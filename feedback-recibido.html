@@ -1,0 +1,78 @@
+<!-- Vista: Feedback Recibido (Participante) -->
+<div>
+  <div class="card">
+    <div class="card-header">
+      <h2>Feedback Recibido</h2>
+    </div>
+    <div class="card-body">
+      <div id="lista-feedback-recibido">
+        <div class="text-center p-4"><div class="spinner spinner-lg"></div><p class="text-muted mt-2">Cargando...</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          renderFeedbackRecibido(r.data);
+        } else {
+          document.getElementById('lista-feedback-recibido').innerHTML =
+            '<div class="empty-state"><p>' + escapeHtml(r.error) + '</p></div>';
+        }
+      })
+      .withFailureHandler(function() {
+        document.getElementById('lista-feedback-recibido').innerHTML =
+          '<div class="empty-state"><p>Error al cargar feedback.</p></div>';
+      })
+      .listarFeedbackRecibido(App.token);
+  })();
+
+  function renderFeedbackRecibido(feedbacks) {
+    var div = document.getElementById('lista-feedback-recibido');
+
+    if (!feedbacks || feedbacks.length === 0) {
+      div.innerHTML = '<div class="empty-state">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;margin-bottom:16px;opacity:0.4;">' +
+          '<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>' +
+        '</svg>' +
+        '<p>Aun no has recibido feedback de tu jefatura.</p>' +
+      '</div>';
+      return;
+    }
+
+    div.innerHTML = feedbacks.map(function(f) {
+      return '<div class="card mb-3"><div class="card-body">' +
+        '<div class="flex-between mb-2">' +
+          '<div>' +
+            '<strong>' + escapeHtml(f.jefatura_nombre) + '</strong>' +
+            (f.programa_nombre ? '<span class="text-sm text-muted"> | ' + escapeHtml(f.programa_nombre) + '</span>' : '') +
+          '</div>' +
+          '<span class="text-sm text-muted">' + formatDate(f.fecha_feedback) + '</span>' +
+        '</div>' +
+        '<div style="display:grid;gap:12px;">' +
+          '<div>' +
+            '<p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Fortaleza</p>' +
+            '<div style="background:var(--color-fondo-alt);padding:10px 14px;border-radius:8px;border-left:3px solid var(--color-exito);">' +
+              '<p class="text-sm">' + escapeHtml(f.fortaleza) + '</p>' +
+            '</div>' +
+          '</div>' +
+          '<div>' +
+            '<p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Aspecto a Reforzar</p>' +
+            '<div style="background:var(--color-fondo-alt);padding:10px 14px;border-radius:8px;border-left:3px solid var(--color-advertencia);">' +
+              '<p class="text-sm">' + escapeHtml(f.aspecto_reforzar) + '</p>' +
+            '</div>' +
+          '</div>' +
+          '<div>' +
+            '<p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Recomendaci&oacute;n</p>' +
+            '<div style="background:var(--color-fondo-alt);padding:10px 14px;border-radius:8px;border-left:3px solid var(--color-secundario);">' +
+              '<p class="text-sm">' + escapeHtml(f.recomendacion) + '</p>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div></div>';
+    }).join('');
+  }
+</script>

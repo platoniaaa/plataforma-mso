@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <?!= include('css'); ?>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="spinner spinner-lg"></div>
+    <span style="color: var(--color-texto-sec);">Cargando...</span>
+  </div>
+
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img src="https://lh3.googleusercontent.com/d/1vKHXAnMVQFDsA7Xd96B-3TKrNytyXXru" alt="MSO Chile" style="max-width:140px;margin:0 auto 8px;display:block;">
+        <div class="text-xs" style="opacity:0.6;">Transferencia al Puesto</div>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="sidebar-user-name" id="user-name">Cargando...</div>
+        <div class="sidebar-user-role" id="user-role"></div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- Se llena dinámicamente según rol -->
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn-logout" onclick="handleLogout()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:6px;">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Cerrar Sesi&oacute;n
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="main-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <h1 id="page-title">Dashboard</h1>
+        </div>
+        <div class="header-actions">
+          <div class="notif-badge" onclick="cargarVista('notificaciones')" title="Notificaciones">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+            <span class="notif-count hidden" id="notif-count">0</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area" id="content-area">
+        <!-- Contenido dinámico se carga aquí -->
+        <div class="text-center" style="padding:60px 20px;">
+          <div class="spinner spinner-lg"></div>
+          <p class="text-muted mt-3">Cargando plataforma...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <?!= include('js-utils'); ?>
+
+  <script>
+    // ============================================
+    // CONFIGURACIÓN DE MENÚ POR ROL
+    // ============================================
+    var MENUS = {
+      admin: [
+        { id: 'dashboard', label: 'Dashboard', icon: 'chart' },
+        { id: 'clientes', label: 'Clientes', icon: 'building' },
+        { id: 'programas', label: 'Programas', icon: 'clipboard' },
+        { id: 'conductas', label: 'Conductas', icon: 'target' },
+        { id: 'encuestas', label: 'Encuestas', icon: 'survey' },
+        { id: 'checklists', label: 'Checklists', icon: 'checklist' },
+        { id: 'usuarios', label: 'Usuarios', icon: 'users' },
+        { id: 'hallazgos', label: 'Hallazgos', icon: 'lightbulb' },
+        { id: 'reportes', label: 'Reportes', icon: 'file' }
+      ],
+      jefatura: [
+        { id: 'dashboard', label: 'Dashboard', icon: 'chart' },
+        { id: 'observaciones', label: 'Mis Observaciones', icon: 'checklist' },
+        { id: 'feedback', label: 'Feedback', icon: 'message' },
+        { id: 'mi-equipo', label: 'Mi Equipo', icon: 'users' }
+      ],
+      participante: [
+        { id: 'mis-encuestas', label: 'Mis Encuestas', icon: 'survey' },
+        { id: 'mi-progreso', label: 'Mi Progreso', icon: 'chart' },
+        { id: 'feedback-recibido', label: 'Feedback Recibido', icon: 'message' }
+      ]
+    };
+
+    var ICONOS = {
+      chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 16V12M12 16V8M16 16V11"/></svg>',
+      building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22V12h6v10M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01"/></svg>',
+      clipboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="12" height="18" rx="1"/><path d="M9 2h6v3H9z"/><path d="M10 12h4M10 16h4M10 8h4"/></svg>',
+      target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+      survey: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>',
+      checklist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10l2 2 4-4"/><path d="M8 16h8"/></svg>',
+      users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+      lightbulb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>',
+      file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
+      message: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'
+    };
+
+    // ============================================
+    // INICIALIZACIÓN
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+      App.init();
+
+      if (!App.isLoggedIn()) {
+        window.top.location.href = '<?= ScriptApp.getService().getUrl() ?>?page=login';
+        return;
+      }
+
+      // Mostrar datos del usuario
+      document.getElementById('user-name').textContent = App.usuario.nombre;
+      document.getElementById('user-role').textContent = App.usuario.rol.toUpperCase();
+
+      // Construir menú
+      buildMenu();
+
+      // Cargar vista inicial
+      var defaultView = App.isParticipante() ? 'mis-encuestas' : 'dashboard';
+      cargarVista(defaultView);
+
+      // Cargar notificaciones
+      cargarContadorNotificaciones();
+    });
+
+    // ============================================
+    // MENÚ DE NAVEGACIÓN
+    // ============================================
+    function buildMenu() {
+      var nav = document.getElementById('sidebar-nav');
+      var items = MENUS[App.getRol()] || [];
+      nav.innerHTML = '';
+
+      items.forEach(function(item) {
+        var div = document.createElement('div');
+        div.className = 'nav-item';
+        div.dataset.vista = item.id;
+        div.innerHTML = (ICONOS[item.icon] || '') + '<span>' + item.label + '</span>';
+        div.onclick = function() { cargarVista(item.id); };
+        nav.appendChild(div);
+      });
+    }
+
+    function setActiveNav(vistaId) {
+      document.querySelectorAll('.nav-item').forEach(function(el) {
+        el.classList.toggle('active', el.dataset.vista === vistaId);
+      });
+    }
+
+    // ============================================
+    // CARGA DINÁMICA DE VISTAS
+    // ============================================
+    function cargarVista(vistaId) {
+      App.vistaActual = vistaId;
+      setActiveNav(vistaId);
+
+      // Mapeo de vista a archivo HTML y título
+      var vistas = {
+        'dashboard': { html: 'dashboard', titulo: 'Dashboard' },
+        'clientes': { html: 'clientes', titulo: 'Gesti\u00f3n de Clientes' },
+        'programas': { html: 'programas', titulo: 'Gesti\u00f3n de Programas' },
+        'conductas': { html: 'conductas', titulo: 'Conductas Cr\u00edticas' },
+        'encuestas': { html: 'encuestas', titulo: 'Encuestas' },
+        'checklists': { html: 'checklists', titulo: 'Checklists de Observaci\u00f3n' },
+        'usuarios': { html: 'usuarios', titulo: 'Gesti\u00f3n de Usuarios' },
+        'hallazgos': { html: 'hallazgos', titulo: 'Hallazgos y Recomendaciones' },
+        'reportes': { html: 'reportes', titulo: 'Reportes' },
+        'observaciones': { html: 'checklists', titulo: 'Mis Observaciones' },
+        'feedback': { html: 'feedback-jefatura', titulo: 'Feedback' },
+        'mi-equipo': { html: 'mi-equipo', titulo: 'Mi Equipo' },
+        'mis-encuestas': { html: 'mis-encuestas', titulo: 'Mis Encuestas' },
+        'mi-progreso': { html: 'mi-progreso', titulo: 'Mi Progreso' },
+        'feedback-recibido': { html: 'feedback-recibido', titulo: 'Feedback Recibido' },
+        'notificaciones': { html: 'notificaciones', titulo: 'Notificaciones' }
+      };
+
+      var vista = vistas[vistaId];
+      if (!vista) {
+        document.getElementById('content-area').innerHTML = '<div class="empty-state"><p>Vista no encontrada.</p></div>';
+        return;
+      }
+
+      document.getElementById('page-title').textContent = vista.titulo;
+
+      // Mostrar loading en el área de contenido
+      document.getElementById('content-area').innerHTML =
+        '<div class="text-center" style="padding:60px 20px;"><div class="spinner spinner-lg"></div><p class="text-muted mt-3">Cargando...</p></div>';
+
+      // Cargar HTML desde el backend
+      google.script.run
+        .withSuccessHandler(function(html) {
+          document.getElementById('content-area').innerHTML = html;
+          // Ejecutar scripts del contenido cargado
+          ejecutarScripts(document.getElementById('content-area'));
+          // Cerrar sidebar en móvil
+          closeSidebar();
+        })
+        .withFailureHandler(function(error) {
+          document.getElementById('content-area').innerHTML =
+            '<div class="empty-state"><p>Error al cargar la vista. Intenta de nuevo.</p></div>';
+        })
+        .getVistaHTML(vista.html);
+    }
+
+    /**
+     * Ejecuta los scripts dentro de un contenedor cargado dinámicamente
+     */
+    function ejecutarScripts(container) {
+      var scripts = container.querySelectorAll('script');
+      scripts.forEach(function(oldScript) {
+        var newScript = document.createElement('script');
+        if (oldScript.src) {
+          newScript.src = oldScript.src;
+        } else {
+          newScript.textContent = oldScript.textContent;
+        }
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+    }
+
+    // ============================================
+    // NOTIFICACIONES
+    // ============================================
+    function cargarContadorNotificaciones() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result && result.success && result.data) {
+            var count = result.data.count || 0;
+            var badge = document.getElementById('notif-count');
+            if (count > 0) {
+              badge.textContent = count > 99 ? '99+' : count;
+              badge.classList.remove('hidden');
+            } else {
+              badge.classList.add('hidden');
+            }
+          }
+        })
+        .withFailureHandler(function() {})
+        .contarNotificacionesPendientes(App.token);
+    }
+
+    // Recargar notificaciones cada 60 segundos
+    setInterval(cargarContadorNotificaciones, 60000);
+
+    // ============================================
+    // SIDEBAR MOBILE
+    // ============================================
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+    }
+
+    // Cerrar sidebar al hacer clic fuera
+    document.addEventListener('click', function(e) {
+      var sidebar = document.getElementById('sidebar');
+      var menuBtn = document.querySelector('.mobile-menu-btn');
+      if (window.innerWidth <= 768 &&
+          !sidebar.contains(e.target) &&
+          !menuBtn.contains(e.target)) {
+        closeSidebar();
+      }
+    });
+
+    // ============================================
+    // LOGOUT
+    // ============================================
+    function handleLogout() {
+      google.script.run
+        .withSuccessHandler(function() {
+          App.clearSession();
+          window.top.location.href = '<?= ScriptApp.getService().getUrl() ?>?page=login';
+        })
+        .withFailureHandler(function() {
+          App.clearSession();
+          window.top.location.href = '<?= ScriptApp.getService().getUrl() ?>?page=login';
+        })
+        .cerrarSesion(App.token);
+    }
+  </script>
+</body>
+</html>

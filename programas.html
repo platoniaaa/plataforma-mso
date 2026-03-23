@@ -1,0 +1,456 @@
+<!-- Vista: Gestión de Programas (Solo Admin) -->
+<div>
+  <div class="flex-between mb-4">
+    <div class="filter-bar" style="flex:1;">
+      <input type="text" class="form-control search-input" id="buscar-programa"
+             placeholder="Buscar por nombre..." oninput="filtrarProgramas()">
+      <select class="form-control" id="filtro-cliente-prog" onchange="filtrarProgramas()" style="max-width:180px;">
+        <option value="">Todos los clientes</option>
+      </select>
+      <select class="form-control" id="filtro-estado-prog" onchange="filtrarProgramas()" style="max-width:140px;">
+        <option value="">Todos</option>
+        <option value="diseno">Dise&ntilde;o</option>
+        <option value="activo">Activo</option>
+        <option value="finalizado">Finalizado</option>
+        <option value="suspendido">Suspendido</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalPrograma()">+ Nuevo Programa</button>
+  </div>
+
+  <div class="card">
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Cliente</th>
+            <th>Tipo</th>
+            <th>Fechas</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-programas">
+          <tr><td colspan="6" class="text-center text-muted p-4">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Crear/Editar Programa -->
+<div class="modal-overlay" id="modal-programa">
+  <div class="modal" style="max-width:650px;">
+    <div class="modal-header">
+      <h3 id="modal-programa-titulo">Nuevo Programa</h3>
+      <button class="modal-close" onclick="closeModal('modal-programa')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-programa">
+        <input type="hidden" id="programa-edit-id">
+
+        <div class="form-group">
+          <label>Nombre del programa *</label>
+          <input type="text" name="nombre" class="form-control" required
+                 placeholder="Ej: Liderazgo Efectivo 2026">
+        </div>
+
+        <div class="form-group">
+          <label>Cliente *</label>
+          <select name="cliente_id" class="form-control" id="prog-cliente" required>
+            <option value="">Selecciona...</option>
+          </select>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label>Fecha inicio *</label>
+            <input type="date" name="fecha_inicio" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Fecha t&eacute;rmino *</label>
+            <input type="date" name="fecha_termino" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Tipo *</label>
+          <select name="tipo" class="form-control" required>
+            <option value="">Selecciona...</option>
+            <option value="piloto">Piloto</option>
+            <option value="programa_completo">Programa Completo</option>
+            <option value="intervencion">Intervenci&oacute;n</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Objetivo *</label>
+          <textarea name="objetivo" class="form-control" required
+                    placeholder="Describe el objetivo del programa..."></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label>Fecha medici&oacute;n PRE</label>
+            <input type="date" name="fecha_medicion_pre" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Fecha medici&oacute;n POST</label>
+            <input type="date" name="fecha_medicion_post" class="form-control">
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-programa')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-programa" onclick="guardarPrograma()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalle del programa -->
+<div class="modal-overlay" id="modal-detalle-programa">
+  <div class="modal" style="max-width:750px;">
+    <div class="modal-header">
+      <h3 id="detalle-prog-titulo">Detalle del Programa</h3>
+      <button class="modal-close" onclick="closeModal('modal-detalle-programa')">&times;</button>
+    </div>
+    <div class="modal-body" id="detalle-prog-body">
+      Cargando...
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-detalle-programa')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Asociar Participantes -->
+<div class="modal-overlay" id="modal-asociar">
+  <div class="modal" style="max-width:550px;">
+    <div class="modal-header">
+      <h3>Asociar Usuarios al Programa</h3>
+      <button class="modal-close" onclick="closeModal('modal-asociar')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-muted mb-3">Selecciona los usuarios que quieres agregar al programa. Solo aparecen usuarios activos del mismo cliente que a&uacute;n no est&aacute;n asociados.</p>
+      <input type="hidden" id="asociar-programa-id">
+      <div id="lista-disponibles">
+        <div class="text-center p-3"><div class="spinner"></div></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-asociar')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-asociar" onclick="ejecutarAsociacion()">Asociar Seleccionados</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var programasData = [];
+  var clientesPrograma = [];
+
+  (function() {
+    cargarProgramas();
+    cargarClientesPrograma();
+  })();
+
+  function cargarClientesPrograma() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.success) {
+          clientesPrograma = r.data;
+          var selects = [document.getElementById('filtro-cliente-prog'), document.getElementById('prog-cliente')];
+          r.data.forEach(function(c) {
+            if (c.estado !== 'Activo') return;
+            selects.forEach(function(sel) {
+              var opt = document.createElement('option');
+              opt.value = c.id;
+              opt.textContent = c.nombre;
+              sel.appendChild(opt);
+            });
+          });
+        } else {
+          console.error('Error cargando clientes:', r ? r.error : 'sin respuesta');
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error cargarClientesPrograma:', err);
+      })
+      .listarClientes(App.token);
+  }
+
+  function cargarProgramas() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.success) {
+          programasData = r.data;
+          renderProgramas(programasData);
+        } else {
+          console.error('Error cargando programas:', r ? r.error : 'sin respuesta');
+          document.getElementById('tbody-programas').innerHTML = '<tr><td colspan="6" class="text-center text-danger p-4">' + (r ? r.error : 'Error al cargar') + '</td></tr>';
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error cargarProgramas:', err);
+        document.getElementById('tbody-programas').innerHTML = '<tr><td colspan="6" class="text-center text-danger p-4">Error de conexi\u00f3n al cargar programas.</td></tr>';
+      })
+      .listarProgramas(App.token, '');
+  }
+
+  function renderProgramas(programas) {
+    var tbody = document.getElementById('tbody-programas');
+    if (!programas.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-4">No hay programas.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = programas.map(function(p) {
+      var acciones = '<button class="btn btn-sm btn-outline" onclick="verDetalle(\'' + p.id + '\')">Ver</button> ';
+      acciones += '<button class="btn btn-sm btn-outline" onclick="editarPrograma(\'' + p.id + '\')">Editar</button> ';
+
+      if (p.estado === 'diseno') {
+        acciones += '<button class="btn btn-sm btn-success" onclick="activarProg(\'' + p.id + '\')">Activar</button>';
+      }
+
+      return '<tr>' +
+        '<td><strong>' + escapeHtml(p.nombre) + '</strong></td>' +
+        '<td>' + escapeHtml(p.cliente_nombre) + '</td>' +
+        '<td>' + escapeHtml(p.tipo) + '</td>' +
+        '<td>' + formatDate(p.fecha_inicio) + ' - ' + formatDate(p.fecha_termino) + '</td>' +
+        '<td>' + getBadge(p.estado) + '</td>' +
+        '<td>' + acciones + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function filtrarProgramas() {
+    var busqueda = document.getElementById('buscar-programa').value.toLowerCase();
+    var cliente = document.getElementById('filtro-cliente-prog').value;
+    var estado = document.getElementById('filtro-estado-prog').value;
+
+    var filtrados = programasData.filter(function(p) {
+      return (!busqueda || p.nombre.toLowerCase().indexOf(busqueda) !== -1) &&
+             (!cliente || p.cliente_id === cliente) &&
+             (!estado || p.estado === estado);
+    });
+    renderProgramas(filtrados);
+  }
+
+  function abrirModalPrograma() {
+    document.getElementById('modal-programa-titulo').textContent = 'Nuevo Programa';
+    resetForm('form-programa');
+    document.getElementById('programa-edit-id').value = '';
+    openModal('modal-programa');
+  }
+
+  function editarPrograma(id) {
+    var prog = programasData.find(function(p) { return p.id === id; });
+    if (!prog) return;
+
+    document.getElementById('modal-programa-titulo').textContent = 'Editar Programa';
+    document.getElementById('programa-edit-id').value = id;
+    fillForm('form-programa', prog);
+    openModal('modal-programa');
+  }
+
+  function guardarPrograma() {
+    var datos = getFormData('form-programa');
+    var id = document.getElementById('programa-edit-id').value;
+    var btn = document.getElementById('btn-guardar-programa');
+
+    btnLoading(btn, true);
+
+    if (id) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          btnLoading(btn, false);
+          if (r.success) { closeModal('modal-programa'); showToast('Programa actualizado.', 'success'); cargarProgramas(); }
+          else showToast(r.error, 'error');
+        })
+        .withFailureHandler(function() { btnLoading(btn, false); showToast('Error.', 'error'); })
+        .actualizarPrograma(App.token, id, datos);
+    } else {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          btnLoading(btn, false);
+          if (r.success) { closeModal('modal-programa'); showToast('Programa creado.', 'success'); cargarProgramas(); }
+          else showToast(r.error, 'error');
+        })
+        .withFailureHandler(function() { btnLoading(btn, false); showToast('Error.', 'error'); })
+        .crearPrograma(App.token, datos);
+    }
+  }
+
+  function activarProg(id) {
+    if (!confirmar('¿Activar este programa? No podrás modificar las conductas después.')) return;
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) { showToast('Programa activado.', 'success'); cargarProgramas(); }
+        else showToast(r.error, 'error');
+      })
+      .activarPrograma(App.token, id);
+  }
+
+  function verDetalle(id) {
+    document.getElementById('detalle-prog-body').innerHTML = '<div class="text-center p-4"><div class="spinner"></div></div>';
+    openModal('modal-detalle-programa');
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          var p = r.data;
+          document.getElementById('detalle-prog-titulo').textContent = p.nombre;
+
+          var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">' +
+            '<div><span class="text-muted text-sm">Estado</span><br>' + getBadge(p.estado) + '</div>' +
+            '<div><span class="text-muted text-sm">Tipo</span><br>' + escapeHtml(p.tipo) + '</div>' +
+            '<div><span class="text-muted text-sm">Inicio</span><br>' + formatDate(p.fecha_inicio) + '</div>' +
+            '<div><span class="text-muted text-sm">Término</span><br>' + formatDate(p.fecha_termino) + '</div>' +
+          '</div>';
+
+          html += '<div class="mb-3"><span class="text-muted text-sm">Objetivo</span><br>' + escapeHtml(p.objetivo) + '</div>';
+
+          // Conductas
+          html += '<h4 style="margin:16px 0 8px;color:var(--color-primario);">Conductas Críticas (' + (p.conductas ? p.conductas.length : 0) + ')</h4>';
+          if (p.conductas && p.conductas.length) {
+            html += '<ul style="margin-left:16px;">';
+            p.conductas.forEach(function(c) {
+              html += '<li style="margin-bottom:4px;">' + escapeHtml(c.nombre) + ' <span class="badge badge-info">P' + c.prioridad + '</span></li>';
+            });
+            html += '</ul>';
+          } else {
+            html += '<p class="text-muted text-sm">Sin conductas configuradas.</p>';
+          }
+
+          // Participantes
+          html += '<div class="flex-between"><h4 style="margin:16px 0 8px;color:var(--color-primario);">Participantes (' + (p.participantes ? p.participantes.length : 0) + ')</h4>' +
+            '<button class="btn btn-sm btn-secondary" onclick="abrirAsociar(\'' + p.id + '\')">+ Asociar Usuarios</button></div>';
+          if (p.participantes && p.participantes.length) {
+            html += '<div class="table-container"><table class="data-table"><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Acci\u00f3n</th></tr></thead><tbody>';
+            p.participantes.forEach(function(part) {
+              html += '<tr><td>' + escapeHtml(part.nombre) + '</td><td>' + escapeHtml(part.email) + '</td><td>' + getBadge(part.rol_programa) + '</td>' +
+                '<td><button class="btn btn-sm btn-danger" onclick="quitarParticipante(\'' + p.id + '\',\'' + part.usuario_id + '\')">Quitar</button></td></tr>';
+            });
+            html += '</tbody></table></div>';
+          } else {
+            html += '<p class="text-muted text-sm">Sin participantes asociados. Usa el bot\u00f3n para agregar.</p>';
+          }
+
+          document.getElementById('detalle-prog-body').innerHTML = html;
+        }
+      })
+      .obtenerPrograma(App.token, id);
+  }
+
+  // === Asociar participantes ===
+  var detalleProgramaId = null;
+
+  function abrirAsociar(programaId) {
+    detalleProgramaId = programaId;
+    document.getElementById('asociar-programa-id').value = programaId;
+    document.getElementById('lista-disponibles').innerHTML = '<div class="text-center p-3"><div class="spinner"></div></div>';
+    openModal('modal-asociar');
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.success) {
+          var usuarios = r.data;
+          if (!usuarios.length) {
+            document.getElementById('lista-disponibles').innerHTML = '<p class="text-muted text-center">No hay usuarios disponibles para asociar. Crea usuarios primero en el m\u00f3dulo Usuarios.</p>';
+            return;
+          }
+          var html = '';
+          usuarios.forEach(function(u) {
+            html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--color-borde);border-radius:6px;margin-bottom:6px;cursor:pointer;">' +
+              '<input type="checkbox" value="' + u.id + '" data-rol="' + u.rol + '" class="cb-asociar">' +
+              '<div><strong>' + escapeHtml(u.nombre) + '</strong><br><span class="text-xs text-muted">' + escapeHtml(u.email) + ' | ' + u.rol + '</span></div>' +
+            '</label>';
+          });
+          document.getElementById('lista-disponibles').innerHTML = html;
+        } else {
+          document.getElementById('lista-disponibles').innerHTML = '<p class="text-danger">Error al cargar usuarios.</p>';
+        }
+      })
+      .withFailureHandler(function() {
+        document.getElementById('lista-disponibles').innerHTML = '<p class="text-danger">Error de conexi\u00f3n.</p>';
+      })
+      .obtenerUsuariosDisponibles(App.token, programaId);
+  }
+
+  function ejecutarAsociacion() {
+    var checkboxes = document.querySelectorAll('.cb-asociar:checked');
+    if (!checkboxes.length) {
+      showToast('Selecciona al menos un usuario.', 'error');
+      return;
+    }
+
+    var userIds = [];
+    checkboxes.forEach(function(cb) { userIds.push(cb.value); });
+
+    var btn = document.getElementById('btn-asociar');
+    btnLoading(btn, true);
+
+    // Determinar rol (usa el rol del usuario)
+    var rolPrograma = checkboxes[0].dataset.rol === 'jefatura' ? 'jefatura' : 'participante';
+
+    // Asociar todos con su rol correspondiente
+    var participanteIds = [];
+    var jefaturaIds = [];
+    checkboxes.forEach(function(cb) {
+      if (cb.dataset.rol === 'jefatura') jefaturaIds.push(cb.value);
+      else participanteIds.push(cb.value);
+    });
+
+    var programaId = document.getElementById('asociar-programa-id').value;
+    var pendientes = 0;
+    var totalAsociados = 0;
+
+    function checkDone() {
+      pendientes--;
+      if (pendientes <= 0) {
+        btnLoading(btn, false);
+        closeModal('modal-asociar');
+        showToast(totalAsociados + ' usuario(s) asociado(s) al programa.', 'success');
+        verDetalle(programaId);
+      }
+    }
+
+    if (participanteIds.length > 0) {
+      pendientes++;
+      google.script.run
+        .withSuccessHandler(function(r) { if (r && r.success) totalAsociados += r.data.count; checkDone(); })
+        .withFailureHandler(function() { checkDone(); })
+        .asociarParticipantes(App.token, programaId, participanteIds, 'participante');
+    }
+
+    if (jefaturaIds.length > 0) {
+      pendientes++;
+      google.script.run
+        .withSuccessHandler(function(r) { if (r && r.success) totalAsociados += r.data.count; checkDone(); })
+        .withFailureHandler(function() { checkDone(); })
+        .asociarParticipantes(App.token, programaId, jefaturaIds, 'jefatura');
+    }
+
+    if (pendientes === 0) {
+      btnLoading(btn, false);
+      showToast('No hay usuarios seleccionados.', 'error');
+    }
+  }
+
+  function quitarParticipante(programaId, userId) {
+    if (!confirmar('\u00bfQuitar este usuario del programa?')) return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.success) {
+          showToast('Usuario quitado del programa.', 'success');
+          verDetalle(programaId);
+        } else {
+          showToast(r ? r.error : 'Error', 'error');
+        }
+      })
+      .withFailureHandler(function() { showToast('Error.', 'error'); })
+      .desasociarParticipante(App.token, programaId, userId);
+  }
+</script>

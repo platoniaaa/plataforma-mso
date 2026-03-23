@@ -1,0 +1,307 @@
+<!-- Vista: Mis Encuestas (Participante) -->
+<div>
+  <!-- Encuestas Pendientes -->
+  <div class="mb-4">
+    <h2 style="color:var(--color-primario);margin-bottom:16px;">Encuestas Pendientes</h2>
+    <div id="encuestas-pendientes">
+      <div class="text-center p-4"><div class="spinner spinner-lg"></div><p class="text-muted mt-2">Cargando...</p></div>
+    </div>
+  </div>
+
+  <!-- Formulario de Encuesta (oculto) -->
+  <div id="encuesta-form-container" class="hidden">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 id="enc-form-titulo">Encuesta</h2>
+          <span class="text-sm text-muted" id="enc-form-programa"></span>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="volverALista()">Volver</button>
+      </div>
+      <div class="card-body">
+        <div id="enc-instrucciones" class="alert alert-info mb-3 hidden"></div>
+
+        <div class="progress-bar-container mb-3">
+          <div class="progress-bar" id="enc-progress" style="width:0%;"></div>
+        </div>
+        <p class="text-sm text-muted mb-3" id="enc-progress-text">Pregunta 0 de 0</p>
+
+        <div id="enc-preguntas"></div>
+
+        <div class="mt-4">
+          <button class="btn btn-primary btn-block" id="btn-enviar-respuestas" onclick="enviarRespuestasEncuesta()">
+            Enviar Respuestas
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encuestas Completadas -->
+  <div class="mt-4">
+    <h2 style="color:var(--color-primario);margin-bottom:16px;">Encuestas Completadas</h2>
+    <div id="encuestas-completadas">
+      <p class="text-muted text-sm">Cargando...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  var encuestasPendientes = [];
+  var encuestaActualId = null;
+  var preguntasActuales = [];
+
+  (function() {
+    cargarMisEncuestas();
+  })();
+
+  function cargarMisEncuestas() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          encuestasPendientes = r.data || [];
+          renderPendientes(encuestasPendientes);
+          renderCompletadas();
+        } else {
+          document.getElementById('encuestas-pendientes').innerHTML =
+            '<div class="empty-state"><p>' + escapeHtml(r.error) + '</p></div>';
+        }
+      })
+      .withFailureHandler(function() {
+        document.getElementById('encuestas-pendientes').innerHTML =
+          '<div class="empty-state"><p>Error al cargar encuestas.</p></div>';
+      })
+      .obtenerEncuestaPendiente(App.token);
+  }
+
+  function renderPendientes(encuestas) {
+    var div = document.getElementById('encuestas-pendientes');
+    if (!encuestas || encuestas.length === 0) {
+      div.innerHTML = '<div class="empty-state"><p>No tienes encuestas pendientes. Buen trabajo.</p></div>';
+      return;
+    }
+
+    div.innerHTML = encuestas.map(function(e) {
+      var tipoBadge = e.tipo === 'pre'
+        ? '<span class="badge badge-info">PRE</span>'
+        : '<span class="badge badge-success">POST</span>';
+      var fechaLimite = e.fecha_cierre ? '<span class="text-xs text-muted">Fecha limite: ' + formatDate(e.fecha_cierre) + '</span>' : '';
+
+      return '<div class="card mb-3"><div class="card-body flex-between">' +
+        '<div>' +
+          '<strong>' + escapeHtml(e.nombre) + '</strong> ' + tipoBadge + '<br>' +
+          '<span class="text-sm text-muted">Programa: ' + escapeHtml(e.programa_nombre) + '</span><br>' +
+          fechaLimite +
+        '</div>' +
+        '<button class="btn btn-primary" onclick="abrirEncuesta(\'' + e.id + '\')">Responder</button>' +
+      '</div></div>';
+    }).join('');
+  }
+
+  function renderCompletadas() {
+    // Las encuestas completadas se obtienen comparando: las que estan en el programa pero no en pendientes
+    // Simplemente mostramos un mensaje si ya no hay pendientes
+    var div = document.getElementById('encuestas-completadas');
+    div.innerHTML = '<div class="empty-state"><p>Las encuestas que hayas completado apareceran aqui una vez cargadas.</p></div>';
+
+    // Intentamos cargar el progreso para mostrar encuestas ya respondidas
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success && r.data && r.data.comparacion && r.data.comparacion.length > 0) {
+          div.innerHTML = '<div class="card"><div class="card-body">' +
+            '<p class="text-sm text-muted">Has respondido encuestas en tus programas asignados. ' +
+            'Revisa tu progreso en la seccion "Mi Progreso".</p>' +
+          '</div></div>';
+        } else {
+          div.innerHTML = '<div class="empty-state"><p>Aun no has completado ninguna encuesta.</p></div>';
+        }
+      })
+      .withFailureHandler(function() {
+        div.innerHTML = '';
+      })
+      .obtenerMiProgreso(App.token);
+  }
+
+  function abrirEncuesta(encuestaId) {
+    encuestaActualId = encuestaId;
+
+    // Ocultar lista, mostrar formulario
+    document.getElementById('encuestas-pendientes').parentElement.classList.add('hidden');
+    document.getElementById('encuestas-completadas').parentElement.classList.add('hidden');
+    document.getElementById('encuesta-form-container').classList.remove('hidden');
+
+    var enc = encuestasPendientes.find(function(e) { return e.id === encuestaId; });
+    if (enc) {
+      document.getElementById('enc-form-titulo').textContent = enc.nombre;
+      document.getElementById('enc-form-programa').textContent = 'Programa: ' + enc.programa_nombre;
+    }
+
+    // Cargar preguntas
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          var encData = r.data;
+          preguntasActuales = encData.preguntas || [];
+
+          // Instrucciones
+          if (encData.instrucciones) {
+            var instrDiv = document.getElementById('enc-instrucciones');
+            instrDiv.textContent = encData.instrucciones;
+            instrDiv.classList.remove('hidden');
+          } else {
+            document.getElementById('enc-instrucciones').classList.add('hidden');
+          }
+
+          renderPreguntas(preguntasActuales);
+        } else {
+          showToast(r.error, 'error');
+        }
+      })
+      .withFailureHandler(function() {
+        showToast('Error al cargar encuesta.', 'error');
+      })
+      .obtenerEncuestaCompleta(App.token, encuestaId);
+  }
+
+  function renderPreguntas(preguntas) {
+    var div = document.getElementById('enc-preguntas');
+    var total = preguntas.length;
+    document.getElementById('enc-progress-text').textContent = 'Pregunta 0 de ' + total;
+    document.getElementById('enc-progress').style.width = '0%';
+
+    div.innerHTML = preguntas.map(function(p, idx) {
+      var obligTag = p.obligatoria !== false ? ' <span class="text-danger">*</span>' : '';
+      var html = '<div class="card mb-3"><div class="card-body">';
+      html += '<p class="mb-2"><strong>' + (idx + 1) + '. ' + escapeHtml(p.texto_pregunta) + '</strong>' + obligTag + '</p>';
+
+      if (p.conducta_nombre) {
+        html += '<p class="text-xs text-muted mb-2">Conducta: ' + escapeHtml(p.conducta_nombre) + '</p>';
+      }
+
+      html += renderInputPorTipo(p.id, p.tipo_respuesta);
+      html += '</div></div>';
+      return html;
+    }).join('');
+
+    // Agregar listeners para actualizar progreso
+    setTimeout(function() {
+      var inputs = div.querySelectorAll('input, textarea');
+      inputs.forEach(function(input) {
+        input.addEventListener('change', actualizarProgreso);
+        input.addEventListener('input', actualizarProgreso);
+      });
+    }, 100);
+  }
+
+  function renderInputPorTipo(preguntaId, tipo) {
+    var name = 'resp_' + preguntaId;
+
+    switch (tipo) {
+      case 'escala_1_5':
+        var html = '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
+        for (var i = 1; i <= 5; i++) {
+          html += '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="' + i + '"> ' +
+            '<span>' + i + '</span>' +
+          '</label>';
+        }
+        html += '</div>';
+        html += '<div style="display:flex;justify-content:space-between;margin-top:4px;">' +
+          '<span class="text-xs text-muted">Muy bajo</span>' +
+          '<span class="text-xs text-muted">Muy alto</span></div>';
+        return html;
+
+      case 'si_no':
+        return '<div style="display:flex;gap:16px;">' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="si"> Si</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="no"> No</label>' +
+        '</div>';
+
+      case 'logrado_parcial_no':
+        return '<div style="display:flex;gap:16px;flex-wrap:wrap;">' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="logrado"> Logrado</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="parcial"> Parcial</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="no"> No logrado</label>' +
+        '</div>';
+
+      case 'texto_breve':
+        return '<textarea name="' + name + '" class="form-control" placeholder="Escribe tu respuesta..." rows="3"></textarea>';
+
+      default:
+        return '<input type="text" name="' + name + '" class="form-control" placeholder="Respuesta...">';
+    }
+  }
+
+  function actualizarProgreso() {
+    var total = preguntasActuales.length;
+    if (total === 0) return;
+
+    var respondidas = 0;
+    preguntasActuales.forEach(function(p) {
+      var name = 'resp_' + p.id;
+      var inputs = document.querySelectorAll('[name="' + name + '"]');
+      var tieneValor = false;
+      inputs.forEach(function(input) {
+        if (input.type === 'radio' && input.checked) tieneValor = true;
+        if (input.type === 'textarea' && input.value.trim()) tieneValor = true;
+        if (input.type === 'text' && input.value.trim()) tieneValor = true;
+      });
+      if (tieneValor) respondidas++;
+    });
+
+    var pct = Math.round(respondidas / total * 100);
+    document.getElementById('enc-progress').style.width = pct + '%';
+    document.getElementById('enc-progress-text').textContent = 'Pregunta ' + respondidas + ' de ' + total + ' (' + pct + '%)';
+  }
+
+  function enviarRespuestasEncuesta() {
+    var respuestas = [];
+    preguntasActuales.forEach(function(p) {
+      var name = 'resp_' + p.id;
+      var inputs = document.querySelectorAll('[name="' + name + '"]');
+      var valor = null;
+      inputs.forEach(function(input) {
+        if (input.type === 'radio' && input.checked) valor = input.value;
+        if (input.type === 'textarea' || input.type === 'text') {
+          if (input.value.trim()) valor = input.value.trim();
+        }
+      });
+      if (valor !== null) {
+        respuestas.push({ preguntaId: p.id, valor: valor });
+      }
+    });
+
+    var btn = document.getElementById('btn-enviar-respuestas');
+    btnLoading(btn, true);
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btnLoading(btn, false);
+        if (r.success) {
+          showToast(r.data.message || 'Respuestas enviadas.', 'success');
+          volverALista();
+          cargarMisEncuestas();
+        } else {
+          showToast(r.error, 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        btnLoading(btn, false);
+        showToast('Error al enviar respuestas.', 'error');
+      })
+      .enviarRespuestas(App.token, encuestaActualId, respuestas);
+  }
+
+  function volverALista() {
+    document.getElementById('encuesta-form-container').classList.add('hidden');
+    document.getElementById('encuestas-pendientes').parentElement.classList.remove('hidden');
+    document.getElementById('encuestas-completadas').parentElement.classList.remove('hidden');
+    encuestaActualId = null;
+    preguntasActuales = [];
+  }
+</script>

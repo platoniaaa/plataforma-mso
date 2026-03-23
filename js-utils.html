@@ -1,0 +1,359 @@
+<script>
+/**
+ * js-utils.html — Funciones JavaScript compartidas
+ * Plataforma TPT - MSO Chile
+ */
+
+// ============================================
+// GESTIÓN DE SESIÓN
+// ============================================
+
+var App = {
+  token: null,
+  usuario: null,
+  vistaActual: null,
+
+  /**
+   * Inicializa la aplicación verificando la sesión
+   */
+  init: function() {
+    this.token = sessionStorage.getItem('tpt_token');
+    var usuarioStr = sessionStorage.getItem('tpt_usuario');
+    if (usuarioStr) {
+      this.usuario = JSON.parse(usuarioStr);
+    }
+  },
+
+  /**
+   * Guarda los datos de sesión
+   */
+  setSession: function(token, usuario) {
+    this.token = token;
+    this.usuario = usuario;
+    sessionStorage.setItem('tpt_token', token);
+    sessionStorage.setItem('tpt_usuario', JSON.stringify(usuario));
+  },
+
+  /**
+   * Limpia la sesión
+   */
+  clearSession: function() {
+    this.token = null;
+    this.usuario = null;
+    sessionStorage.removeItem('tpt_token');
+    sessionStorage.removeItem('tpt_usuario');
+  },
+
+  /**
+   * Verifica si hay sesión activa
+   */
+  isLoggedIn: function() {
+    return !!this.token;
+  },
+
+  /**
+   * Obtiene el rol del usuario actual
+   */
+  getRol: function() {
+    return this.usuario ? this.usuario.rol : null;
+  },
+
+  /**
+   * Verifica si el usuario es admin
+   */
+  isAdmin: function() {
+    return this.getRol() === 'admin';
+  },
+
+  /**
+   * Verifica si el usuario es jefatura
+   */
+  isJefatura: function() {
+    return this.getRol() === 'jefatura';
+  },
+
+  /**
+   * Verifica si el usuario es participante
+   */
+  isParticipante: function() {
+    return this.getRol() === 'participante';
+  },
+
+  /**
+   * Redirige al login
+   */
+  goToLogin: function() {
+    window.top.location.href = google.script.run.getUrl
+      ? google.script.run.getUrl() + '?page=login'
+      : '<?= ScriptApp.getService().getUrl() ?>?page=login';
+    // Fallback
+    var url = window.location.href.split('?')[0];
+    window.top.location.href = url + '?page=login';
+  }
+};
+
+// ============================================
+// LLAMADAS AL BACKEND
+// ============================================
+
+/**
+ * Wrapper para google.script.run con Promises
+ */
+function callBackend(functionName, args) {
+  return new Promise(function(resolve, reject) {
+    var runner = google.script.run
+      .withSuccessHandler(function(result) {
+        // Si el resultado indica sesión expirada, redirigir
+        if (result && result.success === false && result.error &&
+            result.error.indexOf('sesión ha expirado') !== -1) {
+          App.clearSession();
+          showToast('Tu sesión ha expirado. Redirigiendo...', 'error');
+          setTimeout(function() {
+            window.top.location.href = getBaseUrl() + '?page=login';
+          }, 1500);
+          reject(new Error(result.error));
+          return;
+        }
+        resolve(result);
+      })
+      .withFailureHandler(function(error) {
+        console.error('Error backend [' + functionName + ']:', error);
+        reject(error);
+      });
+
+    // Llama a la función con los argumentos
+    if (args !== undefined) {
+      if (Array.isArray(args)) {
+        runner[functionName].apply(runner, args);
+      } else {
+        runner[functionName](args);
+      }
+    } else {
+      runner[functionName]();
+    }
+  });
+}
+
+/**
+ * Obtiene la URL base de la aplicación
+ */
+function getBaseUrl() {
+  var url = window.location.href.split('?')[0];
+  return url;
+}
+
+// ============================================
+// NOTIFICACIONES TOAST
+// ============================================
+
+/**
+ * Muestra un toast notification
+ */
+function showToast(message, type, duration) {
+  type = type || 'info';
+  duration = duration || 3000;
+
+  var container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  var toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(function() {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    toast.style.transition = 'all 0.3s';
+    setTimeout(function() {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+  }, duration);
+}
+
+// ============================================
+// LOADING / SPINNER
+// ============================================
+
+/**
+ * Muestra/oculta el overlay de carga
+ */
+function showLoading(show) {
+  var overlay = document.getElementById('loading-overlay');
+  if (overlay) {
+    if (show) {
+      overlay.classList.remove('hidden');
+    } else {
+      overlay.classList.add('hidden');
+    }
+  }
+}
+
+/**
+ * Muestra loading en un botón
+ */
+function btnLoading(btn, loading) {
+  if (loading) {
+    btn.disabled = true;
+    btn.dataset.originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Procesando...';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn.dataset.originalText || btn.innerHTML;
+  }
+}
+
+// ============================================
+// MODALES
+// ============================================
+
+/**
+ * Abre un modal por ID
+ */
+function openModal(modalId) {
+  var modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+/**
+ * Cierra un modal por ID
+ */
+function closeModal(modalId) {
+  var modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}
+
+// ============================================
+// UTILIDADES DE FORMULARIO
+// ============================================
+
+/**
+ * Obtiene los datos de un formulario como objeto
+ */
+function getFormData(formId) {
+  var form = document.getElementById(formId);
+  if (!form) return {};
+
+  var data = {};
+  var elements = form.querySelectorAll('input, select, textarea');
+  elements.forEach(function(el) {
+    if (el.name) {
+      if (el.type === 'checkbox') {
+        data[el.name] = el.checked;
+      } else if (el.type === 'radio') {
+        if (el.checked) data[el.name] = el.value;
+      } else {
+        data[el.name] = el.value;
+      }
+    }
+  });
+  return data;
+}
+
+/**
+ * Limpia un formulario
+ */
+function resetForm(formId) {
+  var form = document.getElementById(formId);
+  if (form) form.reset();
+}
+
+/**
+ * Rellena un formulario con datos
+ */
+function fillForm(formId, data) {
+  var form = document.getElementById(formId);
+  if (!form) return;
+
+  for (var key in data) {
+    var el = form.querySelector('[name="' + key + '"]');
+    if (el) {
+      if (el.type === 'checkbox') {
+        el.checked = !!data[key];
+      } else {
+        el.value = data[key] || '';
+      }
+    }
+  }
+}
+
+// ============================================
+// UTILIDADES VARIAS
+// ============================================
+
+/**
+ * Escapa HTML para prevenir XSS
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  var div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * Formatea fecha para mostrar
+ */
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  var d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  var dia = ('0' + d.getDate()).slice(-2);
+  var mes = ('0' + (d.getMonth() + 1)).slice(-2);
+  return dia + '/' + mes + '/' + d.getFullYear();
+}
+
+/**
+ * Genera badge HTML según estado
+ */
+function getBadge(estado) {
+  var clases = {
+    'activo': 'badge-success',
+    'Activo': 'badge-success',
+    'completada': 'badge-success',
+    'activa': 'badge-success',
+    'finalizado': 'badge-info',
+    'cerrada': 'badge-info',
+    'pendiente': 'badge-warning',
+    'borrador': 'badge-warning',
+    'diseno': 'badge-warning',
+    'inactivo': 'badge-danger',
+    'Inactivo': 'badge-danger',
+    'suspendido': 'badge-danger'
+  };
+  var clase = clases[estado] || 'badge-secondary';
+  return '<span class="badge ' + clase + '">' + escapeHtml(estado) + '</span>';
+}
+
+/**
+ * Debounce function
+ */
+function debounce(func, wait) {
+  var timeout;
+  return function() {
+    var context = this, args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(function() {
+      func.apply(context, args);
+    }, wait);
+  };
+}
+
+/**
+ * Confirmar acción
+ */
+function confirmar(mensaje) {
+  return confirm(mensaje);
+}
+</script>
