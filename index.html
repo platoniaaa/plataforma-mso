@@ -88,20 +88,26 @@
         { id: 'conductas', label: 'Conductas', icon: 'target' },
         { id: 'encuestas', label: 'Encuestas', icon: 'survey' },
         { id: 'checklists', label: 'Checklists', icon: 'checklist' },
+        { id: 'distribucion-actividades', label: 'Actividades', icon: 'send' },
         { id: 'usuarios', label: 'Usuarios', icon: 'users' },
         { id: 'hallazgos', label: 'Hallazgos', icon: 'lightbulb' },
+        { id: 'gestion-observaciones', label: 'Observaciones', icon: 'camera' },
         { id: 'reportes', label: 'Reportes', icon: 'file' }
       ],
       jefatura: [
         { id: 'dashboard', label: 'Dashboard', icon: 'chart' },
         { id: 'observaciones', label: 'Mis Observaciones', icon: 'checklist' },
         { id: 'feedback', label: 'Feedback', icon: 'message' },
-        { id: 'mi-equipo', label: 'Mi Equipo', icon: 'users' }
+        { id: 'mi-equipo', label: 'Mi Equipo', icon: 'users' },
+        { id: 'mis-actividades', label: 'Mis Actividades', icon: 'send' },
+        { id: 'reportar', label: 'Observaciones', icon: 'camera' }
       ],
       participante: [
         { id: 'mis-encuestas', label: 'Mis Encuestas', icon: 'survey' },
         { id: 'mi-progreso', label: 'Mi Progreso', icon: 'chart' },
-        { id: 'feedback-recibido', label: 'Feedback Recibido', icon: 'message' }
+        { id: 'mis-actividades', label: 'Mis Actividades', icon: 'send' },
+        { id: 'feedback-recibido', label: 'Feedback Recibido', icon: 'message' },
+        { id: 'reportar', label: 'Observaciones', icon: 'camera' }
       ]
     };
 
@@ -115,7 +121,9 @@
       users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
       lightbulb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>',
       file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
-      message: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'
+      message: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+      camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>',
+      send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
     };
 
     // ============================================
@@ -192,7 +200,11 @@
         'mis-encuestas': { html: 'mis-encuestas', titulo: 'Mis Encuestas' },
         'mi-progreso': { html: 'mi-progreso', titulo: 'Mi Progreso' },
         'feedback-recibido': { html: 'feedback-recibido', titulo: 'Feedback Recibido' },
-        'notificaciones': { html: 'notificaciones', titulo: 'Notificaciones' }
+        'notificaciones': { html: 'notificaciones', titulo: 'Notificaciones' },
+        'reportar': { html: 'reportar', titulo: 'Reportar Observaci\u00f3n' },
+        'gestion-observaciones': { html: 'gestion-observaciones', titulo: 'Gesti\u00f3n de Observaciones' },
+        'distribucion-actividades': { html: 'distribucion-actividades', titulo: 'Distribuci\u00f3n de Actividades' },
+        'mis-actividades': { html: 'mis-actividades', titulo: 'Mis Actividades' }
       };
 
       var vista = vistas[vistaId];

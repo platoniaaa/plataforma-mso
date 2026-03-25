@@ -1,0 +1,662 @@
+<!-- Vista: Reportar Observación (Todos los roles) -->
+<div>
+  <div class="flex-between mb-4">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <select class="form-control" id="sel-programa-rep" onchange="filtrarReportes()" style="min-width:250px;">
+        <option value="">Todos los programas</option>
+      </select>
+      <select class="form-control" id="filtro-tipo-rep" onchange="filtrarReportes()" style="max-width:180px;">
+        <option value="">Todos los tipos</option>
+        <option value="observacion_positiva">Observaci&oacute;n positiva</option>
+        <option value="incidente">Incidente</option>
+        <option value="sugerencia">Sugerencia</option>
+        <option value="no_conformidad">No conformidad</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalReporte()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;">
+        <path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z"/>
+        <circle cx="12" cy="13" r="3"/>
+      </svg>
+      Nueva Observaci&oacute;n
+    </button>
+  </div>
+
+  <!-- Lista de reportes -->
+  <div id="reportes-lista">
+    <div class="text-center p-4"><div class="spinner spinner-lg"></div><p class="text-muted mt-2">Cargando observaciones...</p></div>
+  </div>
+</div>
+
+<!-- Modal: Nueva/Editar Observación -->
+<div class="modal-overlay" id="modal-reporte">
+  <div class="modal" style="max-width:650px;">
+    <div class="modal-header">
+      <h3 id="modal-reporte-titulo">Nueva Observaci&oacute;n</h3>
+      <button class="modal-close" onclick="closeModal('modal-reporte')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-reporte">
+        <input type="hidden" id="reporte-edit-id">
+
+        <div class="form-group">
+          <label>Programa asociado *</label>
+          <select name="programa_id" class="form-control" id="rep-programa" required>
+            <option value="">Selecciona un programa...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Tipo de observaci&oacute;n *</label>
+          <select name="tipo" class="form-control" required>
+            <option value="">Selecciona...</option>
+            <option value="observacion_positiva">Observaci&oacute;n positiva</option>
+            <option value="incidente">Incidente</option>
+            <option value="sugerencia">Sugerencia</option>
+            <option value="no_conformidad">No conformidad</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>T&iacute;tulo *</label>
+          <input type="text" name="titulo" class="form-control" required
+                 placeholder="Breve descripci&oacute;n de la observaci&oacute;n">
+        </div>
+
+        <div class="form-group">
+          <label>Comentario / Descripci&oacute;n *</label>
+          <textarea name="comentario" class="form-control" required rows="4"
+                    placeholder="Describe en detalle lo observado, el contexto y cualquier informaci&oacute;n relevante..."></textarea>
+        </div>
+
+        <!-- Subida de evidencia -->
+        <div class="form-group">
+          <label>Evidencia (im&aacute;genes o capturas de pantalla)</label>
+          <div class="evidencia-upload-area" id="evidencia-upload-area" onclick="document.getElementById('input-evidencia').click()">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="1.5" style="margin-bottom:8px;">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            <p style="font-size:14px;color:var(--color-texto-sec);margin:0;">Haz clic o arrastra im&aacute;genes aqu&iacute;</p>
+            <p style="font-size:12px;color:#A0AEC0;margin:4px 0 0;">PNG, JPG o GIF &mdash; M&aacute;x. 5MB por archivo</p>
+          </div>
+          <input type="file" id="input-evidencia" accept="image/*" multiple
+                 style="display:none;" onchange="handleEvidenciaFiles(this.files)">
+        </div>
+
+        <!-- Preview de archivos -->
+        <div id="evidencia-preview" class="evidencia-preview-grid"></div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="cerrarModalReporte()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-reporte" onclick="guardarReporte()">Enviar Observaci&oacute;n</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalle de Observación -->
+<div class="modal-overlay" id="modal-detalle-reporte">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <h3 id="detalle-rep-titulo">Detalle de Observaci&oacute;n</h3>
+      <button class="modal-close" onclick="closeModal('modal-detalle-reporte')">&times;</button>
+    </div>
+    <div class="modal-body" id="detalle-rep-body">
+      Cargando...
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-detalle-reporte')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ver imagen en grande -->
+<div class="modal-overlay" id="modal-imagen-grande" onclick="closeModal('modal-imagen-grande')">
+  <div class="modal" style="max-width:90vw;max-height:90vh;background:transparent;border:none;box-shadow:none;display:flex;align-items:center;justify-content:center;">
+    <img id="imagen-grande-src" src="" alt="Evidencia" style="max-width:100%;max-height:85vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,0.4);">
+  </div>
+</div>
+
+<style>
+  .evidencia-upload-area {
+    border: 2px dashed var(--color-borde);
+    border-radius: 10px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--color-fondo-alt);
+  }
+
+  .evidencia-upload-area:hover,
+  .evidencia-upload-area.drag-over {
+    border-color: var(--color-secundario);
+    background: rgba(245, 130, 32, 0.05);
+  }
+
+  .evidencia-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .evidencia-thumb {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--color-borde);
+    aspect-ratio: 1;
+    background: var(--color-fondo-alt);
+  }
+
+  .evidencia-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+  }
+
+  .evidencia-thumb .thumb-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    background: var(--color-error);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+
+  .evidencia-thumb .thumb-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    font-size: 10px;
+    padding: 3px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .reporte-card {
+    border: 1px solid var(--color-borde);
+    border-radius: 10px;
+    background: white;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+
+  .reporte-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  .reporte-card-body {
+    padding: 16px 20px;
+  }
+
+  .reporte-evidencias-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 0 20px 12px;
+  }
+
+  .reporte-evidencias-strip img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--color-borde);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+
+  .reporte-evidencias-strip img:hover {
+    transform: scale(1.1);
+  }
+
+  .tipo-badge-observacion_positiva { background: #D4EFDF; color: #1E8449; }
+  .tipo-badge-incidente { background: #FADBD8; color: #C0392B; }
+  .tipo-badge-sugerencia { background: #D4E6F1; color: #2471A3; }
+  .tipo-badge-no_conformidad { background: #FDEBD0; color: #D68910; }
+  .tipo-badge-otro { background: #EAECEE; color: #5D6D7E; }
+
+  .estado-badge-pendiente { background: #FDEBD0; color: #D68910; }
+  .estado-badge-en_revision { background: #D4E6F1; color: #2471A3; }
+  .estado-badge-en_proceso { background: #E8DAEF; color: #7D3C98; }
+  .estado-badge-resuelta { background: #D4EFDF; color: #1E8449; }
+  .estado-badge-no_resuelta { background: #FADBD8; color: #C0392B; }
+
+  .detalle-evidencias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .detalle-evidencias-grid img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--color-borde);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .detalle-evidencias-grid img:hover {
+    transform: scale(1.03);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+</style>
+
+<script>
+  var reportesData = [];
+  var evidenciasTemp = []; // {file, dataUrl, name}
+  var programasReporte = [];
+
+  (function() {
+    cargarProgramasReporte();
+    cargarReportes();
+
+    // Drag and drop en el area de upload
+    var uploadArea = document.getElementById('evidencia-upload-area');
+    if (uploadArea) {
+      uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+      });
+      uploadArea.addEventListener('dragleave', function() {
+        uploadArea.classList.remove('drag-over');
+      });
+      uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+          handleEvidenciaFiles(e.dataTransfer.files);
+        }
+      });
+    }
+  })();
+
+  /**
+   * Carga programas en los selectores
+   */
+  function cargarProgramasReporte() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success && r.data) {
+          programasReporte = r.data;
+          var selFiltro = document.getElementById('sel-programa-rep');
+          var selForm = document.getElementById('rep-programa');
+
+          r.data.forEach(function(p) {
+            // Filtro
+            var opt1 = document.createElement('option');
+            opt1.value = p.id;
+            opt1.textContent = p.nombre;
+            selFiltro.appendChild(opt1);
+
+            // Form
+            var opt2 = document.createElement('option');
+            opt2.value = p.id;
+            opt2.textContent = p.nombre + (p.cliente_nombre ? ' - ' + p.cliente_nombre : '');
+            selForm.appendChild(opt2);
+          });
+        }
+      })
+      .withFailureHandler(function() {})
+      .listarProgramasDashboard(App.token);
+  }
+
+  /**
+   * Carga lista de reportes/observaciones
+   */
+  function cargarReportes() {
+    document.getElementById('reportes-lista').innerHTML =
+      '<div class="text-center p-4"><div class="spinner spinner-lg"></div><p class="text-muted mt-2">Cargando observaciones...</p></div>';
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          reportesData = r.data || [];
+          filtrarReportes();
+        } else {
+          document.getElementById('reportes-lista').innerHTML =
+            '<div class="empty-state"><p>Error al cargar observaciones.</p></div>';
+        }
+      })
+      .withFailureHandler(function() {
+        document.getElementById('reportes-lista').innerHTML =
+          '<div class="empty-state"><p>Error de conexi&oacute;n.</p></div>';
+      })
+      .listarReportesObservacion(App.token);
+  }
+
+  /**
+   * Filtra reportes por programa y tipo
+   */
+  function filtrarReportes() {
+    var progId = document.getElementById('sel-programa-rep').value;
+    var tipo = document.getElementById('filtro-tipo-rep').value;
+
+    var filtrados = reportesData.filter(function(r) {
+      var matchProg = !progId || r.programa_id === progId;
+      var matchTipo = !tipo || r.tipo === tipo;
+      return matchProg && matchTipo;
+    });
+
+    renderReportes(filtrados);
+  }
+
+  /**
+   * Renderiza las tarjetas de reportes
+   */
+  function renderReportes(reportes) {
+    var div = document.getElementById('reportes-lista');
+
+    if (!reportes || reportes.length === 0) {
+      div.innerHTML = '<div class="card"><div class="empty-state">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;margin-bottom:16px;opacity:0.4;">' +
+          '<path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z"/>' +
+          '<circle cx="12" cy="13" r="3"/>' +
+        '</svg>' +
+        '<p>No hay observaciones registradas.</p>' +
+        '<p class="text-sm mt-2">Haz clic en "Nueva Observaci&oacute;n" para crear la primera.</p>' +
+      '</div></div>';
+      return;
+    }
+
+    div.innerHTML = reportes.map(function(r) {
+      var tipoBadge = '<span class="badge tipo-badge-' + r.tipo + '">' + getTipoLabel(r.tipo) + '</span>';
+      var comentarioCorto = r.comentario.length > 120 ? r.comentario.substring(0, 120) + '...' : r.comentario;
+      var numEvidencias = (r.evidencias && r.evidencias.length) || 0;
+
+      var estadoGestion = r.estado_gestion || 'pendiente';
+      var estadoLabels = {
+        'pendiente': 'Pendiente',
+        'en_revision': 'En Revisi\u00f3n',
+        'en_proceso': 'En Proceso',
+        'resuelta': 'Resuelta',
+        'no_resuelta': 'No Resuelta'
+      };
+      var estadoBadge = '<span class="badge estado-badge-' + estadoGestion + '">' + (estadoLabels[estadoGestion] || estadoGestion) + '</span>';
+
+      var html = '<div class="reporte-card mb-3">';
+      html += '<div class="reporte-card-body">';
+      html += '<div class="flex-between mb-2">';
+      html += '<div style="display:flex;align-items:center;gap:10px;">';
+      html += tipoBadge;
+      html += '<strong style="font-size:15px;">' + escapeHtml(r.titulo) + '</strong>';
+      html += '</div>';
+      html += '<div style="display:flex;align-items:center;gap:10px;">';
+      html += estadoBadge;
+      html += '<span class="text-xs text-muted">' + formatDate(r.fecha) + '</span>';
+      html += '</div>';
+      html += '</div>';
+
+      html += '<p class="text-sm mb-2" style="color:var(--color-texto-sec);">' + escapeHtml(comentarioCorto) + '</p>';
+
+      html += '<div class="flex-between">';
+      html += '<div style="display:flex;align-items:center;gap:12px;">';
+      html += '<span class="text-xs text-muted">' + escapeHtml(r.programa_nombre) + '</span>';
+      html += '<span class="text-xs text-muted">' + escapeHtml(r.autor_nombre) + '</span>';
+      if (numEvidencias > 0) {
+        html += '<span class="text-xs" style="display:flex;align-items:center;gap:3px;color:var(--color-secundario);">';
+        html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+        html += numEvidencias + ' evidencia' + (numEvidencias > 1 ? 's' : '');
+        html += '</span>';
+      }
+      html += '</div>';
+      html += '<button class="btn btn-sm btn-outline" onclick="verDetalleReporte(\'' + r.id + '\')">Ver detalle</button>';
+      html += '</div>';
+      html += '</div>';
+
+      // Strip de thumbnails de evidencia
+      if (numEvidencias > 0) {
+        html += '<div class="reporte-evidencias-strip">';
+        r.evidencias.forEach(function(ev) {
+          html += '<img src="' + ev.url + '" alt="' + escapeHtml(ev.nombre) + '" onclick="verImagenGrande(\'' + ev.url + '\')" title="' + escapeHtml(ev.nombre) + '">';
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
+      return html;
+    }).join('');
+  }
+
+  /**
+   * Convierte el tipo a etiqueta legible
+   */
+  function getTipoLabel(tipo) {
+    var labels = {
+      'observacion_positiva': 'Positiva',
+      'incidente': 'Incidente',
+      'sugerencia': 'Sugerencia',
+      'no_conformidad': 'No conformidad',
+      'otro': 'Otro'
+    };
+    return labels[tipo] || tipo;
+  }
+
+  // ============================================
+  // MODAL: CREAR/EDITAR OBSERVACIÓN
+  // ============================================
+
+  function abrirModalReporte() {
+    document.getElementById('modal-reporte-titulo').textContent = 'Nueva Observaci\u00f3n';
+    resetForm('form-reporte');
+    document.getElementById('reporte-edit-id').value = '';
+    evidenciasTemp = [];
+    renderEvidenciaPreview();
+    openModal('modal-reporte');
+  }
+
+  function cerrarModalReporte() {
+    evidenciasTemp = [];
+    renderEvidenciaPreview();
+    closeModal('modal-reporte');
+  }
+
+  /**
+   * Maneja archivos seleccionados o arrastrados
+   */
+  function handleEvidenciaFiles(files) {
+    var maxSize = 5 * 1024 * 1024; // 5MB
+
+    Array.prototype.forEach.call(files, function(file) {
+      if (!file.type.startsWith('image/')) {
+        showToast('Solo se permiten im\u00e1genes: ' + file.name, 'error');
+        return;
+      }
+      if (file.size > maxSize) {
+        showToast('Archivo muy grande (m\u00e1x 5MB): ' + file.name, 'error');
+        return;
+      }
+      if (evidenciasTemp.length >= 6) {
+        showToast('M\u00e1ximo 6 im\u00e1genes por observaci\u00f3n.', 'error');
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        evidenciasTemp.push({
+          file: file,
+          dataUrl: e.target.result,
+          name: file.name
+        });
+        renderEvidenciaPreview();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Limpiar el input para permitir re-seleccionar el mismo archivo
+    document.getElementById('input-evidencia').value = '';
+  }
+
+  /**
+   * Renderiza previews de los archivos seleccionados
+   */
+  function renderEvidenciaPreview() {
+    var div = document.getElementById('evidencia-preview');
+
+    if (evidenciasTemp.length === 0) {
+      div.innerHTML = '';
+      return;
+    }
+
+    div.innerHTML = evidenciasTemp.map(function(ev, idx) {
+      return '<div class="evidencia-thumb">' +
+        '<img src="' + ev.dataUrl + '" alt="' + escapeHtml(ev.name) + '">' +
+        '<button class="thumb-remove" onclick="quitarEvidencia(' + idx + ')" title="Quitar">&times;</button>' +
+        '<div class="thumb-name">' + escapeHtml(ev.name) + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  /**
+   * Quita una evidencia del listado temporal
+   */
+  function quitarEvidencia(idx) {
+    evidenciasTemp.splice(idx, 1);
+    renderEvidenciaPreview();
+  }
+
+  /**
+   * Guarda el reporte/observación
+   */
+  function guardarReporte() {
+    var datos = getFormData('form-reporte');
+    var id = document.getElementById('reporte-edit-id').value;
+    var btn = document.getElementById('btn-guardar-reporte');
+
+    if (!datos.programa_id || !datos.tipo || !datos.titulo || !datos.comentario) {
+      showToast('Completa todos los campos obligatorios.', 'error');
+      return;
+    }
+
+    btnLoading(btn, true);
+
+    // Preparar evidencias como base64
+    var evidencias = evidenciasTemp.map(function(ev) {
+      return {
+        nombre: ev.name,
+        tipo: ev.file.type,
+        dataUrl: ev.dataUrl
+      };
+    });
+
+    var payload = {
+      programa_id: datos.programa_id,
+      tipo: datos.tipo,
+      titulo: datos.titulo,
+      comentario: datos.comentario,
+      evidencias: evidencias
+    };
+
+    var fnName = id ? 'actualizarReporteObservacion' : 'crearReporteObservacion';
+    if (id) payload.id = id;
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btnLoading(btn, false);
+        if (r.success) {
+          cerrarModalReporte();
+          showToast(id ? 'Observaci\u00f3n actualizada.' : 'Observaci\u00f3n enviada exitosamente.', 'success');
+          cargarReportes();
+        } else {
+          showToast(r.error, 'error');
+        }
+      })
+      .withFailureHandler(function() {
+        btnLoading(btn, false);
+        showToast('Error al guardar.', 'error');
+      })
+      [fnName](App.token, payload);
+  }
+
+  // ============================================
+  // MODAL: VER DETALLE
+  // ============================================
+
+  function verDetalleReporte(id) {
+    var r = reportesData.find(function(x) { return x.id === id; });
+    if (!r) return;
+
+    document.getElementById('detalle-rep-titulo').textContent = r.titulo;
+
+    var tipoBadge = '<span class="badge tipo-badge-' + r.tipo + '">' + getTipoLabel(r.tipo) + '</span>';
+    var numEvidencias = (r.evidencias && r.evidencias.length) || 0;
+
+    var estadoGestion = r.estado_gestion || 'pendiente';
+    var estadoLabels = {
+      'pendiente': 'Pendiente',
+      'en_revision': 'En Revisi\u00f3n',
+      'en_proceso': 'En Proceso',
+      'resuelta': 'Resuelta',
+      'no_resuelta': 'No Resuelta'
+    };
+    var estadoBadge = '<span class="badge estado-badge-' + estadoGestion + '">' + (estadoLabels[estadoGestion] || estadoGestion) + '</span>';
+
+    var html = '';
+
+    // Info principal
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Tipo</span><br>' + tipoBadge + '</div>';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Estado</span><br>' + estadoBadge + '</div>';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Programa</span><br><span class="text-sm">' + escapeHtml(r.programa_nombre) + '</span></div>';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Fecha</span><br><span class="text-sm">' + formatDate(r.fecha) + '</span></div>';
+    html += '</div>';
+
+    // Comentario
+    html += '<div class="mb-4">';
+    html += '<span class="text-muted text-xs" style="text-transform:uppercase;">Descripci&oacute;n</span>';
+    html += '<div style="background:var(--color-fondo-alt);padding:14px 16px;border-radius:8px;margin-top:6px;border-left:3px solid var(--color-secundario);">';
+    html += '<p class="text-sm" style="white-space:pre-wrap;">' + escapeHtml(r.comentario) + '</p>';
+    html += '</div>';
+    html += '</div>';
+
+    // Evidencias
+    if (numEvidencias > 0) {
+      html += '<div>';
+      html += '<span class="text-muted text-xs" style="text-transform:uppercase;">Evidencia (' + numEvidencias + ' imagen' + (numEvidencias > 1 ? 'es' : '') + ')</span>';
+      html += '<div class="detalle-evidencias-grid">';
+      r.evidencias.forEach(function(ev) {
+        html += '<img src="' + ev.url + '" alt="' + escapeHtml(ev.nombre) + '" onclick="verImagenGrande(\'' + ev.url + '\')" title="Clic para ampliar">';
+      });
+      html += '</div>';
+      html += '</div>';
+    } else {
+      html += '<p class="text-sm text-muted">Sin evidencia adjunta.</p>';
+    }
+
+    document.getElementById('detalle-rep-body').innerHTML = html;
+    openModal('modal-detalle-reporte');
+  }
+
+  /**
+   * Abre imagen en modal grande
+   */
+  function verImagenGrande(url) {
+    document.getElementById('imagen-grande-src').src = url;
+    openModal('modal-imagen-grande');
+  }
+</script>
