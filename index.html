@@ -86,9 +86,8 @@
         { id: 'clientes', label: 'Clientes', icon: 'building' },
         { id: 'programas', label: 'Programas', icon: 'clipboard' },
         { id: 'conductas', label: 'Conductas', icon: 'target' },
-        { id: 'encuestas', label: 'Encuestas', icon: 'survey' },
+        { id: 'actividades', label: 'Actividades', icon: 'send' },
         { id: 'checklists', label: 'Checklists', icon: 'checklist' },
-        { id: 'distribucion-actividades', label: 'Actividades', icon: 'send' },
         { id: 'usuarios', label: 'Usuarios', icon: 'users' },
         { id: 'hallazgos', label: 'Hallazgos', icon: 'lightbulb' },
         { id: 'gestion-observaciones', label: 'Observaciones', icon: 'camera' },
@@ -103,9 +102,8 @@
         { id: 'reportar', label: 'Observaciones', icon: 'camera' }
       ],
       participante: [
-        { id: 'mis-encuestas', label: 'Mis Encuestas', icon: 'survey' },
-        { id: 'mi-progreso', label: 'Mi Progreso', icon: 'chart' },
         { id: 'mis-actividades', label: 'Mis Actividades', icon: 'send' },
+        { id: 'mi-progreso', label: 'Mi Progreso', icon: 'chart' },
         { id: 'feedback-recibido', label: 'Feedback Recibido', icon: 'message' },
         { id: 'reportar', label: 'Observaciones', icon: 'camera' }
       ]
@@ -145,7 +143,7 @@
       buildMenu();
 
       // Cargar vista inicial
-      var defaultView = App.isParticipante() ? 'mis-encuestas' : 'dashboard';
+      var defaultView = App.isParticipante() ? 'mis-actividades' : 'dashboard';
       cargarVista(defaultView);
 
       // Cargar notificaciones
@@ -189,7 +187,7 @@
         'clientes': { html: 'clientes', titulo: 'Gesti\u00f3n de Clientes' },
         'programas': { html: 'programas', titulo: 'Gesti\u00f3n de Programas' },
         'conductas': { html: 'conductas', titulo: 'Conductas Cr\u00edticas' },
-        'encuestas': { html: 'encuestas', titulo: 'Encuestas' },
+        'actividades': { html: 'actividades', titulo: 'Actividades' },
         'checklists': { html: 'checklists', titulo: 'Checklists de Observaci\u00f3n' },
         'usuarios': { html: 'usuarios', titulo: 'Gesti\u00f3n de Usuarios' },
         'hallazgos': { html: 'hallazgos', titulo: 'Hallazgos y Recomendaciones' },
@@ -197,13 +195,11 @@
         'observaciones': { html: 'checklists', titulo: 'Mis Observaciones' },
         'feedback': { html: 'feedback-jefatura', titulo: 'Feedback' },
         'mi-equipo': { html: 'mi-equipo', titulo: 'Mi Equipo' },
-        'mis-encuestas': { html: 'mis-encuestas', titulo: 'Mis Encuestas' },
         'mi-progreso': { html: 'mi-progreso', titulo: 'Mi Progreso' },
         'feedback-recibido': { html: 'feedback-recibido', titulo: 'Feedback Recibido' },
         'notificaciones': { html: 'notificaciones', titulo: 'Notificaciones' },
         'reportar': { html: 'reportar', titulo: 'Reportar Observaci\u00f3n' },
         'gestion-observaciones': { html: 'gestion-observaciones', titulo: 'Gesti\u00f3n de Observaciones' },
-        'distribucion-actividades': { html: 'distribucion-actividades', titulo: 'Distribuci\u00f3n de Actividades' },
         'mis-actividades': { html: 'mis-actividades', titulo: 'Mis Actividades' }
       };
 
