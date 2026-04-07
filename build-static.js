@@ -1,225 +1,116 @@
 /**
- * Build script: genera versión estática para GitHub Pages
- * Uso: node build-static.js
- * Salida: carpeta docs/
+ * Genera version estatica en /docs para GitHub Pages
+ * node build-static.js
  */
-const fs = require('fs');
-const path = require('path');
+var fs = require('fs');
+var path = require('path');
+var BASE = __dirname;
+var DOCS = path.join(BASE, 'docs');
 
-const SRC = __dirname;
-const DEST = path.join(SRC, 'docs');
+function readF(n) { try { return fs.readFileSync(path.join(BASE, n), 'utf8'); } catch(e) { return ''; } }
 
-// Limpiar docs/
-if (fs.existsSync(DEST)) {
-  try { fs.rmSync(DEST, { recursive: true }); } catch(e) {
-    console.error('No se pudo limpiar docs/. Cierra programas que lo usen y reintenta.');
-    process.exit(1);
-  }
-}
-fs.mkdirSync(DEST, { recursive: true });
-
-// ============================================
-// 1. Extraer mock data y funciones del server.js
-// ============================================
-const serverSrc = fs.readFileSync(path.join(SRC, 'server.js'), 'utf-8');
-
-// Extraer desde "const MOCK_DATA = {" hasta la línea "};"
-const mockStart = serverSrc.indexOf('const MOCK_DATA = {');
-const backendEnd = serverSrc.indexOf('\n};', serverSrc.indexOf('const backendFunctions = {'));
-const mockAndBackend = serverSrc.substring(mockStart, backendEnd + 3);
-
-// ============================================
-// 2. Generar mock.js (archivo standalone con mock + google.script.run)
-// ============================================
-const mockJs = `// Auto-generated mock for GitHub Pages static deploy
-${mockAndBackend}
-
-// Google.script.run mock
-var google = { script: { run: _createRunner() } };
-
-function _createRunner() {
-  return new Proxy({}, {
-    get: function(_, prop) {
-      if (prop === 'withSuccessHandler') {
-        return function(sh) {
-          return new Proxy({}, {
-            get: function(_, p2) {
-              if (p2 === 'withFailureHandler') {
-                return function(fh) {
-                  return new Proxy({}, {
-                    get: function(_, fn) {
-                      return function() {
-                        var args = [].slice.call(arguments);
-                        if (fn === 'getVistaHTML') {
-                          var base = document.querySelector('meta[name="base-path"]');
-                          var prefix = base ? base.content : '.';
-                          fetch(prefix + '/' + args[0] + '.html')
-                            .then(function(r) { return r.text(); })
-                            .then(function(h) { setTimeout(function() { sh(h); }, 80); })
-                            .catch(function(e) { fh(e); });
-                          return;
-                        }
-                        var handler = backendFunctions[fn];
-                        if (handler) {
-                          try { var r = handler.apply(null, args); setTimeout(function() { sh(r); }, 120); }
-                          catch(e) { console.error('[MOCK ERROR]', fn, e); fh(e); }
-                        } else {
-                          console.warn('[MOCK] Not implemented:', fn);
-                          setTimeout(function() { sh({ success: true, data: [] }); }, 120);
-                        }
-                      };
-                    }
-                  });
-                };
-              }
-              // sin failureHandler
-              return function() {
-                var args = [].slice.call(arguments);
-                if (p2 === 'getVistaHTML') {
-                  var base = document.querySelector('meta[name="base-path"]');
-                  var prefix = base ? base.content : '.';
-                  fetch(prefix + '/' + args[0] + '.html')
-                    .then(function(r) { return r.text(); })
-                    .then(function(h) { setTimeout(function() { sh(h); }, 80); });
-                  return;
-                }
-                var handler = backendFunctions[p2];
-                if (handler) { setTimeout(function() { sh(handler.apply(null, args)); }, 120); }
-                else { setTimeout(function() { sh({ success: true, data: [] }); }, 120); }
-              };
-            }
-          });
-        };
-      }
-      // withFailureHandler sin successHandler previo
-      if (prop === 'withFailureHandler') {
-        return function() { return _createRunner(); };
-      }
-      return function() { return _createRunner(); };
-    }
-  });
-}
-
-// Groq AI key (stored in localStorage)
-var GROQ_API_KEY = localStorage.getItem('GROQ_API_KEY') || '';
-var GROQ_MODEL = 'llama-3.3-70b-versatile';
-`;
-
-fs.writeFileSync(path.join(DEST, 'mock.js'), mockJs);
-
-// ============================================
-// 3. Leer CSS y JS-utils
-// ============================================
-const cssContent = fs.readFileSync(path.join(SRC, 'css.html'), 'utf-8');
-const jsUtilsContent = fs.readFileSync(path.join(SRC, 'js-utils.html'), 'utf-8');
-
-// ============================================
-// 4. Generar login (index.html)
-// ============================================
-let loginHtml = fs.readFileSync(path.join(SRC, 'login.html'), 'utf-8');
-loginHtml = loginHtml.replace("<?!= include('css'); ?>", cssContent);
-loginHtml = loginHtml.replace(/<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>/g, '');
-// Fix redirects
-loginHtml = loginHtml.replace(/window\.top\.location\.href\s*=\s*['"]\?page=app['"]/g, "window.location.href='app.html'");
-loginHtml = loginHtml.replace(/window\.top\.location\.href\s*=\s*['"].*?\?page=app['"]/g, "window.location.href='app.html'");
-loginHtml = loginHtml.replace(/window\.top\.location\.href\s*=\s*['"].*?\?page=registro['"]/g, "window.location.href='registro.html'");
-// Add mock.js before </body>
-loginHtml = loginHtml.replace('</body>', '<script src="mock.js"></script>\n</body>');
-// Add base-path meta
-loginHtml = loginHtml.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n  <meta name="base-path" content=".">');
-
-fs.writeFileSync(path.join(DEST, 'index.html'), loginHtml);
-
-// ============================================
-// 5. Generar app.html (main app)
-// ============================================
-let appHtml = fs.readFileSync(path.join(SRC, 'index.html'), 'utf-8');
-appHtml = appHtml.replace("<?!= include('css'); ?>", cssContent);
-appHtml = appHtml.replace("<?!= include('js-utils'); ?>", jsUtilsContent);
-appHtml = appHtml.replace(/<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>/g, '');
-// Fix login redirects
-appHtml = appHtml.replace(/window\.top\.location\.href\s*=\s*['"]\?page=login['"]/g, "window.location.href='index.html'");
-appHtml = appHtml.replace(/window\.top\.location\.href\s*=\s*['"].*?\?page=login['"]/g, "window.location.href='index.html'");
-// Add mock.js and base-path
-appHtml = appHtml.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n  <meta name="base-path" content=".">');
-appHtml = appHtml.replace('</body>', '<script src="mock.js"></script>\n</body>');
-
-fs.writeFileSync(path.join(DEST, 'app.html'), appHtml);
-
-// ============================================
-// 6. Generar registro.html
-// ============================================
-if (fs.existsSync(path.join(SRC, 'registro.html'))) {
-  let regHtml = fs.readFileSync(path.join(SRC, 'registro.html'), 'utf-8');
-  regHtml = regHtml.replace("<?!= include('css'); ?>", cssContent);
-  regHtml = regHtml.replace(/<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>/g, '');
-  regHtml = regHtml.replace(/window\.top\.location\.href\s*=\s*['"].*?\?page=login['"]/g, "window.location.href='index.html'");
-  regHtml = regHtml.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n  <meta name="base-path" content=".">');
-  regHtml = regHtml.replace('</body>', '<script src="mock.js"></script>\n</body>');
-  fs.writeFileSync(path.join(DEST, 'registro.html'), regHtml);
-}
-
-// ============================================
-// 7. Copiar vistas HTML (sin modificar, se cargan via fetch)
-// ============================================
-const skipFiles = ['index.html', 'login.html', 'registro.html', 'css.html', 'js-utils.html'];
-const htmlFiles = fs.readdirSync(SRC).filter(f => f.endsWith('.html') && !skipFiles.includes(f));
-
-let copied = 0;
-htmlFiles.forEach(f => {
-  let content = fs.readFileSync(path.join(SRC, f), 'utf-8');
-  // Fix /api/ai-chat calls to use Groq directly from browser
-  content = content.replace(
-    /fetch\('\/api\/ai-chat',\s*\{[\s\S]*?body:\s*JSON\.stringify\(\{\s*messages:\s*(\w+)\s*\}\)\s*\}/g,
-    function(match, msgVar) {
-      return `fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY') || prompt('Ingresa API Key de Groq:') || '') },
-      body: JSON.stringify({ model: GROQ_MODEL || 'llama-3.3-70b-versatile', messages: ${msgVar}, temperature: 0.7, max_tokens: 2048 })
-    }`;
-    }
-  );
-  // Fix ai-chat response format (Groq returns choices, not {success, response})
-  content = content.replace(
-    /\.then\(function\(data\)\s*\{[\s\S]*?if\s*\(data\.success\s*&&\s*data\.response\)/g,
-    function(match) {
-      return match.replace(
-        'if (data.success && data.response)',
-        'data.response = data.choices ? data.choices[0].message.content : data.response; if (data.response)'
-      ).replace(
-        '.then(function(data) {',
-        '.then(function(r){return r.json();}).then(function(data) { data.success = !data.error;'
-      );
-    }
-  );
-  // Fix /api/ai-stats
-  content = content.replace(/fetch\('\/api\/ai-stats'\)/g,
-    "Promise.resolve({json:function(){return{encuestas:3,observaciones:5,participantes:5}}})");
-  // Fix /api/mock calls
-  content = content.replace(
-    /fetch\('\/api\/mock',\s*\{\s*method:\s*'POST',\s*headers:\s*\{[^}]+\},\s*body:\s*JSON\.stringify\(\{[^}]+\}\)\s*\}\)/g,
-    function(match) {
-      const fnMatch = match.match(/fn:\s*'(\w+)'/);
-      const argsMatch = match.match(/args:\s*\[([^\]]*)\]/);
-      const fn = fnMatch ? fnMatch[1] : '';
-      const args = argsMatch ? argsMatch[1] : '';
-      return `Promise.resolve({json:function(){var h=backendFunctions['${fn}'];return h?h(${args}):{success:true,data:[]}},text:function(){return''}})`;
-    }
-  );
-
-  fs.writeFileSync(path.join(DEST, f), content);
-  copied++;
+if (!fs.existsSync(DOCS)) fs.mkdirSync(DOCS);
+fs.readdirSync(DOCS).forEach(function(f) {
+  var fp = path.join(DOCS, f); if (fs.statSync(fp).isFile()) fs.unlinkSync(fp);
 });
 
-// ============================================
-// 8. Copiar imágenes
-// ============================================
-const imgFiles = fs.readdirSync(SRC).filter(f => /\.(png|jpg|jpeg|gif|svg|ico)$/i.test(f));
-imgFiles.forEach(f => fs.copyFileSync(path.join(SRC, f), path.join(DEST, f)));
+var css = readF('css.html');
+var jsUtils = readF('js-utils.html');
+var indexSrc = readF('index.html');
 
-console.log('');
-console.log('  ✅ Build completado en docs/');
-console.log('  📄 ' + (copied + 3) + ' archivos HTML');
-console.log('  📦 1 mock.js (' + Math.round(fs.statSync(path.join(DEST, 'mock.js')).size / 1024) + ' KB)');
-console.log('  🖼️  ' + imgFiles.length + ' imágenes');
-console.log('');
+// Vistas parciales
+var vistaNames = [
+  'dashboard','clientes','programas','usuarios','hallazgos',
+  'gestion-observaciones','correos','asistente-ia',
+  'feedback-jefatura','feedback-recibido','mi-equipo','mi-progreso',
+  'mis-actividades','mis-encuestas','mis-recursos','notificaciones','reportar',
+  'panel-programa','tab-resumen','tab-competencias','tab-participantes',
+  'tab-encuestas-programa','tab-cronograma','tab-seguimiento','tab-informes',
+  'tab-encuesta-editor'
+];
+
+var vistasObj = {};
+vistaNames.forEach(function(v) { vistasObj[v] = readF(v + '.html'); });
+
+// Serialize views safely
+var vistasJSON = JSON.stringify(vistasObj);
+// Escape </script> inside JSON strings so browser doesn't break
+vistasJSON = vistasJSON.split('</script>').join('<\\/script>');
+vistasJSON = vistasJSON.split('</Script>').join('<\\/Script>');
+vistasJSON = vistasJSON.split('</SCRIPT>').join('<\\/SCRIPT>');
+
+// Build mock + views script block
+var mockBlock = [];
+mockBlock.push('var _V = ' + vistasJSON + ';');
+mockBlock.push('');
+mockBlock.push('// Mock google.script.run');
+mockBlock.push('if(typeof google==="undefined")window.google={};');
+mockBlock.push('google.script={run:(function(){');
+mockBlock.push('  function h(s,f){return new Proxy({},{get:function(_,n){');
+mockBlock.push('    if(n==="withSuccessHandler")return function(c){return h(c,f);};');
+mockBlock.push('    if(n==="withFailureHandler")return function(c){return h(s,c);};');
+mockBlock.push('    return function(){var a=Array.from(arguments);setTimeout(function(){_mock(n,a,s,f);},150);};');
+mockBlock.push('  }})}');
+mockBlock.push('  return h(function(){},function(){});');
+mockBlock.push('})()};');
+mockBlock.push('');
+mockBlock.push('function _mock(fn,args,ok,fail){');
+mockBlock.push('  switch(fn){');
+mockBlock.push('    case "getVistaHTML": ok(_V[args[0]]||"<div style=padding:40px;text-align:center;color:#999>Vista: "+args[0]+"</div>"); break;');
+mockBlock.push('    case "listarClientes": ok({success:true,data:[{id:"c1",nombre:"Sodexo",estado:"Activo",activo:true}]}); break;');
+mockBlock.push('    case "listarProgramas": case "listarProgramasDashboard": ok({success:true,data:[{id:"p1",nombre:"Grow 2.0",cliente_id:"c1",cliente_nombre:"Sodexo",tipo:"programa_completo",estado:"activo",objetivo:"Desarrollo de liderazgo",fecha_inicio:"2026-01-15",fecha_termino:"2026-06-30"}]}); break;');
+mockBlock.push('    case "obtenerPanelPrograma": ok({success:true,data:{programa:{id:"p1",nombre:"Grow 2.0",cliente_id:"c1",cliente_nombre:"Sodexo",tipo:"programa_completo",estado:"activo",objetivo:"Desarrollo de liderazgo",fecha_inicio:"2026-01-15",fecha_termino:"2026-06-30"},participantes:[{usuario_id:"u2",nombre:"Juan Castillo",email:"jcastillo@sodexo.cl",cargo:"Gerente",rol_programa:"lider"},{usuario_id:"u3",nombre:"Miguel Jose",email:"mjose@sodexo.cl",cargo:"",rol_programa:"colaborador",lider_id:"u2"}],competencias:[{id:"comp1",nombre:"Delegar con Proposito Estrategico",foco_desarrollo:"Soltar el control",nivel_1_texto:"Nivel 1",nivel_2_texto:"Nivel 2",nivel_3_texto:"Nivel 3",nivel_4_texto:"Nivel 4"}],encuestas:[],stats:{total_lideres:1,total_colaboradores:1,total_competencias:1,total_encuestas:0}}}); break;');
+mockBlock.push('    case "obtenerResumenPrograma": ok({success:true,data:{total_lideres:3,total_colaboradores:3,total_encuestas:2,autoevaluaciones_completadas:1,coevaluaciones_completadas:0,observaciones_realizadas:0,estado_evaluaciones:[]}}); break;');
+mockBlock.push('    case "listarCompetencias": ok({success:true,data:[{id:"comp1",nombre:"Delegar con Proposito Estrategico",descripcion:"Capacidad para delegar",foco_desarrollo:"Soltar el control",nivel_1_texto:"Asume tareas clave",nivel_2_texto:"Comienza a delegar",nivel_3_texto:"Delega con claridad",nivel_4_texto:"Delega procesos estrategicos",prioridad:1,orden:1}]}); break;');
+mockBlock.push('    case "listarEncuestas": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarArchivosPrograma": ok({success:true,data:[{id:"a1",nombre_archivo:"Gantt Grow 2.0.xlsx",tipo:"cronograma",mensaje:"Revisen el cronograma",drive_url:"#",fecha_subida:"2026-04-01",subido_por_nombre:"Admin",visible_participantes:true}]}); break;');
+mockBlock.push('    case "listarUsuarios": ok({success:true,data:[{id:"u1",nombre_completo:"Admin MSO",email:"admin@mso.cl",rol:"admin",estado:"activo"}]}); break;');
+mockBlock.push('    case "contarNotificacionesPendientes": ok({success:true,data:{count:2}}); break;');
+mockBlock.push('    case "cerrarSesion": ok({success:true}); break;');
+mockBlock.push('    case "obtenerEncuestaPendiente": ok({success:true,data:null}); break;');
+mockBlock.push('    case "crearPrograma": ok({success:true,data:{programaId:"p-"+Date.now()}}); break;');
+mockBlock.push('    case "obtenerUsuariosDisponibles": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarCronograma": ok({success:true,data:{hitos:[],fases:{}}}); break;');
+mockBlock.push('    case "obtenerMiProgreso": ok({success:true,data:{}}); break;');
+mockBlock.push('    case "listarFeedbackRecibido": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarHallazgos": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarObservaciones": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarChecklists": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarFeedbackEquipo": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarInformesGenerados": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarParticipantesPrograma": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "obtenerNotificaciones": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarReportesObservacion": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarTodasObservacionesAdmin": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarActividades": ok({success:true,data:[]}); break;');
+mockBlock.push('    case "listarMisActividades": ok({success:true,data:[]}); break;');
+mockBlock.push('    default: ok({success:true,data:[]}); break;');
+mockBlock.push('  }');
+mockBlock.push('}');
+
+var mockScriptTag = '<script>\n' + mockBlock.join('\n') + '\n</' + 'script>\n';
+
+// Build index
+var out = indexSrc;
+out = out.replace("<?!= include('css'); ?>", css);
+out = out.replace("<?!= include('js-utils'); ?>", jsUtils + '\n' + mockScriptTag);
+out = out.replace(/window\.top\.location\.href/g, 'window.location.href');
+out = out.replace(/'<\?= ScriptApp\.getService\(\)\.getUrl\(\) \?>\?page=login'/g, "'login.html'");
+out = out.replace(/<\?= ScriptApp\.getService\(\)\.getUrl\(\) \?>\?page=login/g, 'login.html');
+out = out.replace(/<\?= ScriptApp\.getService\(\)\.getUrl\(\) \?>/g, '.');
+// Fix getBaseUrl login redirect
+out = out.replace(/window\.location\.href = getBaseUrl\(\) \+ '\?page=login'/g, "window.location.href = 'login.html'");
+
+fs.writeFileSync(path.join(DOCS, 'index.html'), out);
+console.log('index.html: ' + Math.round(out.length/1024) + 'KB');
+
+// Login page
+fs.writeFileSync(path.join(DOCS, 'login.html'), '<!DOCTYPE html><html lang=es><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1.0"><title>MSO Chile</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B4F72,#8E44AD,#E67E22)}.c{background:#fff;border-radius:16px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)}.lo{text-align:center;margin-bottom:32px}.lo img{max-width:180px;margin-bottom:12px}.lo p{color:#718096;font-size:14px}.fg{margin-bottom:20px}.fg label{display:block;font-size:14px;font-weight:500;color:#2D3748;margin-bottom:6px}.fc{width:100%;padding:12px 16px;border:1px solid #E2E8F0;border-radius:8px;font-size:15px;outline:none}.fc:focus{border-color:#2E86C1}.bt{width:100%;padding:14px;background:linear-gradient(135deg,#E67E22,#F39C12);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer}.bt:hover{opacity:.9}.bt:disabled{opacity:.6}.al{padding:12px;border-radius:8px;font-size:14px;margin-bottom:16px;background:#FEE2E2;color:#C0392B}.dm{text-align:center;margin-top:24px;padding-top:20px;border-top:1px solid #E2E8F0}.dm p{font-size:12px;color:#999;margin-bottom:4px}.dm code{background:#F1F5F9;padding:2px 6px;border-radius:4px;font-size:12px;color:#1B4F72}</style></head><body><div class=c><div class=lo><img src="https://lh3.googleusercontent.com/d/1F6ndRSX6rNraFsdVHUV6IfDw0o8uK7mf" alt=MSO onerror="this.style.display=\'none\'"><p>Transferencia al Puesto de Trabajo</p></div><div id=a></div><form id=f><div class=fg><label>Correo electronico</label><input type=email id=e class=fc required value=admin@mso.cl></div><div class=fg><label>Contrasena</label><input type=password id=p class=fc required value=123456></div><button type=submit id=b class=bt>Iniciar Sesion</button></form><div class=dm><p>Credenciales:</p><p><code>admin@mso.cl</code> / <code>123456</code> (Admin)</p><p><code>jcastillo@sodexo.cl</code> / <code>123456</code> (Lider)</p><p><code>mjose@sodexo.cl</code> / <code>123456</code> (Colaborador)</p></div></div><script>var U={"admin@mso.cl":{id:"u1",nombre:"Administrador MSO",email:"admin@mso.cl",rol:"admin",cargo:"Administrador"},"admin@msochile.cl":{id:"u1",nombre:"Administrador MSO",email:"admin@msochile.cl",rol:"admin",cargo:"Administrador"},"jcastillo@sodexo.cl":{id:"u2",nombre:"Juan Castillo",email:"jcastillo@sodexo.cl",rol:"participante",cargo:"Gerente",cliente_id:"c1"},"mjose@sodexo.cl":{id:"u3",nombre:"Miguel Jose",email:"mjose@sodexo.cl",rol:"colaborador",cargo:"",cliente_id:"c1"}};document.getElementById("f").onsubmit=function(v){v.preventDefault();var m=document.getElementById("e").value.trim().toLowerCase(),b=document.getElementById("b");b.disabled=true;b.textContent="Ingresando...";document.getElementById("a").innerHTML="";setTimeout(function(){var u=U[m];if(u){sessionStorage.setItem("tpt_token","t-"+Date.now());sessionStorage.setItem("tpt_usuario",JSON.stringify(u));window.location.href="index.html"}else{document.getElementById("a").innerHTML="<div class=al>Credenciales invalidas.</div>";b.disabled=false;b.textContent="Iniciar Sesion"}},300)};</' + 'script></body></html>');
+console.log('login.html generado');
+
+// Assets
+['logo mso.png', 'logo mso blanco.png'].forEach(function(f) {
+  if (fs.existsSync(path.join(BASE, f))) fs.copyFileSync(path.join(BASE, f), path.join(DOCS, f));
+});
+
+console.log('Build OK');
