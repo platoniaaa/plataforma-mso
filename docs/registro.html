@@ -872,35 +872,75 @@
 </head>
 <body>
   <div class="auth-container">
-    <div class="auth-card">
+    <div class="auth-card" style="max-width: 480px;">
       <div class="auth-logo">
         <img src="https://lh3.googleusercontent.com/d/1F6ndRSX6rNraFsdVHUV6IfDw0o8uK7mf" alt="MSO Chile" style="max-width:180px;margin:0 auto 12px;display:block;">
-        <p>Transferencia al Puesto de Trabajo</p>
+        <p>Registro de nuevo usuario</p>
       </div>
 
       <div id="alert-container"></div>
 
-      <form id="login-form" onsubmit="handleLogin(event)">
-        <div class="form-group">
-          <label for="email">Correo electr&oacute;nico</label>
-          <input type="email" id="email" name="email" class="form-control"
-                 placeholder="tu@correo.cl" required>
-        </div>
+      <div id="form-container">
+        <form id="registro-form" onsubmit="handleRegistro(event)">
+          <div class="form-group">
+            <label for="nombre">Nombre completo *</label>
+            <input type="text" id="nombre" name="nombre" class="form-control"
+                   placeholder="Ej: Juan P&eacute;rez" required>
+          </div>
 
-        <div class="form-group">
-          <label for="password">Contrase&ntilde;a</label>
-          <input type="password" id="password" name="password" class="form-control"
-                 placeholder="Ingresa tu contrase&ntilde;a" required minlength="6">
-        </div>
+          <div class="form-group">
+            <label for="email">Correo electr&oacute;nico *</label>
+            <input type="email" id="email" name="email" class="form-control"
+                   placeholder="tu@correo.cl" required>
+          </div>
 
-        <button type="submit" id="btn-login" class="btn btn-primary btn-block btn-lg">
-          Iniciar Sesi&oacute;n
-        </button>
-      </form>
+          <div class="form-group">
+            <label for="password">Contrase&ntilde;a * (m&iacute;nimo 6 caracteres)</label>
+            <input type="password" id="password" name="password" class="form-control"
+                   placeholder="Crea una contrase&ntilde;a" required minlength="6">
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirmar contrase&ntilde;a *</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" class="form-control"
+                   placeholder="Repite tu contrase&ntilde;a" required minlength="6">
+          </div>
+
+          <div class="form-group">
+            <label for="cargo">Cargo / Funci&oacute;n</label>
+            <input type="text" id="cargo" name="cargo" class="form-control"
+                   placeholder="Ej: Supervisor de Ventas">
+          </div>
+
+          <div class="form-group">
+            <label for="clienteId">Empresa *</label>
+            <select id="clienteId" name="clienteId" class="form-control" required>
+              <option value="">Selecciona tu empresa...</option>
+            </select>
+          </div>
+
+          <button type="submit" id="btn-registro" class="btn btn-primary btn-block btn-lg">
+            Registrarme
+          </button>
+        </form>
+      </div>
+
+      <div id="success-container" class="hidden text-center">
+        <div style="margin: 24px 0;">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" style="margin: 0 auto;">
+            <circle cx="12" cy="12" r="10" stroke="#27AE60" stroke-width="2"/>
+            <path d="M8 12l3 3 5-5" stroke="#27AE60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 style="color: #27AE60; margin-bottom: 8px;">Registro exitoso</h3>
+        <p style="color: #718096; font-size: 14px;">
+          Tu registro fue recibido. Un administrador activar&aacute; tu cuenta pronto.
+        </p>
+      </div>
 
       <div class="text-center mt-4">
-        <a href="?page=registro" class="text-link">
-          &iquest;No tienes cuenta? Reg&iacute;strate aqu&iacute;
+        <a href="?page=login" class="text-link">
+          &iquest;Ya tienes cuenta? Inicia sesi&oacute;n
         </a>
       </div>
     </div>
@@ -909,18 +949,57 @@
   <?!= include('js-utils'); ?>
 
   <script>
-    function handleLogin(e) {
+    // Cargar empresas al iniciar
+    document.addEventListener('DOMContentLoaded', function() {
+      cargarEmpresas();
+    });
+
+    function cargarEmpresas() {
+      google.script.run
+        .withSuccessHandler(function(clientes) {
+          var select = document.getElementById('clienteId');
+          clientes.forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.nombre;
+            select.appendChild(opt);
+          });
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error cargando empresas:', error);
+        })
+        .obtenerClientesRegistro();
+    }
+
+    function handleRegistro(e) {
       e.preventDefault();
 
-      var email = document.getElementById('email').value.trim();
-      var password = document.getElementById('password').value;
-      var btn = document.getElementById('btn-login');
+      var datos = {
+        nombre: document.getElementById('nombre').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+        confirmPassword: document.getElementById('confirmPassword').value,
+        cargo: document.getElementById('cargo').value.trim(),
+        clienteId: document.getElementById('clienteId').value
+      };
 
-      if (!email || !password) {
-        showAlert('Completa todos los campos.', 'error');
+      // Validaciones frontend
+      if (!datos.nombre || !datos.email || !datos.password || !datos.clienteId) {
+        showAlert('Completa todos los campos obligatorios.', 'error');
         return;
       }
 
+      if (datos.password.length < 6) {
+        showAlert('La contrase\u00f1a debe tener al menos 6 caracteres.', 'error');
+        return;
+      }
+
+      if (datos.password !== datos.confirmPassword) {
+        showAlert('Las contrase\u00f1as no coinciden.', 'error');
+        return;
+      }
+
+      var btn = document.getElementById('btn-registro');
       btnLoading(btn, true);
       clearAlert();
 
@@ -928,35 +1007,27 @@
         .withSuccessHandler(function(result) {
           btnLoading(btn, false);
           if (result.success) {
-            // Guardar sesión
-            sessionStorage.setItem('tpt_token', result.data.token);
-            sessionStorage.setItem('tpt_usuario', JSON.stringify(result.data.usuario));
-            // Redirigir a la app
-            window.location.href='app.html';
+            document.getElementById('form-container').classList.add('hidden');
+            document.getElementById('success-container').classList.remove('hidden');
           } else {
             showAlert(result.error, 'error');
           }
         })
         .withFailureHandler(function(error) {
           btnLoading(btn, false);
-          showAlert('Error de conexi\u00f3n. Verifica tu internet e intenta de nuevo.', 'error');
+          showAlert('Error de conexi\u00f3n. Intenta de nuevo.', 'error');
         })
-        .loginUsuario(email, password);
+        .registrarUsuario(datos);
     }
 
     function showAlert(message, type) {
       var container = document.getElementById('alert-container');
-      container.innerHTML = '<div class="alert alert-' + type + '">' + escapeHtml(message) + '</div>';
+      container.innerHTML = '<div class="alert alert-' + type + '">' +
+        message.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
     }
 
     function clearAlert() {
       document.getElementById('alert-container').innerHTML = '';
-    }
-
-    function escapeHtml(text) {
-      var div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
     }
   </script>
 <script src="mock.js"></script>

@@ -1,0 +1,466 @@
+<!-- Vista: Reportar Incidencia (Participante + Jefatura) -->
+<div>
+  <div class="flex-between mb-4">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <select class="form-control" id="sel-programa-rep" onchange="filtrarReportes()" style="min-width:220px;">
+        <option value="">Todos los programas</option>
+      </select>
+      <select class="form-control" id="filtro-estado-rep" onchange="filtrarReportes()" style="max-width:170px;">
+        <option value="">Todos los estados</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="en_revision">En Revisi&oacute;n</option>
+        <option value="en_proceso">En Proceso</option>
+        <option value="resuelta">Resuelta</option>
+        <option value="no_resuelta">No Resuelta</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalReporte()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      Reportar Incidencia
+    </button>
+  </div>
+
+  <!-- Lista de reportes -->
+  <div id="reportes-lista">
+    <div class="text-center p-4"><div class="spinner spinner-lg"></div><p class="text-muted mt-2">Cargando...</p></div>
+  </div>
+</div>
+
+<!-- Modal: Nueva Incidencia -->
+<div class="modal-overlay" id="modal-reporte">
+  <div class="modal" style="max-width:650px;">
+    <div class="modal-header">
+      <h3 id="modal-reporte-titulo">Reportar Incidencia</h3>
+      <button class="modal-close" onclick="cerrarModalReporte()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-reporte">
+        <div class="form-group">
+          <label>Programa *</label>
+          <select name="programa_id" class="form-control" id="rep-programa" required>
+            <option value="">Selecciona un programa...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>&iquest;Qu&eacute; presenta el error? *</label>
+          <select name="categoria" class="form-control" id="rep-categoria" required onchange="onCategoriaChange()">
+            <option value="">Selecciona...</option>
+            <option value="encuesta">Encuesta (preguntas, opciones, instrucciones)</option>
+            <option value="actividad">Actividad (enlace roto, archivo no carga, instrucciones err&oacute;neas)</option>
+            <option value="contenido">Contenido / Material (documento, video, presentaci&oacute;n)</option>
+            <option value="plataforma">Error de plataforma (pantalla, funci&oacute;n, carga)</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+
+        <!-- Selector de elemento afectado (encuesta/actividad específica) -->
+        <div class="form-group hidden" id="rep-elemento-group">
+          <label id="rep-elemento-label">Elemento afectado</label>
+          <select name="elemento_id" class="form-control" id="rep-elemento">
+            <option value="">Selecciona...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>T&iacute;tulo del problema *</label>
+          <input type="text" name="titulo" class="form-control" required
+                 placeholder="Ej: Enlace de encuesta no funciona, Pregunta 3 tiene error...">
+        </div>
+
+        <div class="form-group">
+          <label>Descripci&oacute;n detallada *</label>
+          <textarea name="comentario" class="form-control" required rows="4"
+                    placeholder="Describe el error: qu&eacute; intentaste hacer, qu&eacute; ocurri&oacute;, qu&eacute; esperabas que pasara..."></textarea>
+        </div>
+
+        <!-- Subida de evidencia -->
+        <div class="form-group">
+          <label>Evidencia (capturas de pantalla, im&aacute;genes)</label>
+          <div class="evidencia-upload-area" id="evidencia-upload-area" onclick="document.getElementById('input-evidencia').click()">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="1.5" style="margin-bottom:8px;">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            <p style="font-size:14px;color:var(--color-texto-sec);margin:0;">Haz clic o arrastra capturas de pantalla aqu&iacute;</p>
+            <p style="font-size:12px;color:#A0AEC0;margin:4px 0 0;">PNG, JPG o GIF &mdash; M&aacute;x. 5MB por archivo</p>
+          </div>
+          <input type="file" id="input-evidencia" accept="image/*" multiple
+                 style="display:none;" onchange="handleEvidenciaFiles(this.files)">
+        </div>
+
+        <div id="evidencia-preview" class="evidencia-preview-grid"></div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="cerrarModalReporte()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-reporte" onclick="guardarReporte()">Enviar Reporte</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalle de Incidencia -->
+<div class="modal-overlay" id="modal-detalle-reporte">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <h3 id="detalle-rep-titulo">Detalle</h3>
+      <button class="modal-close" onclick="closeModal('modal-detalle-reporte')">&times;</button>
+    </div>
+    <div class="modal-body" id="detalle-rep-body"></div>
+    <div class="modal-footer" id="detalle-rep-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-detalle-reporte')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Cambiar estado (solo jefatura) -->
+<div class="modal-overlay" id="modal-jef-estado">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h3>Marcar en Revisi&oacute;n</h3>
+      <button class="modal-close" onclick="closeModal('modal-jef-estado')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="jef-estado-obs-id">
+      <div class="form-group">
+        <label>Comentario obligatorio *</label>
+        <textarea class="form-control" id="jef-estado-comentario" required rows="3"
+                  placeholder="Describe la acci&oacute;n que tomar&aacute;s sobre este reporte..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-jef-estado')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-jef-confirmar" onclick="confirmarEstadoJef()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ver imagen grande -->
+<div class="modal-overlay" id="modal-imagen-grande" onclick="closeModal('modal-imagen-grande')">
+  <div class="modal" style="max-width:90vw;max-height:90vh;background:transparent;border:none;box-shadow:none;display:flex;align-items:center;justify-content:center;">
+    <img id="imagen-grande-src" src="" alt="Evidencia" style="max-width:100%;max-height:85vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,0.4);">
+  </div>
+</div>
+
+<style>
+  .evidencia-upload-area {
+    border: 2px dashed var(--color-borde);
+    border-radius: 10px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--color-fondo-alt);
+  }
+  .evidencia-upload-area:hover { border-color: var(--color-secundario); background: rgba(245, 130, 32, 0.05); }
+
+  .evidencia-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-top: 12px; }
+  .evidencia-thumb { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--color-borde); aspect-ratio: 1; background: var(--color-fondo-alt); }
+  .evidencia-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .evidencia-thumb .thumb-remove { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; background: var(--color-error); color: white; border: none; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .evidencia-thumb .thumb-name { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 3px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .reporte-card { border: 1px solid var(--color-borde); border-radius: 10px; background: var(--color-tarjeta); overflow: hidden; transition: box-shadow 0.2s; margin-bottom: 12px; }
+  .reporte-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  .reporte-card-body { padding: 16px 20px; }
+  .reporte-evidencias-strip { display: flex; gap: 8px; overflow-x: auto; padding: 0 20px 12px; }
+  .reporte-evidencias-strip img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid var(--color-borde); cursor: pointer; flex-shrink: 0; }
+
+  .cat-badge-encuesta { background: #E8DAEF; color: #7D3C98; }
+  .cat-badge-actividad { background: #D4E6F1; color: #2471A3; }
+  .cat-badge-contenido { background: #FDEBD0; color: #D68910; }
+  .cat-badge-plataforma { background: #FADBD8; color: #C0392B; }
+  .cat-badge-otro { background: #EAECEE; color: #5D6D7E; }
+
+  .estado-badge-pendiente { background: #FDEBD0; color: #D68910; }
+  .estado-badge-en_revision { background: #D4E6F1; color: #2471A3; }
+  .estado-badge-en_proceso { background: #E8DAEF; color: #7D3C98; }
+  .estado-badge-resuelta { background: #D4EFDF; color: #1E8449; }
+  .estado-badge-no_resuelta { background: #FADBD8; color: #C0392B; }
+
+  .detalle-evidencias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+  .detalle-evidencias-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid var(--color-borde); cursor: pointer; }
+
+  .historial-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--color-borde); }
+  .historial-item:last-child { border-bottom: none; }
+  .historial-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+</style>
+
+<script>
+  var reportesData = [];
+  var evidenciasTemp = [];
+  var programasReporte = [];
+  var esJefatura = App.getRol() === 'jefatura';
+
+  (function() {
+    cargarProgramasReporte();
+    cargarReportes();
+
+    var uploadArea = document.getElementById('evidencia-upload-area');
+    if (uploadArea) {
+      uploadArea.addEventListener('dragover', function(e) { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+      uploadArea.addEventListener('dragleave', function() { uploadArea.classList.remove('drag-over'); });
+      uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault(); uploadArea.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) handleEvidenciaFiles(e.dataTransfer.files);
+      });
+    }
+  })();
+
+  function cargarProgramasReporte() {
+    google.script.run.withSuccessHandler(function(r) {
+      if (r.success && r.data) {
+        programasReporte = r.data;
+        var selFiltro = document.getElementById('sel-programa-rep');
+        var selForm = document.getElementById('rep-programa');
+        r.data.forEach(function(p) {
+          var o1 = document.createElement('option'); o1.value = p.id; o1.textContent = p.nombre; selFiltro.appendChild(o1);
+          var o2 = document.createElement('option'); o2.value = p.id; o2.textContent = p.nombre; selForm.appendChild(o2);
+        });
+      }
+    }).listarProgramasDashboard(App.token);
+  }
+
+  function cargarReportes() {
+    document.getElementById('reportes-lista').innerHTML =
+      '<div class="text-center p-4"><div class="spinner spinner-lg"></div></div>';
+    google.script.run.withSuccessHandler(function(r) {
+      if (r.success) { reportesData = r.data || []; filtrarReportes(); }
+      else document.getElementById('reportes-lista').innerHTML = '<div class="empty-state"><p>Error al cargar.</p></div>';
+    }).withFailureHandler(function() {
+      document.getElementById('reportes-lista').innerHTML = '<div class="empty-state"><p>Error de conexi&oacute;n.</p></div>';
+    }).listarReportesObservacion(App.token);
+  }
+
+  function filtrarReportes() {
+    var progId = document.getElementById('sel-programa-rep').value;
+    var estado = document.getElementById('filtro-estado-rep').value;
+    var filtrados = reportesData.filter(function(r) {
+      return (!progId || r.programa_id === progId) && (!estado || r.estado_gestion === estado);
+    });
+    renderReportes(filtrados);
+  }
+
+  function getCatLabel(cat) {
+    return { encuesta: 'Encuesta', actividad: 'Actividad', contenido: 'Contenido', plataforma: 'Plataforma', otro: 'Otro' }[cat] || cat;
+  }
+
+  function getEstadoLabel(e) {
+    return { pendiente: 'Pendiente', en_revision: 'En Revisi\u00f3n', en_proceso: 'En Proceso', resuelta: 'Resuelta', no_resuelta: 'No Resuelta' }[e] || e;
+  }
+
+  function renderReportes(reportes) {
+    var div = document.getElementById('reportes-lista');
+    if (!reportes || reportes.length === 0) {
+      div.innerHTML = '<div class="card"><div class="empty-state">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;margin-bottom:16px;opacity:0.4;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+        '<p>No hay incidencias reportadas.</p>' +
+      '</div></div>';
+      return;
+    }
+
+    div.innerHTML = reportes.map(function(r) {
+      var cat = r.categoria || r.tipo || 'otro';
+      var catBadge = '<span class="badge cat-badge-' + cat + '">' + getCatLabel(cat) + '</span>';
+      var estadoBadge = '<span class="badge estado-badge-' + (r.estado_gestion || 'pendiente') + '">' + getEstadoLabel(r.estado_gestion || 'pendiente') + '</span>';
+      var comentarioCorto = r.comentario.length > 120 ? r.comentario.substring(0, 120) + '...' : r.comentario;
+      var numEv = (r.evidencias && r.evidencias.length) || 0;
+
+      var html = '<div class="reporte-card"><div class="reporte-card-body">';
+      html += '<div class="flex-between mb-2">';
+      html += '<div style="display:flex;align-items:center;gap:10px;">' + catBadge + '<strong style="font-size:15px;">' + escapeHtml(r.titulo) + '</strong></div>';
+      html += '<div style="display:flex;align-items:center;gap:10px;">' + estadoBadge + '<span class="text-xs text-muted">' + formatDate(r.fecha) + '</span></div>';
+      html += '</div>';
+      html += '<p class="text-sm mb-2" style="color:var(--color-texto-sec);">' + escapeHtml(comentarioCorto) + '</p>';
+      html += '<div class="flex-between">';
+      html += '<div style="display:flex;align-items:center;gap:12px;">';
+      html += '<span class="text-xs text-muted">' + escapeHtml(r.programa_nombre) + '</span>';
+      if (esJefatura) html += '<span class="text-xs text-muted">' + escapeHtml(r.autor_nombre) + '</span>';
+      if (numEv > 0) html += '<span class="text-xs" style="color:var(--color-secundario);">' + numEv + ' evidencia' + (numEv > 1 ? 's' : '') + '</span>';
+      html += '</div>';
+      html += '<button class="btn btn-sm btn-outline" onclick="verDetalleReporte(\'' + r.id + '\')">Ver detalle</button>';
+      html += '</div></div>';
+
+      if (numEv > 0) {
+        html += '<div class="reporte-evidencias-strip">';
+        r.evidencias.forEach(function(ev) { html += '<img src="' + ev.url + '" onclick="verImagenGrande(\'' + ev.url + '\')">'; });
+        html += '</div>';
+      }
+      html += '</div>';
+      return html;
+    }).join('');
+  }
+
+  // ============================================
+  // MODAL: CREAR REPORTE
+  // ============================================
+
+  function abrirModalReporte() {
+    document.getElementById('modal-reporte-titulo').textContent = 'Reportar Incidencia';
+    resetForm('form-reporte');
+    document.getElementById('rep-elemento-group').classList.add('hidden');
+    evidenciasTemp = [];
+    renderEvidenciaPreview();
+    openModal('modal-reporte');
+  }
+
+  function cerrarModalReporte() { evidenciasTemp = []; renderEvidenciaPreview(); closeModal('modal-reporte'); }
+
+  function onCategoriaChange() {
+    var cat = document.getElementById('rep-categoria').value;
+    var grupo = document.getElementById('rep-elemento-group');
+    var label = document.getElementById('rep-elemento-label');
+
+    if (cat === 'encuesta' || cat === 'actividad') {
+      grupo.classList.remove('hidden');
+      label.textContent = cat === 'encuesta' ? 'Encuesta afectada' : 'Actividad afectada';
+      cargarElementosAfectados(cat);
+    } else {
+      grupo.classList.add('hidden');
+    }
+  }
+
+  function cargarElementosAfectados(cat) {
+    var sel = document.getElementById('rep-elemento');
+    sel.innerHTML = '<option value="">Selecciona... (opcional)</option>';
+    var progId = document.getElementById('rep-programa').value;
+
+    if (cat === 'encuesta') {
+      google.script.run.withSuccessHandler(function(r) {
+        if (r.success) r.data.forEach(function(e) {
+          var o = document.createElement('option'); o.value = e.id; o.textContent = e.nombre; sel.appendChild(o);
+        });
+      }).listarEncuestas(App.token, progId || null);
+    } else {
+      google.script.run.withSuccessHandler(function(r) {
+        if (r.success) r.data.forEach(function(a) {
+          var o = document.createElement('option'); o.value = a.id; o.textContent = a.nombre; sel.appendChild(o);
+        });
+      }).listarActividades(App.token);
+    }
+  }
+
+  function handleEvidenciaFiles(files) {
+    Array.prototype.forEach.call(files, function(file) {
+      if (!file.type.startsWith('image/')) { showToast('Solo im\u00e1genes: ' + file.name, 'error'); return; }
+      if (file.size > 5 * 1024 * 1024) { showToast('M\u00e1x 5MB: ' + file.name, 'error'); return; }
+      if (evidenciasTemp.length >= 6) { showToast('M\u00e1ximo 6 im\u00e1genes.', 'error'); return; }
+      var reader = new FileReader();
+      reader.onload = function(e) { evidenciasTemp.push({ file: file, dataUrl: e.target.result, name: file.name }); renderEvidenciaPreview(); };
+      reader.readAsDataURL(file);
+    });
+    document.getElementById('input-evidencia').value = '';
+  }
+
+  function renderEvidenciaPreview() {
+    var div = document.getElementById('evidencia-preview');
+    if (evidenciasTemp.length === 0) { div.innerHTML = ''; return; }
+    div.innerHTML = evidenciasTemp.map(function(ev, idx) {
+      return '<div class="evidencia-thumb"><img src="' + ev.dataUrl + '"><button class="thumb-remove" onclick="quitarEvidencia(' + idx + ')">&times;</button><div class="thumb-name">' + escapeHtml(ev.name) + '</div></div>';
+    }).join('');
+  }
+
+  function quitarEvidencia(idx) { evidenciasTemp.splice(idx, 1); renderEvidenciaPreview(); }
+
+  function guardarReporte() {
+    var datos = getFormData('form-reporte');
+    var btn = document.getElementById('btn-guardar-reporte');
+    if (!datos.programa_id || !datos.categoria || !datos.titulo || !datos.comentario) {
+      showToast('Completa todos los campos obligatorios.', 'error'); return;
+    }
+    btnLoading(btn, true);
+    var payload = {
+      programa_id: datos.programa_id, tipo: datos.categoria, categoria: datos.categoria,
+      elemento_id: datos.elemento_id || '', titulo: datos.titulo, comentario: datos.comentario,
+      evidencias: evidenciasTemp.map(function(ev) { return { nombre: ev.name, tipo: ev.file.type, dataUrl: ev.dataUrl }; })
+    };
+    google.script.run.withSuccessHandler(function(r) {
+      btnLoading(btn, false);
+      if (r.success) { cerrarModalReporte(); showToast('Incidencia reportada exitosamente.', 'success'); cargarReportes(); }
+      else showToast(r.error, 'error');
+    }).withFailureHandler(function() { btnLoading(btn, false); showToast('Error al guardar.', 'error'); })
+    .crearReporteObservacion(App.token, payload);
+  }
+
+  // ============================================
+  // DETALLE + GESTIÓN JEFATURA
+  // ============================================
+
+  function verDetalleReporte(id) {
+    var r = reportesData.find(function(x) { return x.id === id; });
+    if (!r) return;
+    document.getElementById('detalle-rep-titulo').textContent = r.titulo;
+
+    var cat = r.categoria || r.tipo || 'otro';
+    var html = '';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Categor&iacute;a</span><br><span class="badge cat-badge-' + cat + '">' + getCatLabel(cat) + '</span></div>';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Estado</span><br><span class="badge estado-badge-' + (r.estado_gestion || 'pendiente') + '">' + getEstadoLabel(r.estado_gestion || 'pendiente') + '</span></div>';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Programa</span><br><span class="text-sm">' + escapeHtml(r.programa_nombre) + '</span></div>';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Fecha</span><br><span class="text-sm">' + formatDate(r.fecha) + '</span></div>';
+    if (esJefatura) html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Reportado por</span><br><span class="text-sm">' + escapeHtml(r.autor_nombre) + '</span></div>';
+    html += '</div>';
+
+    html += '<div class="mb-4"><span class="text-muted text-xs" style="text-transform:uppercase;">Descripci&oacute;n</span>';
+    html += '<div style="background:var(--color-fondo-alt);padding:14px 16px;border-radius:8px;margin-top:6px;border-left:3px solid var(--color-secundario);">';
+    html += '<p class="text-sm" style="white-space:pre-wrap;">' + escapeHtml(r.comentario) + '</p></div></div>';
+
+    var numEv = (r.evidencias && r.evidencias.length) || 0;
+    if (numEv > 0) {
+      html += '<div class="mb-4"><span class="text-muted text-xs" style="text-transform:uppercase;">Evidencia (' + numEv + ')</span>';
+      html += '<div class="detalle-evidencias-grid">';
+      r.evidencias.forEach(function(ev) { html += '<img src="' + ev.url + '" onclick="verImagenGrande(\'' + ev.url + '\')">'; });
+      html += '</div></div>';
+    }
+
+    // Historial
+    if (r.historial && r.historial.length > 0) {
+      html += '<hr style="margin:16px 0;border-color:var(--color-borde);">';
+      html += '<span class="text-muted text-xs" style="text-transform:uppercase;display:block;margin-bottom:10px;">Historial de gesti&oacute;n</span>';
+      var dotColors = { pendiente: '#D68910', en_revision: '#2471A3', en_proceso: '#7D3C98', resuelta: '#1E8449', no_resuelta: '#C0392B' };
+      html += r.historial.map(function(h) {
+        return '<div class="historial-item"><div class="historial-dot" style="background:' + (dotColors[h.estado_nuevo] || '#5D6D7E') + ';"></div>' +
+          '<div style="flex:1;"><div class="flex-between"><span class="text-sm"><strong>' + escapeHtml(h.admin_nombre) + '</strong> &rarr; ' +
+          '<span class="badge estado-badge-' + h.estado_nuevo + '">' + getEstadoLabel(h.estado_nuevo) + '</span></span>' +
+          '<span class="text-xs text-muted">' + formatDate(h.fecha) + '</span></div>' +
+          '<p class="text-sm" style="color:var(--color-texto-sec);margin-top:4px;">' + escapeHtml(h.comentario) + '</p></div></div>';
+      }).join('');
+    }
+
+    document.getElementById('detalle-rep-body').innerHTML = html;
+
+    // Footer: jefatura puede marcar "En Revisión" si es pendiente
+    var footer = '<button class="btn btn-outline" onclick="closeModal(\'modal-detalle-reporte\')">Cerrar</button>';
+    if (esJefatura && (r.estado_gestion === 'pendiente')) {
+      footer += ' <button class="btn btn-primary" onclick="closeModal(\'modal-detalle-reporte\');abrirJefEstado(\'' + r.id + '\');">Marcar en Revisi&oacute;n</button>';
+    }
+    document.getElementById('detalle-rep-footer').innerHTML = footer;
+    openModal('modal-detalle-reporte');
+  }
+
+  // Jefatura: cambiar a En Revisión
+  function abrirJefEstado(obsId) {
+    document.getElementById('jef-estado-obs-id').value = obsId;
+    document.getElementById('jef-estado-comentario').value = '';
+    openModal('modal-jef-estado');
+  }
+
+  function confirmarEstadoJef() {
+    var obsId = document.getElementById('jef-estado-obs-id').value;
+    var comentario = document.getElementById('jef-estado-comentario').value.trim();
+    if (!comentario) { showToast('El comentario es obligatorio.', 'error'); return; }
+    var btn = document.getElementById('btn-jef-confirmar');
+    btnLoading(btn, true);
+    google.script.run.withSuccessHandler(function(r) {
+      btnLoading(btn, false);
+      if (r.success) { closeModal('modal-jef-estado'); showToast('Estado actualizado.', 'success'); cargarReportes(); }
+      else showToast(r.error || 'Error.', 'error');
+    }).withFailureHandler(function() { btnLoading(btn, false); showToast('Error.', 'error'); })
+    .cambiarEstadoObservacion(App.token, obsId, 'en_revision', comentario);
+  }
+
+  function verImagenGrande(url) { document.getElementById('imagen-grande-src').src = url; openModal('modal-imagen-grande'); }
+</script>

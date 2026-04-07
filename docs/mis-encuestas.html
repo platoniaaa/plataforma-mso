@@ -1,0 +1,360 @@
+<!-- Vista: Mis Encuestas (Participante) -->
+<div>
+  <!-- Encuestas Pendientes -->
+  <div class="mb-4">
+    <h2 style="color:var(--color-primario);margin-bottom:16px;">Encuestas Pendientes</h2>
+    <div id="encuestas-pendientes">
+      <div class="text-center p-4"><div class="spinner spinner-lg"></div><p class="text-muted mt-2">Cargando...</p></div>
+    </div>
+  </div>
+
+  <!-- Formulario de Encuesta (oculto) -->
+  <div id="encuesta-form-container" class="hidden">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 id="enc-form-titulo">Encuesta</h2>
+          <span class="text-sm text-muted" id="enc-form-programa"></span>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="volverALista()">Volver</button>
+      </div>
+      <div class="card-body">
+        <div id="enc-instrucciones" class="alert alert-info mb-3 hidden"></div>
+
+        <div class="progress-bar-container mb-3">
+          <div class="progress-bar" id="enc-progress" style="width:0%;"></div>
+        </div>
+        <p class="text-sm text-muted mb-3" id="enc-progress-text">Pregunta 0 de 0</p>
+
+        <div id="enc-preguntas"></div>
+
+        <div class="mt-4">
+          <button class="btn btn-primary btn-block" id="btn-enviar-respuestas" onclick="enviarRespuestasEncuesta()">
+            Enviar Respuestas
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encuestas Completadas -->
+  <div class="mt-4">
+    <h2 style="color:var(--color-primario);margin-bottom:16px;">Encuestas Completadas</h2>
+    <div id="encuestas-completadas">
+      <p class="text-muted text-sm">Cargando...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  var encuestasPendientes = [];
+  var encuestaActualId = null;
+  var preguntasActuales = [];
+
+  (function() {
+    cargarMisEncuestas();
+  })();
+
+  function cargarMisEncuestas() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          encuestasPendientes = r.data || [];
+          renderPendientes(encuestasPendientes);
+          renderCompletadas();
+        } else {
+          document.getElementById('encuestas-pendientes').innerHTML =
+            '<div class="empty-state"><p>' + escapeHtml(r.error) + '</p></div>';
+        }
+      })
+      .withFailureHandler(function() {
+        document.getElementById('encuestas-pendientes').innerHTML =
+          '<div class="empty-state"><p>Error al cargar encuestas.</p></div>';
+      })
+      .obtenerEncuestaPendiente(App.token);
+  }
+
+  function renderPendientes(encuestas) {
+    var div = document.getElementById('encuestas-pendientes');
+    if (!encuestas || encuestas.length === 0) {
+      div.innerHTML = '<div class="empty-state"><p>No tienes encuestas pendientes. Buen trabajo.</p></div>';
+      return;
+    }
+
+    div.innerHTML = encuestas.map(function(e) {
+      var tipoBadge = e.tipo === 'pre'
+        ? '<span class="badge badge-info">PRE</span>'
+        : '<span class="badge badge-success">POST</span>';
+      var fechaLimite = e.fecha_cierre ? '<span class="text-xs text-muted">Fecha limite: ' + formatDate(e.fecha_cierre) + '</span>' : '';
+
+      var liderInfo = e.lider_nombre
+        ? '<br><span class="text-sm" style="color:var(--color-primario);font-weight:500;">Evaluando a: ' + escapeHtml(e.lider_nombre) + '</span>'
+        : '';
+
+      return '<div class="card mb-3"><div class="card-body flex-between">' +
+        '<div>' +
+          '<strong>' + escapeHtml(e.nombre) + '</strong> ' + tipoBadge + '<br>' +
+          '<span class="text-sm text-muted">Programa: ' + escapeHtml(e.programa_nombre) + '</span>' +
+          liderInfo + '<br>' +
+          fechaLimite +
+        '</div>' +
+        '<button class="btn btn-primary" onclick="abrirEncuesta(\'' + e.id + '\')">Responder</button>' +
+      '</div></div>';
+    }).join('');
+  }
+
+  function renderCompletadas() {
+    // Las encuestas completadas se obtienen comparando: las que estan en el programa pero no en pendientes
+    // Simplemente mostramos un mensaje si ya no hay pendientes
+    var div = document.getElementById('encuestas-completadas');
+    div.innerHTML = '<div class="empty-state"><p>Las encuestas que hayas completado apareceran aqui una vez cargadas.</p></div>';
+
+    // Intentamos cargar el progreso para mostrar encuestas ya respondidas
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success && r.data && r.data.comparacion && r.data.comparacion.length > 0) {
+          div.innerHTML = '<div class="card"><div class="card-body">' +
+            '<p class="text-sm text-muted">Has respondido encuestas en tus programas asignados. ' +
+            'Revisa tu progreso en la seccion "Mi Progreso".</p>' +
+          '</div></div>';
+        } else {
+          div.innerHTML = '<div class="empty-state"><p>Aun no has completado ninguna encuesta.</p></div>';
+        }
+      })
+      .withFailureHandler(function() {
+        div.innerHTML = '';
+      })
+      .obtenerMiProgreso(App.token);
+  }
+
+  function abrirEncuesta(encuestaId) {
+    encuestaActualId = encuestaId;
+
+    // Ocultar lista, mostrar formulario
+    document.getElementById('encuestas-pendientes').parentElement.classList.add('hidden');
+    document.getElementById('encuestas-completadas').parentElement.classList.add('hidden');
+    document.getElementById('encuesta-form-container').classList.remove('hidden');
+
+    var enc = encuestasPendientes.find(function(e) { return e.id === encuestaId; });
+    if (enc) {
+      document.getElementById('enc-form-titulo').textContent = enc.nombre;
+      var subtexto = 'Programa: ' + enc.programa_nombre;
+      if (enc.lider_nombre) {
+        subtexto += '  |  Estas evaluando a: ' + enc.lider_nombre;
+      }
+      document.getElementById('enc-form-programa').textContent = subtexto;
+    }
+
+    // Cargar preguntas
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          var d = r.data;
+          var encData = d.encuesta || d;
+          preguntasActuales = d.preguntas || encData.preguntas || [];
+
+          // Instrucciones
+          if (encData.instrucciones) {
+            var instrDiv = document.getElementById('enc-instrucciones');
+            instrDiv.textContent = encData.instrucciones;
+            instrDiv.classList.remove('hidden');
+          } else {
+            document.getElementById('enc-instrucciones').classList.add('hidden');
+          }
+
+          renderPreguntas(preguntasActuales);
+        } else {
+          showToast(r.error, 'error');
+        }
+      })
+      .withFailureHandler(function() {
+        showToast('Error al cargar encuesta.', 'error');
+      })
+      .obtenerEncuestaCompleta(App.token, encuestaId);
+  }
+
+  function renderPreguntas(preguntas) {
+    var div = document.getElementById('enc-preguntas');
+    var total = preguntas.length;
+    document.getElementById('enc-progress-text').textContent = 'Pregunta 0 de ' + total;
+    document.getElementById('enc-progress').style.width = '0%';
+
+    div.innerHTML = preguntas.map(function(p, idx) {
+      var obligTag = p.obligatoria !== false ? ' <span class="text-danger">*</span>' : '';
+      var html = '<div class="card mb-3"><div class="card-body">';
+      // Competencia y foco
+      if (p.competencia_nombre) {
+        html += '<div style="font-size:12px;font-weight:600;color:var(--color-secundario);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;">' + escapeHtml(p.competencia_nombre) + '</div>';
+      }
+      if (p.foco_desarrollo) {
+        html += '<div style="font-size:12px;color:var(--color-texto-sec);font-style:italic;margin-bottom:8px;">' + escapeHtml(p.foco_desarrollo) + '</div>';
+      }
+      html += '<p class="mb-2"><strong>' + (idx + 1) + '. ' + escapeHtml(p.texto_pregunta || 'Selecciona una opcion') + '</strong>' + obligTag + '</p>';
+
+      html += renderInputPorTipo(p.id, p.tipo_respuesta, p);
+      html += '</div></div>';
+      return html;
+    }).join('');
+
+    // Agregar listeners para actualizar progreso
+    setTimeout(function() {
+      var inputs = div.querySelectorAll('input, textarea');
+      inputs.forEach(function(input) {
+        input.addEventListener('change', actualizarProgreso);
+        input.addEventListener('input', actualizarProgreso);
+      });
+    }, 100);
+  }
+
+  function renderInputPorTipo(preguntaId, tipo, pregunta) {
+    var name = 'resp_' + preguntaId;
+
+    switch (tipo) {
+      case 'niveles_competencia':
+      case 'alternativas':
+        var optsHtml = '';
+        for (var n = 1; n <= 4; n++) {
+          var optTexto = pregunta ? (pregunta['opcion_nivel_' + n] || '') : '';
+          if (!optTexto && tipo !== 'niveles_competencia') continue;
+          if (!optTexto) optTexto = 'Nivel ' + n;
+          var nivelLabel = tipo === 'niveles_competencia' ? '<span style="font-weight:700;color:var(--color-secundario);min-width:55px;display:inline-block;">Nivel ' + n + '</span> ' : '';
+          optsHtml += '<label style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--color-borde);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all 0.15s;" ' +
+            'onmouseover="this.style.background=\'var(--color-fondo-alt)\'" onmouseout="this.style.background=\'white\'">' +
+            '<input type="radio" name="' + name + '" value="' + n + '" style="margin-top:3px;flex-shrink:0;"> ' +
+            '<span style="font-size:14px;line-height:1.5;">' + nivelLabel + escapeHtml(optTexto) + '</span>' +
+          '</label>';
+        }
+        return optsHtml || '<p class="text-muted">Sin opciones configuradas.</p>';
+
+      case 'escala_1_5':
+        var html = '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
+        for (var i = 1; i <= 5; i++) {
+          html += '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="' + i + '"> ' +
+            '<span>' + i + '</span>' +
+          '</label>';
+        }
+        html += '</div>';
+        html += '<div style="display:flex;justify-content:space-between;margin-top:4px;">' +
+          '<span class="text-xs text-muted">Muy bajo</span>' +
+          '<span class="text-xs text-muted">Muy alto</span></div>';
+        return html;
+
+      case 'si_no':
+        return '<div style="display:flex;gap:16px;">' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="si"> Si</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="no"> No</label>' +
+        '</div>';
+
+      case 'logrado_parcial_no':
+        return '<div style="display:flex;gap:16px;flex-wrap:wrap;">' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="logrado"> Logrado</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="parcial"> Parcial</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="no"> No logrado</label>' +
+        '</div>';
+
+      case 'texto_breve':
+        return '<input type="text" name="' + name + '" class="form-control" placeholder="Escribe tu respuesta...">';
+
+      case 'parrafo':
+        return '<textarea name="' + name + '" class="form-control" placeholder="Escribe tu respuesta..." rows="4"></textarea>';
+
+      case 'casillas':
+        var cbHtml = '';
+        for (var cb = 1; cb <= 4; cb++) {
+          var cbTxt = pregunta ? (pregunta['opcion_nivel_' + cb] || '') : '';
+          if (!cbTxt) continue;
+          cbHtml += '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--color-borde);border-radius:8px;margin-bottom:6px;cursor:pointer;">' +
+            '<input type="checkbox" name="' + name + '" value="' + cb + '"> ' +
+            '<span style="font-size:14px;">' + escapeHtml(cbTxt) + '</span></label>';
+        }
+        return cbHtml || '<p class="text-muted">Sin opciones.</p>';
+
+      case 'desplegable':
+        var selHtml = '<select name="' + name + '" class="form-control"><option value="">Selecciona...</option>';
+        for (var dp = 1; dp <= 4; dp++) {
+          var dpTxt = pregunta ? (pregunta['opcion_nivel_' + dp] || '') : '';
+          if (!dpTxt) continue;
+          selHtml += '<option value="' + dp + '">' + escapeHtml(dpTxt) + '</option>';
+        }
+        selHtml += '</select>';
+        return selHtml;
+
+      default:
+        return '<input type="text" name="' + name + '" class="form-control" placeholder="Respuesta...">';
+    }
+  }
+
+  function actualizarProgreso() {
+    var total = preguntasActuales.length;
+    if (total === 0) return;
+
+    var respondidas = 0;
+    preguntasActuales.forEach(function(p) {
+      var name = 'resp_' + p.id;
+      var inputs = document.querySelectorAll('[name="' + name + '"]');
+      var tieneValor = false;
+      inputs.forEach(function(input) {
+        if (input.type === 'radio' && input.checked) tieneValor = true;
+        if (input.type === 'textarea' && input.value.trim()) tieneValor = true;
+        if (input.type === 'text' && input.value.trim()) tieneValor = true;
+      });
+      if (tieneValor) respondidas++;
+    });
+
+    var pct = Math.round(respondidas / total * 100);
+    document.getElementById('enc-progress').style.width = pct + '%';
+    document.getElementById('enc-progress-text').textContent = 'Pregunta ' + respondidas + ' de ' + total + ' (' + pct + '%)';
+  }
+
+  function enviarRespuestasEncuesta() {
+    var respuestas = [];
+    preguntasActuales.forEach(function(p) {
+      var name = 'resp_' + p.id;
+      var inputs = document.querySelectorAll('[name="' + name + '"]');
+      var valor = null;
+      inputs.forEach(function(input) {
+        if (input.type === 'radio' && input.checked) valor = input.value;
+        if (input.type === 'textarea' || input.type === 'text') {
+          if (input.value.trim()) valor = input.value.trim();
+        }
+      });
+      if (valor !== null) {
+        respuestas.push({ preguntaId: p.id, valor: valor });
+      }
+    });
+
+    var btn = document.getElementById('btn-enviar-respuestas');
+    btnLoading(btn, true);
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btnLoading(btn, false);
+        if (r.success) {
+          showToast(r.data.message || 'Respuestas enviadas.', 'success');
+          volverALista();
+          cargarMisEncuestas();
+        } else {
+          showToast(r.error, 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        btnLoading(btn, false);
+        showToast('Error al enviar respuestas.', 'error');
+      })
+      .enviarRespuestas(App.token, encuestaActualId, respuestas);
+  }
+
+  function volverALista() {
+    document.getElementById('encuesta-form-container').classList.add('hidden');
+    document.getElementById('encuestas-pendientes').parentElement.classList.remove('hidden');
+    document.getElementById('encuestas-completadas').parentElement.classList.remove('hidden');
+    encuestaActualId = null;
+    preguntasActuales = [];
+  }
+</script>

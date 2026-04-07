@@ -1,0 +1,923 @@
+<!-- Vista: Correos (Admin - Templates de email por programa) -->
+<div>
+  <div class="flex-between mb-4">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <select class="form-control" id="sel-programa-correo" onchange="onProgramaCorreoChange()" style="min-width:250px;">
+        <option value="">Selecciona un programa...</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="btn-nuevo-correo" onclick="abrirCompositor()" disabled>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+      </svg>
+      Nuevo Correo
+    </button>
+  </div>
+
+  <!-- Templates -->
+  <div id="correo-templates" class="hidden">
+    <h3 style="color:var(--color-primario);margin-bottom:16px;">Selecciona una plantilla</h3>
+    <div class="templates-grid">
+      <div class="template-card" onclick="seleccionarTemplate('presentacion')">
+        <div class="template-icon" style="background:#E8DAEF;color:#7D3C98;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h4>Presentaci&oacute;n de Programa</h4>
+        <p class="text-xs text-muted">Describe la metodolog&iacute;a, estructura, hitos y adjunta materiales de apoyo del programa.</p>
+      </div>
+      <div class="template-card" onclick="seleccionarTemplate('bienvenida')">
+        <div class="template-icon" style="background:#D4EFDF;color:#1E8449;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        </div>
+        <h4>Inicio / Bienvenida</h4>
+        <p class="text-xs text-muted">Correo de bienvenida con fechas clave, instrucciones iniciales y documentos de inicio.</p>
+      </div>
+      <div class="template-card" onclick="seleccionarTemplate('checkpoint')">
+        <div class="template-icon" style="background:#FDEBD0;color:#D68910;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h4>Checkpoint / Seguimiento</h4>
+        <p class="text-xs text-muted">Resumen de avance intermedio con indicadores, logros y pr&oacute;ximos pasos.</p>
+      </div>
+      <div class="template-card" onclick="seleccionarTemplate('cierre')">
+        <div class="template-icon" style="background:#D4E6F1;color:#2471A3;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <h4>Cierre / Resultados</h4>
+        <p class="text-xs text-muted">Resultados finales, comparaci&oacute;n PRE/POST, logros destacados y recomendaciones.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compositor de correo -->
+  <div id="correo-compositor" class="hidden">
+    <div class="card">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div id="compositor-icon" class="template-icon-sm" style="background:#E8DAEF;color:#7D3C98;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div>
+            <h2 id="compositor-titulo" style="margin:0;">Nuevo Correo</h2>
+            <span class="text-xs text-muted" id="compositor-programa"></span>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="volverATemplates()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Volver
+        </button>
+      </div>
+      <div class="card-body">
+        <!-- Destinatarios -->
+        <div class="form-group">
+          <label>Destinatarios *</label>
+          <div id="destinatarios-tags" class="tags-container"></div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input type="email" class="form-control" id="input-destinatario" placeholder="Agregar email..." style="flex:1;">
+            <button class="btn btn-sm btn-outline" onclick="agregarDestinatario()">+ Agregar</button>
+          </div>
+          <div id="destinatarios-sugeridos" class="mt-2"></div>
+        </div>
+
+        <!-- Asunto -->
+        <div class="form-group">
+          <label>Asunto *</label>
+          <input type="text" class="form-control" id="correo-asunto" placeholder="Asunto del correo...">
+        </div>
+
+        <!-- Cuerpo del correo -->
+        <div class="form-group">
+          <label>Contenido del correo *</label>
+          <div class="correo-toolbar">
+            <button class="toolbar-btn" onclick="formatText('bold')" title="Negrita"><strong>B</strong></button>
+            <button class="toolbar-btn" onclick="formatText('italic')" title="Cursiva"><em>I</em></button>
+            <button class="toolbar-btn" onclick="formatText('underline')" title="Subrayado"><u>U</u></button>
+            <span class="toolbar-sep"></span>
+            <button class="toolbar-btn" onclick="formatText('insertUnorderedList')" title="Lista">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+            </button>
+            <button class="toolbar-btn" onclick="formatText('insertOrderedList')" title="Lista numerada">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="3" y="8" font-size="8" fill="currentColor">1</text><text x="3" y="14" font-size="8" fill="currentColor">2</text><text x="3" y="20" font-size="8" fill="currentColor">3</text></svg>
+            </button>
+          </div>
+          <div class="correo-editor" id="correo-cuerpo" contenteditable="true"></div>
+        </div>
+
+        <!-- Archivos adjuntos -->
+        <div class="form-group">
+          <label>Archivos adjuntos</label>
+          <div class="adjuntos-area" id="adjuntos-area" onclick="document.getElementById('file-input').click();">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4;">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+            </svg>
+            <span class="text-sm text-muted">Haz clic o arrastra archivos aqu&iacute;</span>
+          </div>
+          <input type="file" id="file-input" multiple style="display:none;" onchange="onFilesSelected(this)">
+          <div id="adjuntos-lista" class="mt-2"></div>
+        </div>
+
+        <!-- Acciones -->
+        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
+          <button class="btn btn-outline" onclick="previsualizarCorreo()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Previsualizar
+          </button>
+          <button class="btn btn-primary" id="btn-enviar-correo" onclick="enviarCorreo()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Enviar Correo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial de correos -->
+  <div id="correo-historial" class="mt-4">
+    <div class="card">
+      <div class="card-header">
+        <h2>Correos Enviados</h2>
+        <span class="text-sm text-muted" id="correo-historial-count"></span>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Plantilla</th>
+              <th>Asunto</th>
+              <th>Programa</th>
+              <th>Destinatarios</th>
+              <th>Adjuntos</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-correos">
+            <tr><td colspan="7" class="text-center text-muted p-4">Selecciona un programa para ver correos enviados.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado vacio -->
+  <div id="correo-empty" class="card">
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;margin-bottom:16px;opacity:0.4;">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+      </svg>
+      <p>Selecciona un programa para crear y gestionar correos.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Previsualización -->
+<div class="modal-overlay" id="modal-preview-correo">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <h3>Previsualizaci&oacute;n del Correo</h3>
+      <button class="modal-close" onclick="closeModal('modal-preview-correo')">&times;</button>
+    </div>
+    <div class="modal-body" id="preview-correo-body" style="padding:0;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-preview-correo')">Cerrar</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-preview-correo');enviarCorreo();">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalle de correo enviado -->
+<div class="modal-overlay" id="modal-detalle-correo">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <h3 id="detalle-correo-titulo">Detalle del Correo</h3>
+      <button class="modal-close" onclick="closeModal('modal-detalle-correo')">&times;</button>
+    </div>
+    <div class="modal-body" id="detalle-correo-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-detalle-correo')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .template-card {
+    background: var(--color-tarjeta);
+    border: 2px solid var(--color-borde);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .template-card:hover {
+    border-color: var(--color-primario);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  .template-card h4 {
+    margin: 12px 0 6px;
+    font-size: 14px;
+    color: var(--color-texto);
+  }
+
+  .template-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .template-icon-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 32px;
+  }
+
+  .tag {
+    background: var(--color-fondo-alt);
+    border: 1px solid var(--color-borde);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tag-remove {
+    cursor: pointer;
+    color: var(--color-peligro);
+    font-weight: bold;
+    line-height: 1;
+  }
+
+  .tag-remove:hover { opacity: 0.7; }
+
+  .correo-toolbar {
+    display: flex;
+    gap: 2px;
+    padding: 6px 8px;
+    background: var(--color-fondo-alt);
+    border: 1px solid var(--color-borde);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .toolbar-btn {
+    width: 30px;
+    height: 28px;
+    border: none;
+    background: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-texto-sec);
+    font-size: 13px;
+  }
+
+  .toolbar-btn:hover { background: var(--color-borde); color: var(--color-texto); }
+
+  .toolbar-sep {
+    width: 1px;
+    background: var(--color-borde);
+    margin: 2px 4px;
+  }
+
+  .correo-editor {
+    min-height: 300px;
+    padding: 16px;
+    border: 1px solid var(--color-borde);
+    border-radius: 0 0 8px 8px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--color-texto);
+    background: var(--color-tarjeta);
+    outline: none;
+    overflow-y: auto;
+  }
+
+  .correo-editor:focus {
+    border-color: var(--color-primario);
+  }
+
+  .correo-editor p { margin: 0 0 10px; }
+  .correo-editor ul, .correo-editor ol { margin: 4px 0 10px; padding-left: 24px; }
+
+  .adjuntos-area {
+    border: 2px dashed var(--color-borde);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .adjuntos-area:hover {
+    border-color: var(--color-primario);
+    background: var(--color-fondo-alt);
+  }
+
+  .adjunto-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--color-fondo-alt);
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
+
+  .adjunto-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .adjunto-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .preview-email {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    max-width: 100%;
+  }
+
+  .preview-header {
+    background: var(--color-fondo-alt);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-borde);
+  }
+
+  .preview-body {
+    padding: 24px 20px;
+    line-height: 1.7;
+    font-size: 14px;
+  }
+
+  .preview-adjuntos {
+    padding: 16px 20px;
+    border-top: 1px solid var(--color-borde);
+    background: var(--color-fondo-alt);
+  }
+
+  .template-badge-presentacion { background: #E8DAEF; color: #7D3C98; }
+  .template-badge-bienvenida { background: #D4EFDF; color: #1E8449; }
+  .template-badge-checkpoint { background: #FDEBD0; color: #D68910; }
+  .template-badge-cierre { background: #D4E6F1; color: #2471A3; }
+</style>
+
+<script>
+  var correoProgramaSeleccionado = null;
+  var correoDestinatarios = [];
+  var correoAdjuntos = [];
+  var correoTemplateActual = null;
+  var correosEnviados = [];
+  var programasCorreo = [];
+
+  (function() {
+    google.script.run.withSuccessHandler(function(r) {
+      if (r.success) {
+        programasCorreo = r.data;
+        var sel = document.getElementById('sel-programa-correo');
+        r.data.forEach(function(p) {
+          var opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.nombre + ' (' + p.cliente_nombre + ')';
+          sel.appendChild(opt);
+        });
+      }
+    }).listarProgramas(App.token, null);
+  })();
+
+  function onProgramaCorreoChange() {
+    var progId = document.getElementById('sel-programa-correo').value;
+    document.getElementById('btn-nuevo-correo').disabled = !progId;
+
+    if (!progId) {
+      document.getElementById('correo-empty').classList.remove('hidden');
+      document.getElementById('correo-templates').classList.add('hidden');
+      document.getElementById('correo-compositor').classList.add('hidden');
+      correoProgramaSeleccionado = null;
+      return;
+    }
+
+    correoProgramaSeleccionado = programasCorreo.find(function(p) { return p.id === progId; });
+    document.getElementById('correo-empty').classList.add('hidden');
+
+    // Cargar historial mock
+    cargarHistorialCorreos(progId);
+  }
+
+  function abrirCompositor() {
+    if (!correoProgramaSeleccionado) return;
+    document.getElementById('correo-empty').classList.add('hidden');
+    document.getElementById('correo-templates').classList.remove('hidden');
+    document.getElementById('correo-compositor').classList.add('hidden');
+  }
+
+  function volverATemplates() {
+    document.getElementById('correo-compositor').classList.add('hidden');
+    document.getElementById('correo-templates').classList.remove('hidden');
+  }
+
+  // ============================================
+  // TEMPLATES
+  // ============================================
+
+  var TEMPLATES = {
+    presentacion: {
+      nombre: 'Presentaci\u00f3n de Programa',
+      color: '#E8DAEF',
+      colorText: '#7D3C98',
+      asunto: function(p) { return 'Presentaci\u00f3n del Programa: ' + p.nombre; },
+      cuerpo: function(p) {
+        return '<p>Estimado/a,</p>' +
+          '<p>Comparto contigo, de forma simple, la l\u00f3gica del programa <strong>' + p.nombre + '</strong>:</p>' +
+          '<ol>' +
+            '<li>El objetivo general del programa est\u00e1 enfocado en ' + (p.objetivo || 'desarrollar competencias cr\u00edticas en los participantes') + '.</li>' +
+            '<li>En t\u00e9rminos de estructura, el programa contempla sesiones presenciales m\u00e1s un proceso de pr\u00e1ctica guiada en el puesto de trabajo.</li>' +
+            '<li>A nivel de dise\u00f1o, se definieron competencias de desarrollo con sus respectivas conductas cr\u00edticas, y a partir de eso se construyeron instrumentos de medici\u00f3n (encuestas PRE y POST).</li>' +
+            '<li>Los instrumentos se aplican en 2 momentos del proceso: al inicio y al final, con el objetivo de contar con una foto inicial y luego levantar una foto final de cierre.</li>' +
+            '<li>Cada participante contar\u00e1 con un seguimiento personalizado durante toda la pr\u00e1ctica.</li>' +
+            '<li>Entre los hitos de medici\u00f3n, el programa contempla checkpoints cuyo foco es generar aprendizaje colaborativo y monitorear el proceso.</li>' +
+          '</ol>' +
+          '<p>En s\u00edntesis, la l\u00f3gica del programa combina formaci\u00f3n, pr\u00e1ctica en terreno, acompa\u00f1amiento, medici\u00f3n en distintos momentos y soporte continuo.</p>' +
+          '<p><strong>Datos del programa:</strong></p>' +
+          '<ul>' +
+            '<li>Fecha inicio: ' + (p.fecha_inicio || 'Por definir') + '</li>' +
+            '<li>Fecha t\u00e9rmino: ' + (p.fecha_termino || 'Por definir') + '</li>' +
+            '<li>Cliente: ' + (p.cliente_nombre || '') + '</li>' +
+          '</ul>' +
+          '<p>Te adjunto los materiales de apoyo del programa.</p>' +
+          '<p>Quedo atenta a cualquier consulta.</p>' +
+          '<p>Saludos cordiales.</p>';
+      }
+    },
+    bienvenida: {
+      nombre: 'Inicio / Bienvenida',
+      color: '#D4EFDF',
+      colorText: '#1E8449',
+      asunto: function(p) { return 'Bienvenido/a al Programa ' + p.nombre; },
+      cuerpo: function(p) {
+        return '<p>Estimado/a,</p>' +
+          '<p>Te damos la bienvenida al programa <strong>' + p.nombre + '</strong>.</p>' +
+          '<p>A continuaci\u00f3n, te compartimos las fechas clave e instrucciones para el inicio:</p>' +
+          '<ul>' +
+            '<li><strong>Fecha de inicio:</strong> ' + (p.fecha_inicio || 'Por confirmar') + '</li>' +
+            '<li><strong>Medici\u00f3n PRE:</strong> ' + (p.fecha_medicion_pre || 'Por confirmar') + '</li>' +
+            '<li><strong>Fecha de t\u00e9rmino estimada:</strong> ' + (p.fecha_termino || 'Por confirmar') + '</li>' +
+          '</ul>' +
+          '<p><strong>Pr\u00f3ximos pasos:</strong></p>' +
+          '<ol>' +
+            '<li>Completar la encuesta de autoevaluaci\u00f3n PRE (se enviar\u00e1 por la plataforma).</li>' +
+            '<li>Revisar los materiales adjuntos para familiarizarse con el programa.</li>' +
+            '<li>Confirmar asistencia a la primera sesi\u00f3n.</li>' +
+          '</ol>' +
+          '<p>Adjuntamos la documentaci\u00f3n inicial del programa.</p>' +
+          '<p>Ante cualquier duda, no dudes en contactarnos.</p>' +
+          '<p>Saludos cordiales.</p>';
+      }
+    },
+    checkpoint: {
+      nombre: 'Checkpoint / Seguimiento',
+      color: '#FDEBD0',
+      colorText: '#D68910',
+      asunto: function(p) { return 'Checkpoint de Avance - ' + p.nombre; },
+      cuerpo: function(p) {
+        return '<p>Estimado/a,</p>' +
+          '<p>Compartimos el resumen de avance del programa <strong>' + p.nombre + '</strong>.</p>' +
+          '<p><strong>Estado general:</strong></p>' +
+          '<ul>' +
+            '<li>Estado del programa: <strong>' + (p.estado || 'activo') + '</strong></li>' +
+            '<li>Per\u00edodo: ' + (p.fecha_inicio || '') + ' - ' + (p.fecha_termino || '') + '</li>' +
+          '</ul>' +
+          '<p><strong>Indicadores clave:</strong></p>' +
+          '<ul>' +
+            '<li>Participantes activos en el proceso</li>' +
+            '<li>Actividades completadas seg\u00fan calendario</li>' +
+            '<li>Observaciones de campo realizadas</li>' +
+            '<li>Feedback entregado por jefaturas</li>' +
+          '</ul>' +
+          '<p><strong>Pr\u00f3ximos hitos:</strong></p>' +
+          '<ol>' +
+            '<li>Continuar con la pr\u00e1ctica guiada en terreno</li>' +
+            '<li>Pr\u00f3ximo checkpoint de seguimiento</li>' +
+            '<li>Preparaci\u00f3n para la medici\u00f3n POST</li>' +
+          '</ol>' +
+          '<p>Adjuntamos el detalle completo del avance.</p>' +
+          '<p>Saludos cordiales.</p>';
+      }
+    },
+    cierre: {
+      nombre: 'Cierre / Resultados',
+      color: '#D4E6F1',
+      colorText: '#2471A3',
+      asunto: function(p) { return 'Resultados Finales - ' + p.nombre; },
+      cuerpo: function(p) {
+        return '<p>Estimado/a,</p>' +
+          '<p>Nos complace compartir los resultados finales del programa <strong>' + p.nombre + '</strong>.</p>' +
+          '<p><strong>Resumen del programa:</strong></p>' +
+          '<ul>' +
+            '<li>Per\u00edodo: ' + (p.fecha_inicio || '') + ' - ' + (p.fecha_termino || '') + '</li>' +
+            '<li>Cliente: ' + (p.cliente_nombre || '') + '</li>' +
+            '<li>Objetivo: ' + (p.objetivo || '') + '</li>' +
+          '</ul>' +
+          '<p><strong>Resultados principales:</strong></p>' +
+          '<ul>' +
+            '<li>Comparaci\u00f3n PRE vs POST: Se evidencia evoluci\u00f3n en las conductas cr\u00edticas medidas</li>' +
+            '<li>Nivel de participaci\u00f3n: Alto compromiso de los participantes durante el proceso</li>' +
+            '<li>Observaciones de campo: Se registraron observaciones que evidencian transferencia al puesto</li>' +
+            '<li>Feedback de jefaturas: Retroalimentaci\u00f3n positiva sobre los cambios observados</li>' +
+          '</ul>' +
+          '<p><strong>Recomendaciones:</strong></p>' +
+          '<ol>' +
+            '<li>Mantener espacios de refuerzo peri\u00f3dico para sostener los cambios logrados</li>' +
+            '<li>Implementar las acciones correctivas identificadas en los hallazgos</li>' +
+            '<li>Considerar un programa de seguimiento a 3 meses</li>' +
+          '</ol>' +
+          '<p>Adjuntamos el informe completo con el detalle de los resultados.</p>' +
+          '<p>Agradecemos la confianza y compromiso durante todo el proceso.</p>' +
+          '<p>Saludos cordiales.</p>';
+      }
+    }
+  };
+
+  function seleccionarTemplate(tipo) {
+    correoTemplateActual = tipo;
+    var tmpl = TEMPLATES[tipo];
+    var prog = correoProgramaSeleccionado;
+
+    document.getElementById('correo-templates').classList.add('hidden');
+    document.getElementById('correo-compositor').classList.remove('hidden');
+
+    document.getElementById('compositor-titulo').textContent = tmpl.nombre;
+    document.getElementById('compositor-programa').textContent = prog.nombre + ' (' + prog.cliente_nombre + ')';
+    document.getElementById('compositor-icon').style.background = tmpl.color;
+    document.getElementById('compositor-icon').style.color = tmpl.colorText;
+
+    document.getElementById('correo-asunto').value = tmpl.asunto(prog);
+    document.getElementById('correo-cuerpo').innerHTML = tmpl.cuerpo(prog);
+
+    // Reset destinatarios y adjuntos
+    correoDestinatarios = [];
+    correoAdjuntos = [];
+    renderDestinatarios();
+    renderAdjuntos();
+
+    // Sugerir contacto del cliente
+    renderSugeridos(prog);
+  }
+
+  // ============================================
+  // DESTINATARIOS
+  // ============================================
+
+  function renderSugeridos(prog) {
+    var div = document.getElementById('destinatarios-sugeridos');
+    var cliente = null;
+
+    // Buscar email del contacto del cliente
+    Promise.resolve({json:function(){var h=backendFunctions['listarClientes'];return h?h(App.token):{success:true,data:[]}},text:function(){return''}})
+    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (r.success && r.data) {
+        cliente = r.data.find(function(c) { return c.id === prog.cliente_id; });
+        if (cliente && cliente.contacto_email) {
+          div.innerHTML = '<div class="text-xs text-muted mb-1">Contacto del cliente:</div>' +
+            '<button class="btn btn-sm btn-outline" onclick="agregarDestinatarioDirecto(\'' + cliente.contacto_email + '\')">' +
+            '+ ' + escapeHtml(cliente.contacto_nombre) + ' (' + escapeHtml(cliente.contacto_email) + ')' +
+            '</button>';
+        }
+      }
+    }).catch(function() {});
+  }
+
+  function agregarDestinatario() {
+    var input = document.getElementById('input-destinatario');
+    var email = input.value.trim();
+    if (!email || correoDestinatarios.indexOf(email) !== -1) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showToast('Email inv\u00e1lido.', 'error');
+      return;
+    }
+    correoDestinatarios.push(email);
+    input.value = '';
+    renderDestinatarios();
+  }
+
+  function agregarDestinatarioDirecto(email) {
+    if (correoDestinatarios.indexOf(email) !== -1) return;
+    correoDestinatarios.push(email);
+    renderDestinatarios();
+  }
+
+  function eliminarDestinatario(email) {
+    correoDestinatarios = correoDestinatarios.filter(function(e) { return e !== email; });
+    renderDestinatarios();
+  }
+
+  function renderDestinatarios() {
+    var div = document.getElementById('destinatarios-tags');
+    div.innerHTML = correoDestinatarios.map(function(email) {
+      return '<span class="tag">' + escapeHtml(email) +
+        ' <span class="tag-remove" onclick="eliminarDestinatario(\'' + escapeHtml(email) + '\')">&times;</span></span>';
+    }).join('');
+  }
+
+  // ============================================
+  // ARCHIVOS ADJUNTOS
+  // ============================================
+
+  function onFilesSelected(input) {
+    var files = Array.from(input.files);
+    files.forEach(function(f) {
+      correoAdjuntos.push({
+        nombre: f.name,
+        tamano: f.size,
+        tipo: f.type || 'application/octet-stream'
+      });
+    });
+    input.value = '';
+    renderAdjuntos();
+  }
+
+  function eliminarAdjunto(idx) {
+    correoAdjuntos.splice(idx, 1);
+    renderAdjuntos();
+  }
+
+  function getFileIcon(tipo) {
+    if (tipo.indexOf('pdf') !== -1) return { bg: '#FADBD8', color: '#C0392B', ext: 'PDF' };
+    if (tipo.indexOf('spreadsheet') !== -1 || tipo.indexOf('xlsx') !== -1 || tipo.indexOf('excel') !== -1) return { bg: '#D4EFDF', color: '#1E8449', ext: 'XLS' };
+    if (tipo.indexOf('presentation') !== -1 || tipo.indexOf('pptx') !== -1 || tipo.indexOf('powerpoint') !== -1) return { bg: '#FDEBD0', color: '#D68910', ext: 'PPT' };
+    if (tipo.indexOf('word') !== -1 || tipo.indexOf('docx') !== -1 || tipo.indexOf('document') !== -1) return { bg: '#D4E6F1', color: '#2471A3', ext: 'DOC' };
+    if (tipo.indexOf('video') !== -1) return { bg: '#E8DAEF', color: '#7D3C98', ext: 'VID' };
+    if (tipo.indexOf('image') !== -1) return { bg: '#D4E6F1', color: '#2471A3', ext: 'IMG' };
+    return { bg: '#EAECEE', color: '#5D6D7E', ext: 'FILE' };
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  function renderAdjuntos() {
+    var div = document.getElementById('adjuntos-lista');
+    if (correoAdjuntos.length === 0) {
+      div.innerHTML = '';
+      return;
+    }
+
+    div.innerHTML = correoAdjuntos.map(function(a, idx) {
+      var icon = getFileIcon(a.tipo);
+      return '<div class="adjunto-item">' +
+        '<div class="adjunto-info">' +
+          '<div class="adjunto-icon" style="background:' + icon.bg + ';color:' + icon.color + ';font-size:10px;font-weight:700;">' + icon.ext + '</div>' +
+          '<div>' +
+            '<span style="font-weight:500;">' + escapeHtml(a.nombre) + '</span><br>' +
+            '<span class="text-xs text-muted">' + formatFileSize(a.tamano) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<button class="btn btn-sm btn-danger" onclick="eliminarAdjunto(' + idx + ')" style="padding:4px 8px;">&times;</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  // ============================================
+  // EDITOR DE TEXTO
+  // ============================================
+
+  function formatText(command) {
+    document.execCommand(command, false, null);
+    document.getElementById('correo-cuerpo').focus();
+  }
+
+  // ============================================
+  // PREVIEW Y ENVÍO
+  // ============================================
+
+  function previsualizarCorreo() {
+    var asunto = document.getElementById('correo-asunto').value;
+    var cuerpo = document.getElementById('correo-cuerpo').innerHTML;
+    var tmpl = TEMPLATES[correoTemplateActual];
+
+    var html = '<div class="preview-email">';
+
+    // Header
+    html += '<div class="preview-header">';
+    html += '<div style="margin-bottom:8px;"><span class="text-xs text-muted">De:</span> <span class="text-sm">MSO Chile - Plataforma TPT &lt;noreply@mso.cl&gt;</span></div>';
+    html += '<div style="margin-bottom:8px;"><span class="text-xs text-muted">Para:</span> <span class="text-sm">' +
+      (correoDestinatarios.length > 0 ? correoDestinatarios.map(function(e) { return escapeHtml(e); }).join(', ') : '<em class="text-muted">Sin destinatarios</em>') +
+      '</span></div>';
+    html += '<div><span class="text-xs text-muted">Asunto:</span> <strong class="text-sm">' + escapeHtml(asunto) + '</strong></div>';
+    html += '</div>';
+
+    // Body
+    html += '<div class="preview-body">' + cuerpo + '</div>';
+
+    // Adjuntos
+    if (correoAdjuntos.length > 0) {
+      html += '<div class="preview-adjuntos">';
+      html += '<div class="text-xs text-muted mb-2" style="text-transform:uppercase;">Archivos adjuntos (' + correoAdjuntos.length + ')</div>';
+      html += correoAdjuntos.map(function(a) {
+        var icon = getFileIcon(a.tipo);
+        return '<div style="display:inline-flex;align-items:center;gap:6px;background:var(--color-tarjeta);padding:4px 10px;border-radius:6px;border:1px solid var(--color-borde);margin:2px;">' +
+          '<span style="color:' + icon.color + ';font-size:10px;font-weight:700;">' + icon.ext + '</span>' +
+          '<span class="text-xs">' + escapeHtml(a.nombre) + '</span>' +
+          '<span class="text-xs text-muted">(' + formatFileSize(a.tamano) + ')</span>' +
+        '</div>';
+      }).join(' ');
+      html += '</div>';
+    }
+
+    html += '</div>';
+
+    document.getElementById('preview-correo-body').innerHTML = html;
+    openModal('modal-preview-correo');
+  }
+
+  function enviarCorreo() {
+    var asunto = document.getElementById('correo-asunto').value.trim();
+    var cuerpo = document.getElementById('correo-cuerpo').innerHTML;
+
+    if (!asunto) { showToast('Escribe un asunto.', 'error'); return; }
+    if (correoDestinatarios.length === 0) { showToast('Agrega al menos un destinatario.', 'error'); return; }
+    if (!cuerpo.trim()) { showToast('El correo est\u00e1 vac\u00edo.', 'error'); return; }
+
+    var btn = document.getElementById('btn-enviar-correo');
+    btnLoading(btn, true);
+
+    // Simular env\u00edo (mock)
+    setTimeout(function() {
+      btnLoading(btn, false);
+
+      // Guardar en historial local
+      var nuevoCorreo = {
+        id: 'mail-' + Date.now(),
+        fecha: new Date().toISOString().split('T')[0],
+        template: correoTemplateActual,
+        template_nombre: TEMPLATES[correoTemplateActual].nombre,
+        asunto: asunto,
+        programa_id: correoProgramaSeleccionado.id,
+        programa_nombre: correoProgramaSeleccionado.nombre,
+        destinatarios: correoDestinatarios.slice(),
+        adjuntos: correoAdjuntos.slice(),
+        cuerpo: cuerpo
+      };
+
+      correosEnviados.unshift(nuevoCorreo);
+      renderHistorialCorreos();
+
+      showToast('Correo enviado exitosamente a ' + correoDestinatarios.length + ' destinatario(s).', 'success');
+
+      // Volver al estado inicial
+      document.getElementById('correo-compositor').classList.add('hidden');
+      document.getElementById('correo-templates').classList.add('hidden');
+      correoDestinatarios = [];
+      correoAdjuntos = [];
+      correoTemplateActual = null;
+    }, 1500);
+  }
+
+  // ============================================
+  // HISTORIAL
+  // ============================================
+
+  function cargarHistorialCorreos(progId) {
+    // Mock: agregar algunos correos de ejemplo
+    if (correosEnviados.length === 0) {
+      correosEnviados = [
+        {
+          id: 'mail-001',
+          fecha: '2026-03-15',
+          template: 'presentacion',
+          template_nombre: 'Presentaci\u00f3n de Programa',
+          asunto: 'Presentaci\u00f3n del Programa: Liderazgo Seguro 2026',
+          programa_id: 'prog-001',
+          programa_nombre: 'Liderazgo Seguro 2026',
+          destinatarios: ['mgonzalez@losandes.cl'],
+          adjuntos: [
+            { nombre: 'Presentaci\u00f3n Programa.pptx', tamano: 432039, tipo: 'application/pptx' },
+            { nombre: 'Matriz de competencias.xlsx', tamano: 12406, tipo: 'application/xlsx' }
+          ],
+          cuerpo: '<p>Correo de presentaci\u00f3n enviado al cliente.</p>'
+        },
+        {
+          id: 'mail-002',
+          fecha: '2026-01-20',
+          template: 'bienvenida',
+          template_nombre: 'Inicio / Bienvenida',
+          asunto: 'Bienvenido/a al Programa Liderazgo Seguro 2026',
+          programa_id: 'prog-001',
+          programa_nombre: 'Liderazgo Seguro 2026',
+          destinatarios: ['mgonzalez@losandes.cl', 'rrhh@losandes.cl'],
+          adjuntos: [
+            { nombre: 'Instructivo pr\u00e1ctica.pdf', tamano: 250948, tipo: 'application/pdf' },
+            { nombre: 'Gantt del programa.xlsx', tamano: 16685, tipo: 'application/xlsx' }
+          ],
+          cuerpo: '<p>Correo de bienvenida enviado.</p>'
+        }
+      ];
+    }
+    renderHistorialCorreos();
+  }
+
+  function getTemplateBadge(tipo) {
+    var tmpl = TEMPLATES[tipo];
+    if (!tmpl) return '<span class="badge">' + tipo + '</span>';
+    return '<span class="badge template-badge-' + tipo + '">' + tmpl.nombre + '</span>';
+  }
+
+  function renderHistorialCorreos() {
+    var tbody = document.getElementById('tbody-correos');
+    var progId = document.getElementById('sel-programa-correo').value;
+    var filtrados = correosEnviados.filter(function(c) { return !progId || c.programa_id === progId; });
+
+    document.getElementById('correo-historial-count').textContent = filtrados.length + ' correos';
+
+    if (filtrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-4">No hay correos enviados para este programa.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtrados.map(function(c) {
+      return '<tr>' +
+        '<td class="text-sm">' + formatDate(c.fecha) + '</td>' +
+        '<td>' + getTemplateBadge(c.template) + '</td>' +
+        '<td><strong class="text-sm">' + escapeHtml(c.asunto.length > 40 ? c.asunto.substring(0, 40) + '...' : c.asunto) + '</strong></td>' +
+        '<td class="text-sm">' + escapeHtml(c.programa_nombre) + '</td>' +
+        '<td class="text-sm">' + c.destinatarios.length + '</td>' +
+        '<td class="text-center">' + c.adjuntos.length + '</td>' +
+        '<td><button class="btn btn-sm btn-outline" onclick="verDetalleCorreo(\'' + c.id + '\')">Ver</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function verDetalleCorreo(id) {
+    var c = correosEnviados.find(function(x) { return x.id === id; });
+    if (!c) return;
+
+    document.getElementById('detalle-correo-titulo').textContent = c.asunto;
+
+    var html = '';
+    html += '<div class="preview-header">';
+    html += '<div style="margin-bottom:6px;">' + getTemplateBadge(c.template) + ' <span class="text-xs text-muted">| ' + formatDate(c.fecha) + '</span></div>';
+    html += '<div style="margin-bottom:4px;"><span class="text-xs text-muted">Para:</span> <span class="text-sm">' + c.destinatarios.map(function(e) { return escapeHtml(e); }).join(', ') + '</span></div>';
+    html += '<div><span class="text-xs text-muted">Programa:</span> <span class="text-sm">' + escapeHtml(c.programa_nombre) + '</span></div>';
+    html += '</div>';
+
+    html += '<div class="preview-body">' + c.cuerpo + '</div>';
+
+    if (c.adjuntos.length > 0) {
+      html += '<div class="preview-adjuntos">';
+      html += '<div class="text-xs text-muted mb-2" style="text-transform:uppercase;">Adjuntos (' + c.adjuntos.length + ')</div>';
+      html += c.adjuntos.map(function(a) {
+        var icon = getFileIcon(a.tipo);
+        return '<div style="display:inline-flex;align-items:center;gap:6px;background:var(--color-tarjeta);padding:4px 10px;border-radius:6px;border:1px solid var(--color-borde);margin:2px;">' +
+          '<span style="color:' + icon.color + ';font-size:10px;font-weight:700;">' + icon.ext + '</span>' +
+          '<span class="text-xs">' + escapeHtml(a.nombre) + '</span>' +
+          '<span class="text-xs text-muted">(' + formatFileSize(a.tamano) + ')</span>' +
+        '</div>';
+      }).join(' ');
+      html += '</div>';
+    }
+
+    document.getElementById('detalle-correo-body').innerHTML = html;
+    openModal('modal-detalle-correo');
+  }
+</script>

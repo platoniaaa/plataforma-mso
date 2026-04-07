@@ -1,0 +1,164 @@
+<!-- Vista: Mi Equipo (Jefatura) -->
+<div>
+  <div class="mb-4">
+    <select class="form-control" id="sel-programa-equipo" onchange="cargarEquipo()" style="max-width:320px;">
+      <option value="">Selecciona un programa...</option>
+    </select>
+  </div>
+
+  <div id="equipo-empty" class="card">
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;margin-bottom:16px;opacity:0.4;">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+      </svg>
+      <p>Selecciona un programa para ver tu equipo asignado.</p>
+    </div>
+  </div>
+
+  <div id="equipo-content" class="hidden">
+    <div id="equipo-lista"></div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    google.script.run.withSuccessHandler(function(r) {
+      if (r.success) {
+        var sel = document.getElementById('sel-programa-equipo');
+        r.data.forEach(function(p) {
+          var opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.nombre;
+          sel.appendChild(opt);
+        });
+      }
+    }).listarProgramasDashboard(App.token);
+  })();
+
+  function cargarEquipo() {
+    var progId = document.getElementById('sel-programa-equipo').value;
+    if (!progId) {
+      document.getElementById('equipo-empty').classList.remove('hidden');
+      document.getElementById('equipo-content').classList.add('hidden');
+      return;
+    }
+
+    document.getElementById('equipo-empty').classList.add('hidden');
+    document.getElementById('equipo-content').classList.remove('hidden');
+    document.getElementById('equipo-lista').innerHTML =
+      '<div class="text-center p-4"><div class="spinner spinner-lg"></div></div>';
+
+    // Cargar participantes
+    google.script.run.withSuccessHandler(function(rPart) {
+      if (!rPart.success) {
+        document.getElementById('equipo-lista').innerHTML =
+          '<div class="empty-state"><p>' + escapeHtml(rPart.error) + '</p></div>';
+        return;
+      }
+
+      var participantes = rPart.data.filter(function(p) { return p.rol_programa === 'participante'; });
+
+      if (participantes.length === 0) {
+        document.getElementById('equipo-lista').innerHTML =
+          '<div class="empty-state"><p>No tienes participantes asignados en este programa.</p></div>';
+        return;
+      }
+
+      // Cargar observaciones y feedback del programa
+      var obsData = [];
+      var fbData = [];
+      var loaded = 0;
+
+      function renderWhenReady() {
+        loaded++;
+        if (loaded >= 2) {
+          renderEquipo(participantes, obsData, fbData, progId);
+        }
+      }
+
+      google.script.run.withSuccessHandler(function(rObs) {
+        if (rObs.success) obsData = rObs.data || [];
+        renderWhenReady();
+      }).withFailureHandler(function() { renderWhenReady(); })
+      .listarObservaciones(App.token, progId);
+
+      google.script.run.withSuccessHandler(function(rFb) {
+        if (rFb.success) fbData = rFb.data || [];
+        renderWhenReady();
+      }).withFailureHandler(function() { renderWhenReady(); })
+      .listarFeedbackEquipo(App.token, progId);
+
+    }).withFailureHandler(function() {
+      document.getElementById('equipo-lista').innerHTML =
+        '<div class="empty-state"><p>Error al cargar equipo.</p></div>';
+    }).listarParticipantesPrograma(App.token, progId);
+  }
+
+  function renderEquipo(participantes, observaciones, feedbacks, progId) {
+    var div = document.getElementById('equipo-lista');
+
+    // Contar observaciones y feedback por participante
+    var obsCount = {};
+    var lastObsDate = {};
+    observaciones.forEach(function(o) {
+      var pid = o.participante_id;
+      obsCount[pid] = (obsCount[pid] || 0) + 1;
+      var fecha = o.fecha_observacion || o.fecha_creacion;
+      if (!lastObsDate[pid] || fecha > lastObsDate[pid]) {
+        lastObsDate[pid] = fecha;
+      }
+    });
+
+    var fbCount = {};
+    feedbacks.forEach(function(f) {
+      fbCount[f.participante_id] = (fbCount[f.participante_id] || 0) + 1;
+    });
+
+    div.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:16px;">' +
+      participantes.map(function(p) {
+        var numObs = obsCount[p.id] || 0;
+        var numFb = fbCount[p.id] || 0;
+        var ultimaObs = lastObsDate[p.id] ? formatDate(lastObsDate[p.id]) : 'Sin observaciones';
+
+        return '<div class="card">' +
+          '<div class="card-body">' +
+            '<div class="mb-3">' +
+              '<h3 style="font-size:16px;color:var(--color-primario);">' + escapeHtml(p.nombre) + '</h3>' +
+              '<p class="text-sm text-muted">' + escapeHtml(p.cargo || 'Sin cargo') + '</p>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">' +
+              '<div style="background:var(--color-fondo-alt);padding:8px 12px;border-radius:6px;text-align:center;">' +
+                '<div class="text-xs text-muted">Observaciones</div>' +
+                '<div style="font-size:20px;font-weight:700;color:var(--color-primario);">' + numObs + '</div>' +
+              '</div>' +
+              '<div style="background:var(--color-fondo-alt);padding:8px 12px;border-radius:6px;text-align:center;">' +
+                '<div class="text-xs text-muted">Feedback</div>' +
+                '<div style="font-size:20px;font-weight:700;color:var(--color-primario);">' + numFb + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<p class="text-xs text-muted mb-3">Ultima observacion: ' + ultimaObs + '</p>' +
+            '<div style="display:flex;gap:8px;">' +
+              '<button class="btn btn-sm btn-outline" style="flex:1;" onclick="irAObservar(\'' + progId + '\')">Observar</button>' +
+              '<button class="btn btn-sm btn-secondary" style="flex:1;" onclick="irAFeedback(\'' + progId + '\', \'' + p.id + '\')">Dar Feedback</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  function irAObservar(progId) {
+    // Navegar a la vista de observaciones
+    if (typeof cargarVista === 'function') {
+      cargarVista('observaciones');
+    }
+  }
+
+  function irAFeedback(progId, partId) {
+    // Navegar a la vista de feedback
+    if (typeof cargarVista === 'function') {
+      cargarVista('feedback');
+    }
+  }
+</script>

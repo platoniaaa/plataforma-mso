@@ -1,0 +1,316 @@
+<!-- Tab: Resumen del Programa (Panel Programa) -->
+<style>
+  .resumen-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .resumen-kpi-grid .kpi-card {
+    text-align: center;
+    padding: 20px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--color-borde);
+    background: #fff;
+    transition: box-shadow 0.2s;
+  }
+  .resumen-kpi-grid .kpi-card:hover {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  }
+  .resumen-kpi-grid .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-primario);
+    line-height: 1.2;
+  }
+  .resumen-kpi-grid .kpi-label {
+    font-size: 12px;
+    color: var(--color-texto-sec, #64748b);
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .resumen-icon-check {
+    color: var(--color-exito);
+    font-weight: 700;
+  }
+  .resumen-icon-x {
+    color: var(--color-error);
+    font-weight: 700;
+  }
+  .resumen-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-primario);
+    margin: 0 0 16px 0;
+  }
+  .campo-editable {
+    border-bottom: 1px dashed transparent;
+    transition: border-color 0.2s, background 0.2s;
+    padding: 2px 4px; margin: -2px -4px; border-radius: 4px;
+  }
+  .campo-editable:hover { border-bottom-color: var(--color-secundario); background: rgba(46,134,193,0.06); }
+  .input-inline {
+    font-size: 14px; font-weight: 500; padding: 4px 8px;
+    border: 2px solid var(--color-secundario); border-radius: 6px;
+    outline: none; width: 100%; margin-top: 2px; background: white;
+  }
+  .input-inline:focus { box-shadow: 0 0 0 3px rgba(46,134,193,0.15); }
+  .input-inline-titulo {
+    font-size: 22px; font-weight: 700; color: var(--color-primario);
+    padding: 4px 8px; width: auto; min-width: 200px; max-width: 100%;
+  }
+</style>
+
+<div>
+  <!-- Info del programa (inline editable) -->
+  <div class="card mb-4" id="resumen-programa-info">
+    <div class="card-body" style="padding:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+        <div style="flex:1;min-width:280px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap;">
+            <h2 id="resumen-nombre" class="campo-editable" onclick="editarCampo('nombre')"
+                style="font-size:22px;font-weight:700;color:var(--color-primario);margin:0;cursor:pointer;">—</h2>
+            <input type="text" id="input-nombre" class="input-inline input-inline-titulo hidden"
+                   onblur="guardarCampo('nombre')" onkeydown="if(event.key==='Enter')this.blur()">
+            <span id="resumen-estado" class="badge badge-secondary">—</span>
+          </div>
+          <p id="resumen-cliente" style="font-size:14px;color:var(--color-texto-sec);margin-bottom:12px;">—</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px 24px;margin-top:12px;">
+            <div>
+              <span class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:0.4px;">Fecha inicio</span>
+              <p id="resumen-fecha-inicio" class="campo-editable" onclick="editarCampo('fecha_inicio')"
+                 style="font-size:14px;font-weight:500;margin-top:2px;cursor:pointer;">—</p>
+              <input type="date" id="input-fecha_inicio" class="input-inline hidden"
+                     onblur="guardarCampo('fecha_inicio')" onchange="this.blur()">
+            </div>
+            <div>
+              <span class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:0.4px;">Fecha termino</span>
+              <p id="resumen-fecha-termino" class="campo-editable" onclick="editarCampo('fecha_termino')"
+                 style="font-size:14px;font-weight:500;margin-top:2px;cursor:pointer;">—</p>
+              <input type="date" id="input-fecha_termino" class="input-inline hidden"
+                     onblur="guardarCampo('fecha_termino')" onchange="this.blur()">
+            </div>
+            <div>
+              <span class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:0.4px;">Tipo</span>
+              <p id="resumen-tipo" class="campo-editable" onclick="editarCampo('tipo')"
+                 style="font-size:14px;font-weight:500;margin-top:2px;cursor:pointer;">—</p>
+              <select id="input-tipo" class="input-inline hidden" onblur="guardarCampo('tipo')" onchange="this.blur()">
+                <option value="piloto">Piloto</option>
+                <option value="programa_completo">Programa completo</option>
+                <option value="intervencion">Intervencion</option>
+              </select>
+            </div>
+            <div style="grid-column:1/-1;">
+              <span class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:0.4px;">Objetivo</span>
+              <p id="resumen-objetivo" class="campo-editable" onclick="editarCampo('objetivo')"
+                 style="font-size:14px;font-weight:500;margin-top:2px;cursor:pointer;white-space:pre-wrap;">—</p>
+              <textarea id="input-objetivo" class="input-inline hidden" rows="2"
+                        onblur="guardarCampo('objetivo')"></textarea>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+          <button id="btn-activar-resumen" class="btn btn-success btn-sm hidden" onclick="activarProgramaPanel()">
+            Activar programa
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div id="resumen-kpis-container">
+    <div class="resumen-kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-total-lideres">--</div>
+        <div class="kpi-label">Total L&iacute;deres</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-total-colaboradores">--</div>
+        <div class="kpi-label">Total Colaboradores</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-auto-completadas">--</div>
+        <div class="kpi-label">Autoevaluaciones Completadas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-co-completadas">--</div>
+        <div class="kpi-label">Coevaluaciones Completadas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-observaciones">--</div>
+        <div class="kpi-label">Observaciones Realizadas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado de evaluaciones -->
+  <div class="card" style="margin-top: 8px;">
+    <div class="card-header">
+      <h3 class="resumen-section-title">Estado de Evaluaciones</h3>
+    </div>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>L&iacute;der</th>
+            <th style="text-align:center;">Auto PRE</th>
+            <th style="text-align:center;">Co PRE</th>
+            <th style="text-align:center;">Auto POST</th>
+            <th style="text-align:center;">Co POST</th>
+            <th>Colaborador Asignado</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-resumen-evaluaciones">
+          <tr><td colspan="6" class="text-center text-muted p-4">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  var resumenData = null;
+
+  // Edicion inline para resumen
+  function editarCampo(campo) {
+    if (!panelData) return;
+    var textoIds = { 'nombre': 'resumen-nombre', 'fecha_inicio': 'resumen-fecha-inicio',
+      'fecha_termino': 'resumen-fecha-termino', 'tipo': 'resumen-tipo', 'objetivo': 'resumen-objetivo' };
+    var dataKeys = { 'nombre': 'nombre', 'fecha_inicio': 'fechaInicio', 'fecha_termino': 'fechaTermino',
+      'tipo': 'tipo', 'objetivo': 'objetivo' };
+
+    var textoEl = document.getElementById(textoIds[campo]);
+    var inputEl = document.getElementById('input-' + campo);
+    if (!textoEl || !inputEl) return;
+
+    textoEl.classList.add('hidden');
+    inputEl.classList.remove('hidden');
+    inputEl.value = panelData[dataKeys[campo]] || '';
+    inputEl.focus();
+    if (inputEl.select && inputEl.tagName !== 'SELECT') inputEl.select();
+  }
+
+  function guardarCampo(campo) {
+    var textoIds = { 'nombre': 'resumen-nombre', 'fecha_inicio': 'resumen-fecha-inicio',
+      'fecha_termino': 'resumen-fecha-termino', 'tipo': 'resumen-tipo', 'objetivo': 'resumen-objetivo' };
+    var dataKeys = { 'nombre': 'nombre', 'fecha_inicio': 'fechaInicio', 'fecha_termino': 'fechaTermino',
+      'tipo': 'tipo', 'objetivo': 'objetivo' };
+
+    var textoEl = document.getElementById(textoIds[campo]);
+    var inputEl = document.getElementById('input-' + campo);
+    if (!textoEl || !inputEl) return;
+
+    var nuevoValor = inputEl.value.trim();
+    inputEl.classList.add('hidden');
+    textoEl.classList.remove('hidden');
+
+    var dataKey = dataKeys[campo];
+    var valorAnterior = panelData[dataKey] || '';
+    if (nuevoValor === valorAnterior) return;
+    if (campo === 'nombre' && !nuevoValor) { showToast('El nombre no puede estar vacio', 'warning'); return; }
+
+    panelData[dataKey] = nuevoValor;
+    if (campo === 'fecha_inicio' || campo === 'fecha_termino') {
+      textoEl.textContent = nuevoValor ? formatDate(nuevoValor) : 'Definir fecha';
+    } else {
+      textoEl.textContent = nuevoValor || '—';
+    }
+
+    // Actualizar breadcrumb y titulo
+    if (campo === 'nombre') {
+      var bc = document.getElementById('breadcrumb-programa-nombre');
+      if (bc) bc.textContent = nuevoValor;
+      var pt = document.getElementById('page-title');
+      if (pt) pt.textContent = nuevoValor;
+    }
+
+    var datos = {};
+    datos[campo] = nuevoValor;
+    google.script.run
+      .withSuccessHandler(function(r) { if (r && !r.success) { showToast(r.error, 'error'); panelData[dataKey] = valorAnterior; } })
+      .withFailureHandler(function() { showToast('Error al guardar', 'error'); panelData[dataKey] = valorAnterior; })
+      .actualizarPrograma(App.token, panelProgramaId, datos);
+  }
+
+  (function() {
+    // Poblar info del programa desde panelData
+    if (typeof panelData !== 'undefined' && panelData) {
+      document.getElementById('resumen-nombre').textContent = panelData.nombre || '—';
+      document.getElementById('resumen-cliente').textContent = panelData.clienteNombre || panelData.cliente || '—';
+      document.getElementById('resumen-fecha-inicio').textContent = panelData.fechaInicio ? formatDate(panelData.fechaInicio) : 'Definir fecha';
+      document.getElementById('resumen-fecha-termino').textContent = panelData.fechaTermino ? formatDate(panelData.fechaTermino) : 'Definir fecha';
+      document.getElementById('resumen-tipo').textContent = panelData.tipo || '—';
+      document.getElementById('resumen-objetivo').textContent = panelData.objetivo || '—';
+
+      var estado = (panelData.estado || 'diseno').toLowerCase();
+      var badgeEl = document.getElementById('resumen-estado');
+      var estadoMap = { 'diseno': 'badge-info', 'activo': 'badge-success', 'finalizado': 'badge-secondary', 'suspendido': 'badge-danger' };
+      badgeEl.className = 'badge ' + (estadoMap[estado] || 'badge-secondary');
+      badgeEl.textContent = estado.charAt(0).toUpperCase() + estado.slice(1);
+
+      if (estado === 'diseno') document.getElementById('btn-activar-resumen').classList.remove('hidden');
+    }
+    cargarResumenPrograma();
+  })();
+
+  function cargarResumenPrograma() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && !r.error) {
+          resumenData = r;
+          renderResumenKPIs(r);
+          renderResumenEvaluaciones(r.evaluaciones || []);
+        } else {
+          showToast(r ? r.error : 'Error al cargar resumen', 'error');
+          document.getElementById('tbody-resumen-evaluaciones').innerHTML =
+            '<tr><td colspan="6" class="text-center text-danger p-4">Error al cargar datos.</td></tr>';
+        }
+      })
+      .withFailureHandler(function(err) {
+        showToast('Error de conexi&oacute;n al cargar resumen: ' + err.message, 'error');
+        document.getElementById('tbody-resumen-evaluaciones').innerHTML =
+          '<tr><td colspan="6" class="text-center text-danger p-4">Error de conexi&oacute;n.</td></tr>';
+      })
+      .obtenerResumenPrograma(App.token, panelProgramaId);
+  }
+
+  function renderResumenKPIs(data) {
+    document.getElementById('kpi-total-lideres').textContent = data.totalLideres != null ? data.totalLideres : 0;
+    document.getElementById('kpi-total-colaboradores').textContent = data.totalColaboradores != null ? data.totalColaboradores : 0;
+    document.getElementById('kpi-auto-completadas').textContent = data.autoevaluacionesCompletadas != null ? data.autoevaluacionesCompletadas : 0;
+    document.getElementById('kpi-co-completadas').textContent = data.coevaluacionesCompletadas != null ? data.coevaluacionesCompletadas : 0;
+    document.getElementById('kpi-observaciones').textContent = data.observacionesRealizadas != null ? data.observacionesRealizadas : 0;
+  }
+
+  function renderResumenEvaluaciones(evaluaciones) {
+    var tbody = document.getElementById('tbody-resumen-evaluaciones');
+
+    if (!evaluaciones || !evaluaciones.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-4">No hay datos de evaluaciones a&uacute;n.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = evaluaciones.map(function(ev) {
+      var liderNombre = escapeHtml(ev.lider || '');
+      var colabNombre = ev.colaborador ? escapeHtml(ev.colaborador) : '<span class="text-muted">Sin asignar</span>';
+
+      return '<tr>' +
+        '<td><strong>' + liderNombre + '</strong></td>' +
+        '<td style="text-align:center;">' + renderCheckIcon(ev.autoPre) + '</td>' +
+        '<td style="text-align:center;">' + renderCheckIcon(ev.coPre) + '</td>' +
+        '<td style="text-align:center;">' + renderCheckIcon(ev.autoPost) + '</td>' +
+        '<td style="text-align:center;">' + renderCheckIcon(ev.coPost) + '</td>' +
+        '<td>' + colabNombre + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function renderCheckIcon(value) {
+    if (value) {
+      return '<svg class="resumen-icon-check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    }
+    return '<svg class="resumen-icon-x" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  }
+</script>

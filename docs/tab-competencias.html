@@ -1,0 +1,915 @@
+<!-- Tab: Competencias del Programa -->
+<style>
+  .campo-editable-comp {
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .campo-editable-comp:hover {
+    background: rgba(46,134,193,0.08);
+  }
+  .competencias-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .competencias-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .competencias-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-primario);
+  }
+  .competencias-header .count-badge {
+    background: var(--color-secundario);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 12px;
+  }
+  .competencias-header .header-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Competency Cards */
+  .competencia-card {
+    background: var(--color-fondo, #fff);
+    border: 1px solid var(--color-borde);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+  }
+  .competencia-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .competencia-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    cursor: pointer;
+    background: var(--color-fondo-alt);
+    border-bottom: 1px solid transparent;
+    transition: background 0.15s;
+  }
+  .competencia-card-header:hover {
+    background: #f0f0f4;
+  }
+  .competencia-card-header.expanded {
+    border-bottom-color: var(--color-borde);
+  }
+  .competencia-card-header .card-title-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+  .competencia-card-header .card-title-area h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-texto);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .competencia-card-header .foco-tag {
+    font-size: 12px;
+    color: var(--color-texto-sec);
+    background: #EDE7F6;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .competencia-card-header .toggle-icon {
+    font-size: 18px;
+    color: var(--color-texto-sec);
+    transition: transform 0.2s;
+    margin-left: 12px;
+    flex-shrink: 0;
+  }
+  .competencia-card-header.expanded .toggle-icon {
+    transform: rotate(180deg);
+  }
+
+  .competencia-card-body {
+    display: none;
+    padding: 18px;
+  }
+  .competencia-card-body.visible {
+    display: block;
+  }
+  .competencia-card-body .descripcion-text {
+    font-size: 14px;
+    color: var(--color-texto-sec);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  /* Niveles Grid 2x2 */
+  .niveles-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .nivel-box {
+    background: var(--color-fondo-alt);
+    border: 1px solid var(--color-borde);
+    border-radius: 6px;
+    padding: 12px;
+  }
+  .nivel-box .nivel-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-primario);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .nivel-box .nivel-text {
+    font-size: 13px;
+    color: var(--color-texto);
+    line-height: 1.45;
+  }
+
+  /* Interpretaciones */
+  .interpretaciones-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-borde);
+  }
+  .interpretaciones-section h5 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-texto);
+    margin-bottom: 10px;
+  }
+  .interpretaciones-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .interp-box {
+    background: #FFF8E1;
+    border: 1px solid #FFE082;
+    border-radius: 6px;
+    padding: 10px;
+  }
+  .interp-box .interp-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-secundario);
+    margin-bottom: 4px;
+  }
+  .interp-box .interp-text {
+    font-size: 12px;
+    color: var(--color-texto);
+    line-height: 1.4;
+  }
+
+  .competencia-card-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-borde);
+  }
+
+  /* Import preview table */
+  .import-preview-container {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-top: 12px;
+    border: 1px solid var(--color-borde);
+    border-radius: 6px;
+  }
+  .import-preview-container table {
+    width: 100%;
+    font-size: 12px;
+    border-collapse: collapse;
+  }
+  .import-preview-container th {
+    position: sticky;
+    top: 0;
+    background: var(--color-primario);
+    color: #fff;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .import-preview-container td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--color-borde);
+    vertical-align: top;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .import-preview-container tr:nth-child(even) {
+    background: var(--color-fondo-alt);
+  }
+
+  .excel-instructions {
+    background: var(--color-fondo-alt);
+    border: 1px solid var(--color-borde);
+    border-radius: 6px;
+    padding: 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .excel-instructions strong {
+    color: var(--color-primario);
+  }
+  .excel-instructions code {
+    background: #EDE7F6;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+
+  /* Textarea sizing in competencia modal */
+  #form-competencia textarea {
+    min-height: 60px;
+    resize: vertical;
+  }
+
+  @media (max-width: 600px) {
+    .niveles-grid,
+    .interpretaciones-grid {
+      grid-template-columns: 1fr;
+    }
+    .competencias-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+  }
+</style>
+
+<div>
+  <!-- Header -->
+  <div class="competencias-header">
+    <div class="header-left">
+      <h3>Competencias del Programa</h3>
+      <span class="count-badge" id="competencias-count">0</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" onclick="abrirModalImportarExcel()">Cargar desde Excel</button>
+      <button class="btn btn-primary" onclick="abrirModalCompetencia()">+ Agregar Competencia</button>
+    </div>
+  </div>
+
+  <!-- Lista de competencias -->
+  <div id="lista-competencias">
+    <div class="empty-state">
+      <p>Cargando competencias...</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Crear/Editar Competencia -->
+<div class="modal-overlay" id="modal-competencia">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-header">
+      <h3 id="modal-competencia-titulo">Nueva Competencia</h3>
+      <button class="modal-close" onclick="closeModal('modal-competencia')">&times;</button>
+    </div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+      <form id="form-competencia">
+        <input type="hidden" id="competencia-edit-id">
+
+        <div class="form-group">
+          <label>Nombre de la competencia *</label>
+          <input type="text" name="nombre" class="form-control" required placeholder="Ej: Liderazgo adaptativo">
+        </div>
+
+        <div class="form-group">
+          <label>Descripci&oacute;n</label>
+          <textarea name="descripcion" class="form-control" placeholder="Descripci&oacute;n general de la competencia..."></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label>Foco de desarrollo</label>
+            <input type="text" name="foco_desarrollo" class="form-control" placeholder="Ej: Gesti&oacute;n de equipos">
+          </div>
+          <div class="form-group">
+            <label>Prioridad *</label>
+            <select name="prioridad" class="form-control" required>
+              <option value="1">1 - Alta</option>
+              <option value="2" selected>2 - Media</option>
+              <option value="3">3 - Baja</option>
+            </select>
+          </div>
+        </div>
+
+        <h4 style="font-size:14px;font-weight:600;color:var(--color-primario);margin:16px 0 10px;">Niveles de desarrollo</h4>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label>Nivel 1</label>
+            <textarea name="nivel_1_texto" class="form-control" placeholder="Descripci&oacute;n del nivel 1 (inicial)..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Nivel 2</label>
+            <textarea name="nivel_2_texto" class="form-control" placeholder="Descripci&oacute;n del nivel 2 (en desarrollo)..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Nivel 3</label>
+            <textarea name="nivel_3_texto" class="form-control" placeholder="Descripci&oacute;n del nivel 3 (competente)..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Nivel 4</label>
+            <textarea name="nivel_4_texto" class="form-control" placeholder="Descripci&oacute;n del nivel 4 (avanzado)..."></textarea>
+          </div>
+        </div>
+
+        <h4 style="font-size:14px;font-weight:600;color:var(--color-primario);margin:16px 0 10px;">Interpretaci&oacute;n por nivel (opcional)</h4>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label>Interpretaci&oacute;n Nivel 1</label>
+            <textarea name="interpretacion_nivel_1" class="form-control" placeholder="Interpretaci&oacute;n para nivel 1..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Interpretaci&oacute;n Nivel 2</label>
+            <textarea name="interpretacion_nivel_2" class="form-control" placeholder="Interpretaci&oacute;n para nivel 2..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Interpretaci&oacute;n Nivel 3</label>
+            <textarea name="interpretacion_nivel_3" class="form-control" placeholder="Interpretaci&oacute;n para nivel 3..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Interpretaci&oacute;n Nivel 4</label>
+            <textarea name="interpretacion_nivel_4" class="form-control" placeholder="Interpretaci&oacute;n para nivel 4..."></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-competencia')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-competencia" onclick="guardarCompetencia()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Importar desde Excel -->
+<div class="modal-overlay" id="modal-importar-excel">
+  <div class="modal" style="max-width:780px;">
+    <div class="modal-header">
+      <h3>Importar Competencias desde Excel</h3>
+      <button class="modal-close" onclick="closeModal('modal-importar-excel')">&times;</button>
+    </div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+
+      <div class="excel-instructions">
+        <strong>Formato esperado del archivo Excel (.xlsx):</strong><br><br>
+        <strong>Hoja 1:</strong> <code>DESCRIPTOR DE COMPETENCIAS</code><br>
+        Columnas: <code>Competencia</code>, <code>Descripcion</code>, <code>Foco</code>, <code>Nivel 1</code>, <code>Nivel 2</code>, <code>Nivel 3</code>, <code>Nivel 4</code><br><br>
+        <strong>Hoja 2 (opcional):</strong> <code>INTERPRETACION</code><br>
+        Columnas: <code>Competencia</code>, <code>Foco</code>, <code>Nivel 1</code>, <code>Nivel 2</code>, <code>Nivel 3</code>, <code>Nivel 4</code><br><br>
+        <em>Las competencias se vinculan por nombre entre ambas hojas. Las competencias existentes del programa ser&aacute;n reemplazadas.</em>
+      </div>
+
+      <div class="form-group">
+        <label>Selecciona el archivo Excel</label>
+        <input type="file" id="input-excel-competencias" class="form-control" accept=".xlsx,.xls" onchange="handleExcelUpload(event)">
+      </div>
+
+      <div id="excel-preview-area" style="display:none;">
+        <h4 style="font-size:14px;font-weight:600;margin:12px 0 8px;">Vista previa (<span id="excel-preview-count">0</span> competencias encontradas)</h4>
+        <div class="import-preview-container">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Competencia</th>
+                <th>Foco</th>
+                <th>Nivel 1</th>
+                <th>Nivel 2</th>
+                <th>Nivel 3</th>
+                <th>Nivel 4</th>
+                <th>Interp.</th>
+              </tr>
+            </thead>
+            <tbody id="excel-preview-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-importar-excel')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-importacion" onclick="confirmarImportacion()" style="display:none;">Importar Competencias</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var competenciasData = [];
+  var competenciasExpandidas = {};
+  var excelCompetenciasParsed = [];
+
+  // Auto-cargar al incluir el tab
+  (function() {
+    cargarCompetencias();
+  })();
+
+  /**
+   * Carga las competencias del programa desde el backend
+   */
+  function cargarCompetencias() {
+    var container = document.getElementById('lista-competencias');
+    container.innerHTML = '<div class="empty-state"><p>Cargando competencias...</p></div>';
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          competenciasData = r.data || [];
+          document.getElementById('competencias-count').textContent = competenciasData.length;
+          renderCompetencias(competenciasData);
+        } else {
+          container.innerHTML = '<div class="empty-state"><p>Error al cargar: ' + escapeHtml(r.error || 'Error desconocido') + '</p></div>';
+        }
+      })
+      .withFailureHandler(function(err) {
+        container.innerHTML = '<div class="empty-state"><p>Error de conexi&oacute;n al cargar competencias.</p></div>';
+      })
+      .listarCompetencias(App.token, panelProgramaId);
+  }
+
+  /**
+   * Renderiza las tarjetas de competencias
+   */
+  function renderCompetencias(competencias) {
+    var container = document.getElementById('lista-competencias');
+
+    if (!competencias.length) {
+      container.innerHTML = '<div class="empty-state"><p>No hay competencias configuradas. Agrega la primera o importa desde Excel.</p></div>';
+      return;
+    }
+
+    var html = competencias.map(function(c, idx) {
+      var prioLabel = c.prioridad == 1 ? 'Alta' : (c.prioridad == 2 ? 'Media' : 'Baja');
+      var prioClass = c.prioridad == 1 ? 'badge-danger' : (c.prioridad == 2 ? 'badge-warning' : 'badge-info');
+      var isExpanded = competenciasExpandidas[c.id] === true;
+      var expandedClass = isExpanded ? ' expanded' : '';
+      var visibleClass = isExpanded ? ' visible' : '';
+
+      // Niveles editables inline
+      var nivelesHtml = '';
+      for (var n = 1; n <= 4; n++) {
+        var texto = c['nivel_' + n + '_texto'] || '';
+        var campo = 'nivel_' + n + '_texto';
+        nivelesHtml += '<div class="nivel-box">' +
+          '<div class="nivel-label">Nivel ' + n + '</div>' +
+          '<div class="nivel-text campo-editable-comp" onclick="event.stopPropagation();editarCampoComp(\'' + c.id + '\',\'' + campo + '\',this)" title="Clic para editar">' +
+            (escapeHtml(texto) || '<span class=text-muted>Clic para definir...</span>') +
+          '</div>' +
+        '</div>';
+      }
+
+      // Interpretaciones editables
+      var interpHtml = '';
+      for (var i = 1; i <= 4; i++) {
+        var interp = c['interpretacion_nivel_' + i] || '';
+        var campoI = 'interpretacion_nivel_' + i;
+        interpHtml += '<div class="interp-box">' +
+          '<div class="interp-label">Nivel ' + i + '</div>' +
+          '<div class="interp-text campo-editable-comp" onclick="event.stopPropagation();editarCampoComp(\'' + c.id + '\',\'' + campoI + '\',this)" title="Clic para editar">' +
+            (escapeHtml(interp) || '<span class=text-muted>Clic para definir...</span>') +
+          '</div>' +
+        '</div>';
+      }
+
+      var interpSection = '<div class="interpretaciones-section">' +
+        '<h5>Interpretaci&oacute;n por nivel</h5>' +
+        '<div class="interpretaciones-grid">' + interpHtml + '</div>' +
+      '</div>';
+
+      return '<div class="competencia-card">' +
+        '<div class="competencia-card-header' + expandedClass + '" onclick="toggleCompetencia(\'' + c.id + '\')">' +
+          '<div class="card-title-area">' +
+            '<h4 class="campo-editable-comp" onclick="event.stopPropagation();editarCampoComp(\'' + c.id + '\',\'nombre\',this)" title="Clic para editar nombre">' + escapeHtml(c.nombre) + '</h4>' +
+            '<span class="foco-tag campo-editable-comp" onclick="event.stopPropagation();editarCampoComp(\'' + c.id + '\',\'foco_desarrollo\',this)" title="Clic para editar foco">' +
+              (escapeHtml(c.foco_desarrollo) || 'Definir foco...') +
+            '</span>' +
+            '<span class="badge ' + prioClass + '">P' + c.prioridad + ' ' + prioLabel + '</span>' +
+          '</div>' +
+          '<span class="toggle-icon">&#9660;</span>' +
+        '</div>' +
+        '<div class="competencia-card-body' + visibleClass + '" id="comp-body-' + c.id + '">' +
+          '<div class="descripcion-text campo-editable-comp" onclick="event.stopPropagation();editarCampoComp(\'' + c.id + '\',\'descripcion\',this)" title="Clic para editar descripcion">' +
+            (escapeHtml(c.descripcion) || '<span class=text-muted>Clic para agregar descripcion...</span>') +
+          '</div>' +
+          '<div class="niveles-grid">' + nivelesHtml + '</div>' +
+          interpSection +
+          '<div class="competencia-card-actions">' +
+            '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();eliminarCompetenciaPanel(\'' + c.id + '\')">Eliminar competencia</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    container.innerHTML = html;
+  }
+
+  /**
+   * Expande/colapsa una competencia
+   */
+  function toggleCompetencia(id) {
+    competenciasExpandidas[id] = !competenciasExpandidas[id];
+    var header = document.querySelector('#comp-body-' + id).previousElementSibling;
+    var body = document.getElementById('comp-body-' + id);
+
+    if (competenciasExpandidas[id]) {
+      header.classList.add('expanded');
+      body.classList.add('visible');
+    } else {
+      header.classList.remove('expanded');
+      body.classList.remove('visible');
+    }
+  }
+
+  /**
+   * Abre el modal para crear nueva competencia
+   */
+  function abrirModalCompetencia() {
+    document.getElementById('modal-competencia-titulo').textContent = 'Nueva Competencia';
+    resetForm('form-competencia');
+    document.getElementById('competencia-edit-id').value = '';
+    openModal('modal-competencia');
+  }
+
+  /**
+   * Abre el modal para editar una competencia existente
+   */
+  function editarCompetenciaModal(id) {
+    var c = competenciasData.find(function(x) { return x.id === id; });
+    if (!c) return;
+    document.getElementById('modal-competencia-titulo').textContent = 'Editar Competencia';
+    document.getElementById('competencia-edit-id').value = id;
+    fillForm('form-competencia', c);
+    openModal('modal-competencia');
+  }
+
+  /**
+   * Guarda (crea o actualiza) una competencia
+   */
+  function guardarCompetencia() {
+    var datos = getFormData('form-competencia');
+    var id = document.getElementById('competencia-edit-id').value;
+    var btn = document.getElementById('btn-guardar-competencia');
+
+    if (!datos.nombre || !datos.nombre.trim()) {
+      showToast('El nombre de la competencia es obligatorio.', 'error');
+      return;
+    }
+
+    datos.programa_id = panelProgramaId;
+    datos.prioridad = parseInt(datos.prioridad) || 2;
+    btnLoading(btn, true);
+
+    if (id) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          btnLoading(btn, false);
+          if (r.success) {
+            closeModal('modal-competencia');
+            showToast('Competencia actualizada.', 'success');
+            cargarCompetencias();
+          } else {
+            showToast(r.error, 'error');
+          }
+        })
+        .withFailureHandler(function() { btnLoading(btn, false); showToast('Error de conexi\u00f3n.', 'error'); })
+        .actualizarCompetencia(App.token, id, datos);
+    } else {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          btnLoading(btn, false);
+          if (r.success) {
+            closeModal('modal-competencia');
+            showToast('Competencia creada.', 'success');
+            cargarCompetencias();
+          } else {
+            showToast(r.error, 'error');
+          }
+        })
+        .withFailureHandler(function() { btnLoading(btn, false); showToast('Error de conexi\u00f3n.', 'error'); })
+        .crearCompetencia(App.token, datos);
+    }
+  }
+
+  /**
+   * Elimina (desactiva) una competencia
+   */
+  function eliminarCompetenciaPanel(id) {
+    if (!confirmar('\u00bfEliminar esta competencia? Esta acci\u00f3n no se puede deshacer.')) return;
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          showToast('Competencia eliminada.', 'success');
+          cargarCompetencias();
+        } else {
+          showToast(r.error, 'error');
+        }
+      })
+      .withFailureHandler(function() { showToast('Error de conexi\u00f3n.', 'error'); })
+      .desactivarCompetencia(App.token, id);
+  }
+
+  /**
+   * Edicion inline de un campo de competencia
+   */
+  function editarCampoComp(compId, campo, elemento) {
+    // Evitar doble edicion
+    if (elemento.querySelector('textarea, input')) return;
+
+    var comp = competenciasData.find(function(c) { return c.id === compId; });
+    if (!comp) return;
+
+    var valorActual = comp[campo] || '';
+    var esTextoLargo = campo.indexOf('nivel') !== -1 || campo === 'descripcion' || campo.indexOf('interpretacion') !== -1;
+
+    // Reemplazar contenido con input/textarea
+    var originalHtml = elemento.innerHTML;
+    if (esTextoLargo) {
+      elemento.innerHTML = '<textarea class="input-inline-comp" rows="3" style="width:100%;font-size:13px;padding:8px;border:2px solid var(--color-secundario);border-radius:6px;resize:vertical;">' +
+        escapeHtml(valorActual) + '</textarea>';
+    } else {
+      elemento.innerHTML = '<input type="text" class="input-inline-comp" value="' + escapeHtml(valorActual) + '" ' +
+        'style="width:100%;font-size:inherit;font-weight:inherit;padding:4px 8px;border:2px solid var(--color-secundario);border-radius:6px;">';
+    }
+
+    var input = elemento.querySelector('.input-inline-comp');
+    input.focus();
+    if (input.select) input.select();
+
+    function guardar() {
+      var nuevoValor = input.value.trim();
+      // Restaurar texto visual
+      if (campo === 'nombre' && !nuevoValor) {
+        showToast('El nombre no puede estar vacio.', 'warning');
+        elemento.innerHTML = originalHtml;
+        return;
+      }
+
+      // Actualizar visual inmediatamente
+      comp[campo] = nuevoValor;
+      if (esTextoLargo) {
+        elemento.innerHTML = escapeHtml(nuevoValor) || '<span class=text-muted>Clic para definir...</span>';
+      } else {
+        elemento.textContent = nuevoValor || 'Clic para definir...';
+      }
+
+      // Guardar en backend si cambio
+      if (nuevoValor !== valorActual) {
+        var datos = {};
+        datos[campo] = nuevoValor;
+        google.script.run
+          .withSuccessHandler(function(r) {
+            if (!r || !r.success) showToast(r ? r.error : 'Error', 'error');
+          })
+          .withFailureHandler(function() { showToast('Error al guardar.', 'error'); })
+          .actualizarCompetencia(App.token, compId, datos);
+      }
+    }
+
+    input.addEventListener('blur', guardar);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !esTextoLargo) { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { elemento.innerHTML = originalHtml; }
+    });
+  }
+
+  /**
+   * Abre el modal de importaci&oacute;n de Excel
+   */
+  function abrirModalImportarExcel() {
+    document.getElementById('input-excel-competencias').value = '';
+    document.getElementById('excel-preview-area').style.display = 'none';
+    document.getElementById('btn-confirmar-importacion').style.display = 'none';
+    excelCompetenciasParsed = [];
+    openModal('modal-importar-excel');
+  }
+
+  /**
+   * Lee y parsea el archivo Excel con SheetJS (XLSX)
+   */
+  function handleExcelUpload(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var data = new Uint8Array(e.target.result);
+        var workbook = XLSX.read(data, { type: 'array' });
+
+        // Buscar hoja de descriptores
+        var descriptorSheet = null;
+        var interpSheet = null;
+
+        workbook.SheetNames.forEach(function(name) {
+          var upper = name.toUpperCase().trim();
+          if (upper.indexOf('DESCRIPTOR') !== -1 || upper.indexOf('COMPETENCIA') !== -1) {
+            descriptorSheet = workbook.Sheets[name];
+          }
+          if (upper.indexOf('INTERPRETACION') !== -1 || upper.indexOf('INTERPRETACI') !== -1) {
+            interpSheet = workbook.Sheets[name];
+          }
+        });
+
+        // Si no se encuentra por nombre, usar la primera hoja como descriptores
+        if (!descriptorSheet && workbook.SheetNames.length > 0) {
+          descriptorSheet = workbook.Sheets[workbook.SheetNames[0]];
+        }
+        if (!interpSheet && workbook.SheetNames.length > 1) {
+          // Verificar si la segunda hoja parece ser de interpretaciones
+          var secondSheet = workbook.Sheets[workbook.SheetNames[1]];
+          var secondData = XLSX.utils.sheet_to_json(secondSheet, { defval: '' });
+          if (secondData.length > 0) {
+            var cols = Object.keys(secondData[0]).join(' ').toUpperCase();
+            if (cols.indexOf('NIVEL') !== -1) {
+              interpSheet = secondSheet;
+            }
+          }
+        }
+
+        if (!descriptorSheet) {
+          showToast('No se encontr\u00f3 la hoja de descriptores en el archivo.', 'error');
+          return;
+        }
+
+        // Helper: normaliza claves de un objeto (trim, lowercase)
+        function normalizarFila(row) {
+          var norm = {};
+          Object.keys(row).forEach(function(key) {
+            var k = key.trim().toLowerCase()
+              .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u');
+            norm[k] = (row[key] || '').toString().trim();
+          });
+          return norm;
+        }
+
+        function getVal(row, opciones) {
+          for (var i = 0; i < opciones.length; i++) {
+            if (row[opciones[i]]) return row[opciones[i]];
+          }
+          return '';
+        }
+
+        // Parsear descriptores con claves normalizadas
+        var rawDescriptores = XLSX.utils.sheet_to_json(descriptorSheet, { defval: '' });
+        var descriptores = rawDescriptores.map(normalizarFila);
+        if (!descriptores.length) {
+          showToast('La hoja de descriptores esta vacia.', 'error');
+          return;
+        }
+
+        // Parsear interpretaciones
+        var interpMap = {};
+        if (interpSheet) {
+          // Leer como array de arrays para saltar filas de titulo
+          var rawInterp = XLSX.utils.sheet_to_json(interpSheet, { header: 1, defval: '' });
+          // Buscar la fila de encabezados (la que tiene "Competencia")
+          var headerIdx = 0;
+          for (var ri = 0; ri < Math.min(rawInterp.length, 5); ri++) {
+            var fila = rawInterp[ri].join(' ').toLowerCase();
+            if (fila.indexOf('competencia') !== -1 && fila.indexOf('nivel') !== -1) {
+              headerIdx = ri;
+              break;
+            }
+          }
+          // Re-parsear desde la fila de encabezados correcta
+          var interpRange = XLSX.utils.sheet_to_json(interpSheet, { range: headerIdx, defval: '' });
+          interpRange.forEach(function(row) {
+            var nr = normalizarFila(row);
+            var nombre = getVal(nr, ['competencia', 'nombre']);
+            if (nombre) {
+              interpMap[nombre.toLowerCase()] = {
+                interp_1: getVal(nr, ['nivel 1', 'nivel1']),
+                interp_2: getVal(nr, ['nivel 2', 'nivel2']),
+                interp_3: getVal(nr, ['nivel 3', 'nivel3']),
+                interp_4: getVal(nr, ['nivel 4', 'nivel4'])
+              };
+            }
+          });
+        }
+
+        // Construir array de competencias
+        excelCompetenciasParsed = descriptores.map(function(row) {
+          var nombre = getVal(row, ['competencia', 'nombre', 'competencia ']);
+          var interp = interpMap[nombre.toLowerCase()] || {};
+
+          return {
+            nombre: nombre,
+            descripcion: getVal(row, ['descripcion', 'description']),
+            foco_desarrollo: getVal(row, ['foco de desarrollo', 'foco', 'foco_desarrollo']),
+            nivel_1_texto: getVal(row, ['nivel 1', 'nivel1']),
+            nivel_2_texto: getVal(row, ['nivel 2', 'nivel2']),
+            nivel_3_texto: getVal(row, ['nivel 3', 'nivel3']),
+            nivel_4_texto: getVal(row, ['nivel 4', 'nivel4']),
+            interpretacion_nivel_1: interp.interp_1 || '',
+            interpretacion_nivel_2: interp.interp_2 || '',
+            interpretacion_nivel_3: interp.interp_3 || '',
+            interpretacion_nivel_4: interp.interp_4 || '',
+            prioridad: 1
+          };
+        }).filter(function(c) { return c.nombre; });
+
+        if (!excelCompetenciasParsed.length) {
+          showToast('No se encontraron competencias v\u00e1lidas en el archivo.', 'error');
+          return;
+        }
+
+        // Renderizar preview
+        renderExcelPreview(excelCompetenciasParsed);
+
+      } catch (err) {
+        showToast('Error al leer el archivo: ' + err.message, 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  /**
+   * Muestra la tabla de preview con las competencias parseadas
+   */
+  function renderExcelPreview(competencias) {
+    document.getElementById('excel-preview-count').textContent = competencias.length;
+
+    var tbody = document.getElementById('excel-preview-tbody');
+    tbody.innerHTML = competencias.map(function(c, idx) {
+      var tieneInterp = c.interpretacion_nivel_1 || c.interpretacion_nivel_2 || c.interpretacion_nivel_3 || c.interpretacion_nivel_4;
+      return '<tr>' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td title="' + escapeHtml(c.nombre) + '">' + escapeHtml(c.nombre) + '</td>' +
+        '<td title="' + escapeHtml(c.foco_desarrollo) + '">' + escapeHtml(c.foco_desarrollo) + '</td>' +
+        '<td title="' + escapeHtml(c.nivel_1_texto) + '">' + escapeHtml(truncar(c.nivel_1_texto, 40)) + '</td>' +
+        '<td title="' + escapeHtml(c.nivel_2_texto) + '">' + escapeHtml(truncar(c.nivel_2_texto, 40)) + '</td>' +
+        '<td title="' + escapeHtml(c.nivel_3_texto) + '">' + escapeHtml(truncar(c.nivel_3_texto, 40)) + '</td>' +
+        '<td title="' + escapeHtml(c.nivel_4_texto) + '">' + escapeHtml(truncar(c.nivel_4_texto, 40)) + '</td>' +
+        '<td>' + (tieneInterp ? '<span class="badge badge-success">S&iacute;</span>' : '<span class="badge badge-secondary">No</span>') + '</td>' +
+      '</tr>';
+    }).join('');
+
+    document.getElementById('excel-preview-area').style.display = 'block';
+    document.getElementById('btn-confirmar-importacion').style.display = '';
+  }
+
+  /**
+   * Trunca un texto a un largo m&aacute;ximo
+   */
+  function truncar(texto, max) {
+    if (!texto) return '';
+    return texto.length > max ? texto.substring(0, max) + '...' : texto;
+  }
+
+  /**
+   * Confirma e importa las competencias parseadas del Excel
+   */
+  function confirmarImportacion() {
+    if (!excelCompetenciasParsed.length) {
+      showToast('No hay competencias para importar.', 'error');
+      return;
+    }
+
+    if (!confirmar('Se importar\u00e1n ' + excelCompetenciasParsed.length + ' competencias. Las competencias existentes del programa ser\u00e1n reemplazadas. \u00bfContinuar?')) return;
+
+    var btn = document.getElementById('btn-confirmar-importacion');
+    btnLoading(btn, true);
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btnLoading(btn, false);
+        if (r.success) {
+          closeModal('modal-importar-excel');
+          showToast(r.data.message || 'Competencias importadas correctamente.', 'success');
+          excelCompetenciasParsed = [];
+          cargarCompetencias();
+        } else {
+          showToast(r.error || 'Error al importar.', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        btnLoading(btn, false);
+        showToast('Error de conexi\u00f3n al importar.', 'error');
+      })
+      .importarCompetenciasExcel(App.token, panelProgramaId, excelCompetenciasParsed);
+  }
+</script>
