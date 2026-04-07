@@ -31,20 +31,14 @@ var vistas = [
   'tab-encuesta-editor'
 ];
 
-// Construir objeto JS con todas las vistas
+// Construir objeto JS con todas las vistas usando JSON.stringify (safe)
 var vistasObj = {};
 vistas.forEach(function(v) { vistasObj[v] = readF(v + '.html'); });
 
 // Mock GAS completo
 var mockScript = '<script>\n';
-mockScript += '// Vistas embebidas\nvar _V = {};\n';
-vistas.forEach(function(v) {
-  var html = vistasObj[v]
-    .replace(/\\/g, '\\\\')
-    .replace(/`/g, '\\`')
-    .replace(/\$\{/g, '\\${');
-  mockScript += '_V["' + v + '"] = `' + html + '`;\n';
-});
+var vistasJSON = JSON.stringify(vistasObj).replace(/<\/script>/gi, '<\\/script>');
+mockScript += '// Vistas embebidas\nvar _V = ' + vistasJSON + ';\n';
 
 mockScript += '\n// Mock google.script.run\n';
 mockScript += 'if(typeof google==="undefined")window.google={};\n';
