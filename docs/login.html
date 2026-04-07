@@ -1,4 +1,10 @@
-<!DOCTYPE html><html lang="es"><head><base target="_top"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
   /* ============================================
      Estilos globales - MSO Chile TPT
      Paleta: Morado + Naranjo MSO
@@ -861,13 +867,7 @@
     min-width: 200px;
   }
 </style>
-</head><body><!DOCTYPE html>
-<html lang="es">
-<head>
-  <base target="_top">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <?!= include('css'); ?>
+
 </head>
 <body>
   <div class="auth-container">
@@ -898,69 +898,14 @@
       </form>
 
       <div class="text-center mt-4">
-        <a href=".?page=registro" class="text-link">
+        <a href="#" class="text-link">
           &iquest;No tienes cuenta? Reg&iacute;strate aqu&iacute;
         </a>
       </div>
     </div>
   </div>
 
-  <?!= include('js-utils'); ?>
-
   <script>
-    function handleLogin(e) {
-      e.preventDefault();
-
-      var email = document.getElementById('email').value.trim();
-      var password = document.getElementById('password').value;
-      var btn = document.getElementById('btn-login');
-
-      if (!email || !password) {
-        showAlert('Completa todos los campos.', 'error');
-        return;
-      }
-
-      btnLoading(btn, true);
-      clearAlert();
-
-      google.script.run
-        .withSuccessHandler(function(result) {
-          btnLoading(btn, false);
-          if (result.success) {
-            // Guardar sesión
-            sessionStorage.setItem('tpt_token', result.data.token);
-            sessionStorage.setItem('tpt_usuario', JSON.stringify(result.data.usuario));
-            // Redirigir a la app
-            window.top.location.href = '.?page=app';
-          } else {
-            showAlert(result.error, 'error');
-          }
-        })
-        .withFailureHandler(function(error) {
-          btnLoading(btn, false);
-          showAlert('Error de conexi\u00f3n. Verifica tu internet e intenta de nuevo.', 'error');
-        })
-        .loginUsuario(email, password);
-    }
-
-    function showAlert(message, type) {
-      var container = document.getElementById('alert-container');
-      container.innerHTML = '<div class="alert alert-' + type + '">' + escapeHtml(message) + '</div>';
-    }
-
-    function clearAlert() {
-      document.getElementById('alert-container').innerHTML = '';
-    }
-
-    function escapeHtml(text) {
-      var div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-  </script>
-</body>
-</html>
-<script>
 /**
  * js-utils.html — Funciones JavaScript compartidas
  * Plataforma TPT - MSO Chile
@@ -1047,7 +992,7 @@ var App = {
   goToLogin: function() {
     window.top.location.href = google.script.run.getUrl
       ? google.script.run.getUrl() + '?page=login'
-      : '<?= ScriptApp.getService().getUrl() ?>?page=login';
+      : '.?page=login';
     // Fallback
     var url = window.location.href.split('?')[0];
     window.top.location.href = url + '?page=login';
@@ -15977,6 +15922,7 @@ function feCerrar(){
 // Mock data
 var MOCK_USERS = {
   'admin@mso.cl': { id: 'usr-001', nombre: 'Administrador MSO', email: 'admin@mso.cl', rol: 'admin', cargo: 'Administrador', cliente_id: null },
+  'admin@msochile.cl': { id: 'usr-001', nombre: 'Administrador MSO', email: 'admin@msochile.cl', rol: 'admin', cargo: 'Administrador', cliente_id: null },
   'jcastillo@sodexo.cl': { id: 'usr-002', nombre: 'Juan Castillo', email: 'jcastillo@sodexo.cl', rol: 'participante', cargo: 'Gerente', cliente_id: 'cli-001' },
   'mjose@sodexo.cl': { id: 'usr-003', nombre: 'Miguel Jose', email: 'mjose@sodexo.cl', rol: 'colaborador', cargo: '', cliente_id: 'cli-001' }
 };
@@ -16108,4 +16054,58 @@ function mockCall(fnName, args, successCb, failCb) {
   }, 300);
 }
 </script>
-<script>document.querySelector("form").addEventListener("submit",function(e){e.preventDefault();var email=document.querySelector("[name=email]").value;var pass=document.querySelector("[name=password]").value;google.script.run.withSuccessHandler(function(r){if(r.success){localStorage.setItem("mso_token",r.data.token);localStorage.setItem("mso_usuario",JSON.stringify(r.data.usuario));window.location.href="index.html";}else{alert(r.error);}}).loginUsuario(email,pass);});</script></body></html>
+
+
+  <script>
+    function handleLogin(e) {
+      e.preventDefault();
+
+      var email = document.getElementById('email').value.trim();
+      var password = document.getElementById('password').value;
+      var btn = document.getElementById('btn-login');
+
+      if (!email || !password) {
+        showAlert('Completa todos los campos.', 'error');
+        return;
+      }
+
+      btnLoading(btn, true);
+      clearAlert();
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          btnLoading(btn, false);
+          if (result.success) {
+            // Guardar sesión
+            sessionStorage.setItem('tpt_token', result.data.token);
+            sessionStorage.setItem('tpt_usuario', JSON.stringify(result.data.usuario));
+            // Redirigir a la app
+            window.location.href = 'index.html';
+          } else {
+            showAlert(result.error, 'error');
+          }
+        })
+        .withFailureHandler(function(error) {
+          btnLoading(btn, false);
+          showAlert('Error de conexi\u00f3n. Verifica tu internet e intenta de nuevo.', 'error');
+        })
+        .loginUsuario(email, password);
+    }
+
+    function showAlert(message, type) {
+      var container = document.getElementById('alert-container');
+      container.innerHTML = '<div class="alert alert-' + type + '">' + escapeHtml(message) + '</div>';
+    }
+
+    function clearAlert() {
+      document.getElementById('alert-container').innerHTML = '';
+    }
+
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

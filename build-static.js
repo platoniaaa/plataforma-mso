@@ -60,6 +60,7 @@ ${vistasJS}
 // Mock data
 var MOCK_USERS = {
   'admin@mso.cl': { id: 'usr-001', nombre: 'Administrador MSO', email: 'admin@mso.cl', rol: 'admin', cargo: 'Administrador', cliente_id: null },
+  'admin@msochile.cl': { id: 'usr-001', nombre: 'Administrador MSO', email: 'admin@msochile.cl', rol: 'admin', cargo: 'Administrador', cliente_id: null },
   'jcastillo@sodexo.cl': { id: 'usr-002', nombre: 'Juan Castillo', email: 'jcastillo@sodexo.cl', rol: 'participante', cargo: 'Gerente', cliente_id: 'cli-001' },
   'mjose@sodexo.cl': { id: 'usr-003', nombre: 'Miguel Jose', email: 'mjose@sodexo.cl', rol: 'colaborador', cargo: '', cliente_id: 'cli-001' }
 };
@@ -197,19 +198,21 @@ function mockCall(fnName, args, successCb, failCb) {
 var indexHTML = indexSrc
   .replace("<?!= include('css'); ?>", css)
   .replace("<?!= include('js-utils'); ?>", jsUtils + mockGAS)
-  .replace(/window\.top\.location\.href\s*=\s*'<\?=.*?\?>\?page=login';/g, "window.location.href = 'login.html';")
+  .replace(/window\.top\.location\.href/g, "window.location.href")
+  .replace(/'<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>\?page=login'/g, "'login.html'")
   .replace(/<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>/g, '.');
 
 fs.writeFileSync(path.join(DOCS, 'index.html'), indexHTML);
 console.log('index.html generado');
 
-// Build login.html
-var loginHTML = '<!DOCTYPE html><html lang="es"><head><base target="_top"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-  css + '</head><body>' +
-  loginSrc.replace(/<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>/g, '.') +
-  jsUtils + mockGAS +
-  '<script>document.querySelector("form").addEventListener("submit",function(e){e.preventDefault();var email=document.querySelector("[name=email]").value;var pass=document.querySelector("[name=password]").value;google.script.run.withSuccessHandler(function(r){if(r.success){localStorage.setItem("mso_token",r.data.token);localStorage.setItem("mso_usuario",JSON.stringify(r.data.usuario));window.location.href="index.html";}else{alert(r.error);}}).loginUsuario(email,pass);});</script>' +
-  '</body></html>';
+// Build login.html - reemplazar GAS tags y redirect
+var loginHTML = loginSrc
+  .replace("<?!= include('css'); ?>", css)
+  .replace("<?!= include('js-utils'); ?>", jsUtils + mockGAS)
+  .replace(/<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>\?page=app/g, 'index.html')
+  .replace(/<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>\?page=registro/g, '#')
+  .replace(/<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>/g, '.')
+  .replace("window.top.location.href = 'index.html'", "window.location.href = 'index.html'");
 fs.writeFileSync(path.join(DOCS, 'login.html'), loginHTML);
 console.log('login.html generado');
 

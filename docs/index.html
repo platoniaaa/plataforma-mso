@@ -1023,12 +1023,12 @@ var App = {
    * Redirige al login
    */
   goToLogin: function() {
-    window.top.location.href = google.script.run.getUrl
+    window.location.href = google.script.run.getUrl
       ? google.script.run.getUrl() + '?page=login'
-      : '.?page=login';
+      : 'login.html';
     // Fallback
     var url = window.location.href.split('?')[0];
-    window.top.location.href = url + '?page=login';
+    window.location.href = url + '?page=login';
   }
 };
 
@@ -1049,7 +1049,7 @@ function callBackend(functionName, args) {
           App.clearSession();
           showToast('Tu sesión ha expirado. Redirigiendo...', 'error');
           setTimeout(function() {
-            window.top.location.href = getBaseUrl() + '?page=login';
+            window.location.href = getBaseUrl() + '?page=login';
           }, 1500);
           reject(new Error(result.error));
           return;
@@ -15955,6 +15955,7 @@ function feCerrar(){
 // Mock data
 var MOCK_USERS = {
   'admin@mso.cl': { id: 'usr-001', nombre: 'Administrador MSO', email: 'admin@mso.cl', rol: 'admin', cargo: 'Administrador', cliente_id: null },
+  'admin@msochile.cl': { id: 'usr-001', nombre: 'Administrador MSO', email: 'admin@msochile.cl', rol: 'admin', cargo: 'Administrador', cliente_id: null },
   'jcastillo@sodexo.cl': { id: 'usr-002', nombre: 'Juan Castillo', email: 'jcastillo@sodexo.cl', rol: 'participante', cargo: 'Gerente', cliente_id: 'cli-001' },
   'mjose@sodexo.cl': { id: 'usr-003', nombre: 'Miguel Jose', email: 'mjose@sodexo.cl', rol: 'colaborador', cargo: '', cliente_id: 'cli-001' }
 };
