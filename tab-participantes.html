@@ -3,6 +3,12 @@
   <div class="flex-between mb-4">
     <h3 style="margin:0;">Participantes del Programa</h3>
     <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline" onclick="openModal('modal-recordatorio')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px;">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+        </svg>
+        Enviar Recordatorio
+      </button>
       <button class="btn btn-outline" onclick="openModal('modal-importar-participantes')">Cargar desde Excel</button>
       <button class="btn btn-primary" onclick="abrirModalAgregarLider()">+ Agregar L&iacute;der</button>
     </div>
@@ -218,6 +224,78 @@
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-importar-participantes')">Cancelar</button>
       <button class="btn btn-primary hidden" id="btn-confirmar-import-part" onclick="confirmarImportParticipantes()">Importar Participantes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Enviar Recordatorio -->
+<div class="modal-overlay" id="modal-recordatorio">
+  <div class="modal" style="max-width:650px;">
+    <div class="modal-header">
+      <h3>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:6px;">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+        </svg>
+        Enviar Recordatorio
+      </h3>
+      <button class="modal-close" onclick="closeModal('modal-recordatorio')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label>Tipo de recordatorio *</label>
+          <select class="form-control" id="rec-tipo" onchange="onRecTipoChange()">
+            <option value="">Selecciona...</option>
+            <option value="encuestas">Encuestas pendientes</option>
+            <option value="actividades">Actividades pendientes</option>
+            <option value="hitos">Pr&oacute;ximos hitos</option>
+            <option value="general">Mensaje personalizado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Enviar a *</label>
+          <select class="form-control" id="rec-destinatarios" onchange="onRecDestinatariosChange()">
+            <option value="todos">Todos los participantes</option>
+            <option value="lideres">Solo l&iacute;deres</option>
+            <option value="colaboradores">Solo colaboradores</option>
+            <option value="seleccion">Selecci&oacute;n manual</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Selecci&oacute;n manual -->
+      <div id="rec-seleccion-manual" class="hidden mb-3">
+        <div id="rec-lista-participantes" style="max-height:180px;overflow-y:auto;border:1px solid var(--color-borde);border-radius:8px;">
+          <p class="text-sm text-muted p-3">Cargando...</p>
+        </div>
+      </div>
+
+      <!-- Mensaje personalizado -->
+      <div id="rec-mensaje-custom" class="form-group hidden">
+        <label>Mensaje *</label>
+        <textarea class="form-control" id="rec-mensaje-texto" rows="4" placeholder="Escribe el mensaje que recibir&aacute;n los participantes..." oninput="generarPreviewRecordatorio()"></textarea>
+      </div>
+
+      <!-- Preview del correo -->
+      <div id="rec-preview-container" class="hidden" style="margin-top:16px;">
+        <label class="text-xs text-muted" style="text-transform:uppercase;display:block;margin-bottom:8px;">Vista previa del correo</label>
+        <div style="border:1px solid var(--color-borde);border-radius:10px;overflow:hidden;">
+          <div style="background:var(--color-fondo-alt);padding:10px 16px;border-bottom:1px solid var(--color-borde);">
+            <span class="text-xs text-muted">Asunto: </span><strong class="text-sm" id="rec-preview-asunto"></strong>
+          </div>
+          <div style="padding:16px;font-size:13px;line-height:1.7;" id="rec-preview-cuerpo">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-recordatorio')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-enviar-recordatorio" onclick="enviarRecordatorio()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+        Enviar Recordatorio
+      </button>
     </div>
   </div>
 </div>
@@ -694,6 +772,162 @@
       }
     };
     reader.readAsArrayBuffer(file);
+  }
+
+  // ============================================
+  // ENVIAR RECORDATORIO
+  // ============================================
+
+  var recordatorioDestinatarios = [];
+
+  function initRecordatorioModal() {
+    var sel = document.getElementById('rec-destinatarios');
+    sel.value = 'todos';
+    document.getElementById('rec-seleccion-manual').classList.add('hidden');
+    document.getElementById('rec-tipo').value = '';
+    document.getElementById('rec-mensaje-custom').classList.add('hidden');
+    document.getElementById('rec-mensaje-texto').value = '';
+    document.getElementById('rec-preview-container').classList.add('hidden');
+    onRecDestinatariosChange();
+  }
+
+  function onRecDestinatariosChange() {
+    var val = document.getElementById('rec-destinatarios').value;
+    var manualDiv = document.getElementById('rec-seleccion-manual');
+
+    if (val === 'seleccion') {
+      manualDiv.classList.remove('hidden');
+      renderRecCheckboxes();
+    } else {
+      manualDiv.classList.add('hidden');
+    }
+  }
+
+  function renderRecCheckboxes() {
+    var div = document.getElementById('rec-lista-participantes');
+    var parts = panelData && panelData.participantes ? panelData.participantes : [];
+
+    if (!parts.length) {
+      div.innerHTML = '<p class="text-sm text-muted">No hay participantes cargados.</p>';
+      return;
+    }
+
+    var html = '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:2px solid var(--color-borde);">' +
+      '<input type="checkbox" id="rec-check-todos" onchange="toggleRecTodos(this)"><label for="rec-check-todos" style="font-weight:600;cursor:pointer;">Seleccionar todos</label></div>';
+
+    html += parts.map(function(p) {
+      var nombre = p.nombre || (p.nombre_lider || '');
+      var email = p.email || (p.email_lider || '');
+      var rol = p.rol_programa || p.rol || '';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--color-borde);">' +
+        '<input type="checkbox" class="rec-check-part" value="' + email + '" id="rec-p-' + (p.id || p.usuario_id || Math.random()) + '">' +
+        '<label for="rec-p-' + (p.id || p.usuario_id || Math.random()) + '" style="cursor:pointer;flex:1;">' +
+          escapeHtml(nombre) + ' <span class="text-xs text-muted">(' + escapeHtml(email) + ')</span>' +
+          ' <span class="badge badge-info" style="font-size:9px;">' + escapeHtml(rol) + '</span>' +
+        '</label></div>';
+    }).join('');
+
+    div.innerHTML = html;
+  }
+
+  function toggleRecTodos(cb) {
+    document.querySelectorAll('.rec-check-part').forEach(function(c) { c.checked = cb.checked; });
+  }
+
+  function onRecTipoChange() {
+    var tipo = document.getElementById('rec-tipo').value;
+    document.getElementById('rec-mensaje-custom').classList.toggle('hidden', tipo !== 'general');
+    generarPreviewRecordatorio();
+  }
+
+  function generarPreviewRecordatorio() {
+    var tipo = document.getElementById('rec-tipo').value;
+    if (!tipo) {
+      document.getElementById('rec-preview-container').classList.add('hidden');
+      return;
+    }
+
+    var prog = panelData && panelData.programa ? panelData.programa : {};
+    var progNombre = prog.nombre || 'Programa';
+    var asunto = '';
+    var cuerpo = '';
+
+    switch (tipo) {
+      case 'encuestas':
+        asunto = 'Recordatorio: Encuestas pendientes - ' + progNombre;
+        cuerpo = '<p>Estimado/a participante,</p>' +
+          '<p>Te recordamos que tienes <strong>encuestas pendientes</strong> en el programa <strong>' + escapeHtml(progNombre) + '</strong>.</p>' +
+          '<p>Por favor, ingresa a la plataforma y completa tus encuestas a la brevedad. Tu participaci\u00f3n es fundamental para el \u00e9xito del programa.</p>' +
+          '<p>Saludos cordiales,<br>Equipo MSO Chile</p>';
+        break;
+      case 'actividades':
+        asunto = 'Recordatorio: Actividades pendientes - ' + progNombre;
+        cuerpo = '<p>Estimado/a participante,</p>' +
+          '<p>Te recordamos que tienes <strong>actividades pendientes</strong> en el programa <strong>' + escapeHtml(progNombre) + '</strong>.</p>' +
+          '<p>Revisa las actividades asignadas en la plataforma y comp\u00e9talas antes de la fecha l\u00edmite.</p>' +
+          '<p>Saludos cordiales,<br>Equipo MSO Chile</p>';
+        break;
+      case 'general':
+        var textoCustom = document.getElementById('rec-mensaje-texto').value.trim();
+        asunto = 'Mensaje del programa: ' + progNombre;
+        cuerpo = '<p>Estimado/a participante,</p>' +
+          '<p>' + (textoCustom ? escapeHtml(textoCustom).replace(/\n/g, '<br>') : '<em>(Escribe tu mensaje arriba)</em>') + '</p>' +
+          '<p>Saludos cordiales,<br>Equipo MSO Chile</p>';
+        break;
+      case 'hitos':
+        asunto = 'Pr\u00f3ximos hitos del programa: ' + progNombre;
+        cuerpo = '<p>Estimado/a participante,</p>' +
+          '<p>Te compartimos los <strong>pr\u00f3ximos hitos</strong> del programa <strong>' + escapeHtml(progNombre) + '</strong>:</p>' +
+          '<ul>' +
+            '<li><strong>Fecha de medici\u00f3n POST:</strong> ' + escapeHtml(prog.fecha_medicion_post || prog.fecha_termino || 'Por confirmar') + '</li>' +
+            '<li><strong>Fecha de t\u00e9rmino:</strong> ' + escapeHtml(prog.fecha_termino || 'Por confirmar') + '</li>' +
+          '</ul>' +
+          '<p>Te pedimos estar atento/a a estas fechas y prepararte adecuadamente.</p>' +
+          '<p>Saludos cordiales,<br>Equipo MSO Chile</p>';
+        break;
+    }
+
+    document.getElementById('rec-preview-asunto').textContent = asunto;
+    document.getElementById('rec-preview-cuerpo').innerHTML = cuerpo;
+    document.getElementById('rec-preview-container').classList.remove('hidden');
+  }
+
+  function enviarRecordatorio() {
+    var tipo = document.getElementById('rec-tipo').value;
+    var destVal = document.getElementById('rec-destinatarios').value;
+
+    if (!tipo) { showToast('Selecciona un tipo de recordatorio.', 'error'); return; }
+    if (tipo === 'general' && !document.getElementById('rec-mensaje-texto').value.trim()) {
+      showToast('Escribe el mensaje del recordatorio.', 'error'); return;
+    }
+
+    // Determinar destinatarios
+    var parts = panelData && panelData.participantes ? panelData.participantes : [];
+    var destinatarios = [];
+
+    if (destVal === 'todos') {
+      destinatarios = parts.map(function(p) { return p.email || p.email_lider || ''; }).filter(Boolean);
+    } else if (destVal === 'lideres') {
+      destinatarios = parts.filter(function(p) { return (p.rol_programa || p.rol) === 'jefatura' || (p.rol_programa || p.rol) === 'lider'; })
+        .map(function(p) { return p.email || p.email_lider || ''; }).filter(Boolean);
+    } else if (destVal === 'colaboradores') {
+      destinatarios = parts.filter(function(p) { return (p.rol_programa || p.rol) === 'participante' || (p.rol_programa || p.rol) === 'colaborador'; })
+        .map(function(p) { return p.email || p.email_lider || ''; }).filter(Boolean);
+    } else if (destVal === 'seleccion') {
+      document.querySelectorAll('.rec-check-part:checked').forEach(function(c) { destinatarios.push(c.value); });
+    }
+
+    if (destinatarios.length === 0) { showToast('No hay destinatarios seleccionados.', 'error'); return; }
+
+    var btn = document.getElementById('btn-enviar-recordatorio');
+    btnLoading(btn, true);
+
+    // Mock: simular env\u00edo
+    setTimeout(function() {
+      btnLoading(btn, false);
+      closeModal('modal-recordatorio');
+      showToast('Recordatorio enviado a ' + destinatarios.length + ' destinatario(s).', 'success');
+    }, 1500);
   }
 
   function confirmarImportParticipantes() {

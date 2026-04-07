@@ -711,6 +711,16 @@ var google = {
                         return function() {
                           var args = Array.prototype.slice.call(arguments);
                           console.log('[MOCK] google.script.run.' + fnName + '(', args, ')');
+                          // Interceptar getVistaHTML para devolver HTML
+                          if (fnName === 'getVistaHTML') {
+                            fetch('/api/vista?nombre=' + args[0])
+                              .then(function(r) { return r.text(); })
+                              .then(function(html) {
+                                setTimeout(function() { successHandler(html); }, 100);
+                              })
+                              .catch(function(err) { failureHandler(err); });
+                            return;
+                          }
                           // Llamar al endpoint mock
                           fetch('/api/mock', {
                             method: 'POST',
