@@ -87,10 +87,15 @@
         : '<span class="badge badge-success">POST</span>';
       var fechaLimite = e.fecha_cierre ? '<span class="text-xs text-muted">Fecha limite: ' + formatDate(e.fecha_cierre) + '</span>' : '';
 
+      var liderInfo = e.lider_nombre
+        ? '<br><span class="text-sm" style="color:var(--color-primario);font-weight:500;">Evaluando a: ' + escapeHtml(e.lider_nombre) + '</span>'
+        : '';
+
       return '<div class="card mb-3"><div class="card-body flex-between">' +
         '<div>' +
           '<strong>' + escapeHtml(e.nombre) + '</strong> ' + tipoBadge + '<br>' +
-          '<span class="text-sm text-muted">Programa: ' + escapeHtml(e.programa_nombre) + '</span><br>' +
+          '<span class="text-sm text-muted">Programa: ' + escapeHtml(e.programa_nombre) + '</span>' +
+          liderInfo + '<br>' +
           fechaLimite +
         '</div>' +
         '<button class="btn btn-primary" onclick="abrirEncuesta(\'' + e.id + '\')">Responder</button>' +
@@ -133,7 +138,11 @@
     var enc = encuestasPendientes.find(function(e) { return e.id === encuestaId; });
     if (enc) {
       document.getElementById('enc-form-titulo').textContent = enc.nombre;
-      document.getElementById('enc-form-programa').textContent = 'Programa: ' + enc.programa_nombre;
+      var subtexto = 'Programa: ' + enc.programa_nombre;
+      if (enc.lider_nombre) {
+        subtexto += '  |  Estas evaluando a: ' + enc.lider_nombre;
+      }
+      document.getElementById('enc-form-programa').textContent = subtexto;
     }
 
     // Cargar preguntas

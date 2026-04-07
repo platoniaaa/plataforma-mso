@@ -299,20 +299,36 @@ function obtenerEncuestaPendiente(token) {
 
     if (pendientes.length === 0) return respuestaOk(null);
 
-    // Obtener nombre del programa
+    // Obtener nombre del programa y datos de usuarios
     var programas = getSheetData(HOJAS.PROGRAMAS);
     var progMap = {};
     programas.forEach(function(p) { progMap[p.id] = p.nombre; });
 
+    var usuarios = getSheetData(HOJAS.USUARIOS);
+    var usrMap = {};
+    usuarios.forEach(function(u) { usrMap[u.id] = u; });
+
+    // Buscar lider asignado para coevaluaciones
+    var miAsignacion = todasAsignaciones.find(function(a) { return a.rol_programa === 'colaborador' && a.lider_id; });
+    var liderNombre = '';
+    if (miAsignacion && miAsignacion.lider_id) {
+      var liderUser = usrMap[miAsignacion.lider_id] || {};
+      liderNombre = liderUser.nombre_completo || '';
+    }
+
     var lista = pendientes.map(function(e) {
+      var esCo = e.tipo_cuestionario === 'coevaluacion';
       return {
         id: e.id,
         nombre: e.nombre,
         tipo: e.tipo,
+        tipo_cuestionario: e.tipo_cuestionario || '',
         instrucciones: e.instrucciones,
         programa_nombre: progMap[e.programa_id] || '',
         programa_id: e.programa_id,
-        fecha_cierre: e.fecha_cierre
+        fecha_cierre: e.fecha_cierre,
+        lider_nombre: esCo ? liderNombre : '',
+        es_coevaluacion: esCo
       };
     });
 

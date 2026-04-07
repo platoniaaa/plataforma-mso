@@ -653,7 +653,7 @@ function obtenerMiProgreso(token) {
  */
 function listarProgramasDashboard(token) {
   try {
-    var sesion = autorizarAccion(token, [ROLES.ADMIN, ROLES.JEFATURA, ROLES.PARTICIPANTE]);
+    var sesion = autorizarAccion(token, [ROLES.ADMIN, ROLES.JEFATURA, ROLES.PARTICIPANTE, ROLES.COLABORADOR]);
 
     var programas = getSheetData(HOJAS.PROGRAMAS)
       .filter(function(p) { return p.activo !== false; });
@@ -666,7 +666,7 @@ function listarProgramasDashboard(token) {
       programas = programas.filter(function(p) {
         return p.cliente_id === sesion.clienteId;
       });
-    } else if (sesion.rol === ROLES.PARTICIPANTE) {
+    } else if (sesion.rol === ROLES.PARTICIPANTE || sesion.rol === ROLES.COLABORADOR) {
       var asignaciones = findWhere(HOJAS.PROGRAMA_PARTICIPANTES, { usuario_id: sesion.userId })
         .filter(function(a) { return a.activo !== false; });
       var misProgramaIds = asignaciones.map(function(a) { return a.programa_id; });
