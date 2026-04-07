@@ -93,7 +93,11 @@ var out = indexSrc
   .replace(/window\.top\.location\.href/g, 'window.location.href')
   .replace(/'<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>\?page=login'/g, "'login.html'")
   .replace(/<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>\?page=login/g, 'login.html')
-  .replace(/<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>/g, '.');
+  .replace(/<\?=\s*ScriptApp\.getService\(\)\.getUrl\(\)\s*\?>/g, '.')
+  // Fix all login redirects
+  .replace(/window\.location\.href\s*=\s*google\.script\.run\.getUrl[\s\S]*?'login\.html';/g, "window.location.href = 'login.html';")
+  .replace(/var url = window\.location\.href\.split\('\?'\)\[0\];\s*\n\s*window\.location\.href = url \+ '\?page=login';/g, '')
+  .replace(/window\.location\.href\s*=\s*getBaseUrl\(\)\s*\+\s*'\?page=login'/g, "window.location.href = 'login.html'");
 
 fs.writeFileSync(path.join(DOCS, 'index.html'), out);
 console.log('index.html: ' + Math.round(out.length/1024) + 'KB');
