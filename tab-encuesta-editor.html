@@ -1,0 +1,361 @@
+<!-- Editor de Encuesta — UX tipo Google Forms -->
+<style>
+  .fe { max-width: 720px; margin: 0 auto; }
+  .fe-header { background: white; border: 1px solid var(--color-borde); border-top: 8px solid var(--color-primario); border-radius: 10px; padding: 24px 28px; margin-bottom: 16px; }
+  .fe-header-title { font-size: 28px; border: none; width: 100%; padding: 0 0 8px; margin: 0; border-bottom: 1px solid transparent; outline: none; color: var(--color-texto); font-weight: 400; }
+  .fe-header-title:focus { border-bottom-color: var(--color-primario); }
+  .fe-header-desc { font-size: 14px; border: none; width: 100%; padding: 4px 0; margin-top: 4px; outline: none; color: var(--color-texto-sec); resize: none; }
+  .fe-header-desc:focus { border-bottom: 1px solid var(--color-primario); }
+
+  .fe-card { background: white; border: 1px solid var(--color-borde); border-radius: 10px; padding: 20px 24px; margin-bottom: 12px; transition: border-color 0.2s, box-shadow 0.2s; position: relative; }
+  .fe-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .fe-card.fe-card-active { border-left: 4px solid var(--color-secundario); }
+
+  .fe-card-top { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+  .fe-card-top-left { flex: 1; }
+  .fe-card-top-right { flex-shrink: 0; }
+
+  .fe-q-input { font-size: 15px; border: none; border-bottom: 1px solid var(--color-borde); width: 100%; padding: 8px 0; outline: none; background: transparent; color: var(--color-texto); }
+  .fe-q-input:focus { border-bottom-color: var(--color-primario); border-bottom-width: 2px; }
+  .fe-q-input::placeholder { color: #bbb; }
+
+  .fe-tipo-select { padding: 8px 12px; border: 1px solid var(--color-borde); border-radius: 6px; font-size: 13px; color: var(--color-texto); background: white; cursor: pointer; min-width: 160px; }
+  .fe-tipo-select:focus { border-color: var(--color-primario); outline: none; }
+
+  .fe-opciones { margin-top: 12px; }
+  .fe-opcion-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; padding: 4px 0; }
+  .fe-opcion-icon { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #bbb; flex-shrink: 0; }
+  .fe-opcion-icon-cb { border-radius: 3px; }
+  .fe-opcion-input { flex: 1; border: none; border-bottom: 1px solid var(--color-borde); padding: 6px 0; font-size: 14px; outline: none; }
+  .fe-opcion-input:focus { border-bottom-color: var(--color-primario); }
+  .fe-opcion-input::placeholder { color: #ccc; }
+  .fe-opcion-del { background: none; border: none; color: #bbb; font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1; }
+  .fe-opcion-del:hover { color: #c0392b; }
+
+  .fe-add-opcion { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 4px 0; }
+  .fe-add-opcion-icon { width: 20px; height: 20px; border-radius: 50%; border: 2px dashed #ccc; flex-shrink: 0; }
+  .fe-add-opcion span { color: var(--color-texto-sec); font-size: 14px; cursor: pointer; }
+  .fe-add-opcion span:hover { color: var(--color-primario); }
+
+  .fe-escala { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .fe-escala-dot { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--color-borde); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--color-texto-sec); }
+  .fe-escala-label { margin-top: 8px; }
+  .fe-escala-label input { border: none; border-bottom: 1px solid var(--color-borde); padding: 4px 0; font-size: 13px; width: 120px; outline: none; }
+  .fe-escala-label input:focus { border-bottom-color: var(--color-primario); }
+
+  .fe-texto-preview { border-bottom: 1px dotted var(--color-borde); padding: 10px 0; color: #999; font-size: 14px; margin-top: 12px; }
+
+  .fe-card-bottom { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-borde); }
+  .fe-card-btn { background: none; border: none; color: var(--color-texto-sec); cursor: pointer; padding: 6px 8px; border-radius: 4px; font-size: 18px; transition: all 0.15s; }
+  .fe-card-btn:hover { background: var(--color-fondo-alt); color: var(--color-texto); }
+  .fe-card-btn svg { width: 20px; height: 20px; vertical-align: middle; }
+
+  .fe-separator { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+  .fe-separator span { font-size: 13px; color: var(--color-texto-sec); }
+  .fe-toggle { position: relative; width: 40px; height: 22px; background: #ccc; border-radius: 11px; cursor: pointer; transition: background 0.2s; }
+  .fe-toggle.on { background: var(--color-secundario); }
+  .fe-toggle::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: white; top: 2px; left: 2px; transition: left 0.2s; }
+  .fe-toggle.on::after { left: 20px; }
+
+  .fe-add-card { border: 1px dashed var(--color-borde); border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; }
+  .fe-add-card:hover { border-color: var(--color-secundario); background: rgba(46,134,193,0.03); }
+
+  .fe-footer { background: white; border: 1px solid var(--color-borde); border-radius: 10px; padding: 20px; margin-bottom: 16px; text-align: center; }
+  .fe-back { display: inline-flex; align-items: center; gap: 6px; color: var(--color-secundario); font-size: 14px; cursor: pointer; margin-bottom: 12px; }
+  .fe-back:hover { text-decoration: underline; }
+  .fe-badges { display: flex; gap: 6px; margin-bottom: 12px; }
+</style>
+
+<div class="fe">
+  <div class="fe-back" onclick="switchTab('encuestas')">&#8249; Volver a Encuestas</div>
+
+  <div id="fe-loading" class="text-center p-4"><div class="spinner spinner-lg"></div><p class="text-muted mt-3">Cargando...</p></div>
+
+  <div id="fe-content" class="hidden">
+    <!-- Header -->
+    <div class="fe-header">
+      <div class="fe-badges">
+        <span class="badge badge-info" id="fe-b1"></span>
+        <span class="badge badge-warning" id="fe-b2"></span>
+        <span class="badge badge-secondary" id="fe-b3"></span>
+      </div>
+      <input class="fe-header-title" id="fe-titulo" placeholder="Titulo de la encuesta" onblur="saveEncField('nombre',this.value)">
+      <textarea class="fe-header-desc" id="fe-desc" rows="2" placeholder="Descripcion / instrucciones para los participantes" onblur="saveEncField('instrucciones',this.value)"></textarea>
+    </div>
+
+    <!-- Preguntas -->
+    <div id="fe-preguntas"></div>
+
+    <!-- Agregar -->
+    <div class="fe-add-card" onclick="addPregunta()">
+      <span style="font-size:24px;color:var(--color-secundario);">+</span>
+      <p style="margin:4px 0 0;color:var(--color-secundario);font-weight:500;">Agregar pregunta</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="fe-footer">
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="switchTab('encuestas')">Volver</button>
+        <button class="btn btn-primary" id="fe-btn-activar" onclick="feActivar()">Activar Encuesta</button>
+        <button class="btn btn-outline hidden" style="color:#c0392b;" id="fe-btn-cerrar" onclick="feCerrar()">Cerrar Encuesta</button>
+      </div>
+      <p class="text-sm text-muted mt-2" id="fe-estado"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+var feId=null, feEnc=null, fePregs=[], feCompMap={};
+
+(function(){
+  if(typeof editorEncuestaIdPendiente!=='undefined'&&editorEncuestaIdPendiente){
+    feId=editorEncuestaIdPendiente; feLoad(feId);
+  } else {
+    document.getElementById('fe-loading').innerHTML='<p class="text-muted">No se especifico encuesta.</p>';
+  }
+})();
+
+function feLoad(id){
+  feId=id;
+  google.script.run.withSuccessHandler(function(r){
+    if(r&&r.success){
+      var d=r.data;
+      if(d.encuesta){feEnc=d.encuesta;fePregs=d.preguntas||d.encuesta.preguntas||[];}
+      else{feEnc=d;fePregs=d.preguntas||[];}
+      if(typeof panelData!=='undefined'&&panelData.competencias)
+        panelData.competencias.forEach(function(c){feCompMap[c.id]=c;});
+      feRender();
+    } else {
+      document.getElementById('fe-loading').innerHTML='<p class="text-danger">'+(r?r.error:'Error')+'</p>';
+    }
+  }).withFailureHandler(function(e){
+    document.getElementById('fe-loading').innerHTML='<p class="text-danger">Error: '+(e?e.message:'')+'</p>';
+  }).obtenerEncuestaCompleta(App.token,id);
+}
+
+function feRender(){
+  document.getElementById('fe-loading').classList.add('hidden');
+  document.getElementById('fe-content').classList.remove('hidden');
+  var tc=feEnc.tipo_cuestionario||'autoevaluacion';
+  document.getElementById('fe-titulo').value=feEnc.nombre||'';
+  document.getElementById('fe-desc').value=feEnc.instrucciones||'';
+  document.getElementById('fe-b1').textContent=tc==='autoevaluacion'?'Autoevaluacion':'Coevaluacion';
+  document.getElementById('fe-b2').textContent=(feEnc.tipo||'pre').toUpperCase();
+  document.getElementById('fe-b3').textContent=(feEnc.estado||'borrador');
+  document.getElementById('fe-estado').textContent='Estado: '+(feEnc.estado||'borrador');
+  if(feEnc.estado==='activa'){document.getElementById('fe-btn-activar').classList.add('hidden');document.getElementById('fe-btn-cerrar').classList.remove('hidden');}
+  else if(feEnc.estado==='cerrada'){document.getElementById('fe-btn-activar').classList.add('hidden');}
+  feRenderPregs();
+}
+
+function feRenderPregs(){
+  var c=document.getElementById('fe-preguntas');
+  if(!fePregs.length){c.innerHTML='';return;}
+
+  c.innerHTML=fePregs.map(function(p,i){
+    var comp=feCompMap[p.competencia_id]||{};
+    var tipo=p.tipo_respuesta||'alternativas';
+
+    // Tipo select
+    var sel='<select class="fe-tipo-select" onchange="feSetTipo(\''+p.id+'\',this.value)">'+
+      '<option value="niveles_competencia"'+(tipo==='niveles_competencia'?' selected':'')+'>Niveles de competencia (1-4)</option>'+
+      '<option value="alternativas"'+(tipo==='alternativas'?' selected':'')+'>Varias opciones</option>'+
+      '<option value="casillas"'+(tipo==='casillas'?' selected':'')+'>Casillas</option>'+
+      '<option value="desplegable"'+(tipo==='desplegable'?' selected':'')+'>Desplegable</option>'+
+      '<option value="texto_breve"'+(tipo==='texto_breve'?' selected':'')+'>Respuesta corta</option>'+
+      '<option value="parrafo"'+(tipo==='parrafo'?' selected':'')+'>Parrafo</option>'+
+      '<option value="escala_1_5"'+(tipo==='escala_1_5'?' selected':'')+'>Escala lineal</option>'+
+    '</select>';
+
+    // Opciones
+    var optsHtml='';
+    if(tipo==='alternativas'||tipo==='niveles_competencia'||tipo==='casillas'||tipo==='desplegable'){
+      var iconCls=tipo==='casillas'?'fe-opcion-icon fe-opcion-icon-cb':'fe-opcion-icon';
+      var prefix=tipo==='desplegable';
+      var isNiveles=tipo==='niveles_competencia';
+      for(var n=1;n<=4;n++){
+        var txt=p['opcion_nivel_'+n]||'';
+        var nivelLabel=isNiveles?'<span style="font-size:11px;font-weight:700;color:var(--color-secundario);min-width:50px;">Nivel '+n+'</span>':'';
+        optsHtml+='<div class="fe-opcion-row">'+
+          (prefix?'<span style="color:#999;font-size:13px;">'+n+'.</span>':'<div class="'+iconCls+'"></div>')+
+          nivelLabel+
+          '<input class="fe-opcion-input" value="'+escapeHtml(txt)+'" placeholder="'+(isNiveles?'Descripcion del nivel '+n+'...':'Opcion '+n)+'" '+
+            'onblur="feSaveOpt(\''+p.id+'\','+n+',this.value)">'+
+          '<button class="fe-opcion-del" onclick="feClearOpt(\''+p.id+'\','+n+',this)" title="Quitar">&times;</button>'+
+        '</div>';
+      }
+      if(!isNiveles){
+        optsHtml+='<div class="fe-add-opcion">'+
+          (prefix?'<span style="color:#999;font-size:13px;">5.</span>':'<div class="fe-add-opcion-icon"></div>')+
+          '<span onclick="showToast(\'Puedes usar hasta 4 opciones.\',\'info\')">Agregar opcion</span>'+
+        '</div>';
+      }
+    } else if(tipo==='escala_1_5'){
+      optsHtml='<div class="fe-escala">';
+      for(var s=1;s<=5;s++) optsHtml+='<div class="fe-escala-dot">'+s+'</div>';
+      optsHtml+='</div>';
+      optsHtml+='<div style="display:flex;gap:24px;margin-top:8px;">'+
+        '<div class="fe-escala-label"><span style="font-size:12px;color:#999;">1</span> <input placeholder="Etiqueta (opcional)" onblur="feSaveOpt(\''+p.id+'\',1,this.value)" value="'+escapeHtml(p.opcion_nivel_1||'')+'"></div>'+
+        '<div class="fe-escala-label"><span style="font-size:12px;color:#999;">5</span> <input placeholder="Etiqueta (opcional)" onblur="feSaveOpt(\''+p.id+'\',4,this.value)" value="'+escapeHtml(p.opcion_nivel_4||'')+'"></div>'+
+      '</div>';
+    } else if(tipo==='texto_breve'){
+      optsHtml='<div class="fe-texto-preview">Texto de respuesta corta</div>';
+    } else if(tipo==='parrafo'){
+      optsHtml='<div class="fe-texto-preview">Texto de respuesta larga</div>';
+    }
+
+    // Competencia selector
+    var compKeys=Object.keys(feCompMap);
+    var compSelect='<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">'+
+      '<select class="fe-tipo-select" style="min-width:auto;font-size:12px;padding:4px 8px;color:var(--color-secundario);" onchange="feSetComp(\''+p.id+'\',this.value)">'+
+        '<option value=""'+((!p.competencia_id)?' selected':'')+'>Sin competencia</option>';
+    compKeys.forEach(function(cid){
+      var cn=feCompMap[cid];
+      compSelect+='<option value="'+cid+'"'+(p.competencia_id===cid?' selected':'')+'>'+escapeHtml(cn.nombre)+'</option>';
+    });
+    compSelect+='</select>';
+    if(p.foco_desarrollo||comp.foco_desarrollo){
+      compSelect+='<span style="font-size:11px;color:var(--color-texto-sec);font-style:italic;">'+escapeHtml(p.foco_desarrollo||comp.foco_desarrollo)+'</span>';
+    }
+    compSelect+='</div>';
+
+    // Obligatorio toggle
+    var oblig=p.obligatoria!==false&&p.obligatoria!=='false';
+
+    return '<div class="fe-card" id="fec-'+p.id+'">'+
+      '<div class="fe-card-top">'+
+        '<div class="fe-card-top-left">'+compSelect+
+          '<input class="fe-q-input" value="'+escapeHtml(p.texto_pregunta||'')+'" placeholder="Pregunta sin titulo" onblur="feSaveTxt(\''+p.id+'\',this.value)">'+
+        '</div>'+
+        '<div class="fe-card-top-right">'+sel+'</div>'+
+      '</div>'+
+      '<div class="fe-opciones">'+optsHtml+'</div>'+
+      '<div class="fe-card-bottom">'+
+        '<button class="fe-card-btn" onclick="feDuplicar(\''+p.id+'\')" title="Duplicar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>'+
+        '<button class="fe-card-btn" onclick="feEliminar(\''+p.id+'\')" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>'+
+        '<div class="fe-separator" style="margin-left:12px;border-left:1px solid var(--color-borde);padding-left:12px;">'+
+          '<span>Obligatorio</span>'+
+          '<div class="fe-toggle'+(oblig?' on':'')+'" onclick="feToggleOblig(\''+p.id+'\',this)"></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+/* ---- Guardar campos ---- */
+function saveEncField(campo,val){
+  val=val.trim();
+  if(feEnc[campo]===val)return;
+  feEnc[campo]=val;
+  var d={};d[campo]=val;
+  google.script.run.actualizarEncuesta(App.token,feId,d);
+}
+
+function feSaveTxt(pid,val){
+  var p=fePregs.find(function(x){return x.id===pid;});
+  if(p&&p.texto_pregunta!==val){p.texto_pregunta=val;google.script.run.actualizarPregunta(App.token,pid,{texto_pregunta:val});}
+}
+
+function feSaveOpt(pid,n,val){
+  var p=fePregs.find(function(x){return x.id===pid;});
+  if(!p)return;var campo='opcion_nivel_'+n;
+  if(p[campo]!==val){p[campo]=val;var d={};d[campo]=val;google.script.run.actualizarPregunta(App.token,pid,d);}
+}
+
+function feClearOpt(pid,n,btn){
+  var row=btn.parentElement;
+  var inp=row.querySelector('.fe-opcion-input');
+  if(inp){inp.value='';feSaveOpt(pid,n,'');}
+}
+
+function feSetComp(pid,compId){
+  var p=fePregs.find(function(x){return x.id===pid;});
+  if(!p)return;
+  p.competencia_id=compId;
+  var comp=feCompMap[compId]||{};
+  p.foco_desarrollo=comp.foco_desarrollo||'';
+
+  // Auto-cargar los 4 niveles de la competencia como opciones
+  var datos={competencia_id:compId, foco_desarrollo:p.foco_desarrollo};
+  if(comp.nivel_1_texto){datos.opcion_nivel_1=comp.nivel_1_texto; p.opcion_nivel_1=comp.nivel_1_texto;}
+  if(comp.nivel_2_texto){datos.opcion_nivel_2=comp.nivel_2_texto; p.opcion_nivel_2=comp.nivel_2_texto;}
+  if(comp.nivel_3_texto){datos.opcion_nivel_3=comp.nivel_3_texto; p.opcion_nivel_3=comp.nivel_3_texto;}
+  if(comp.nivel_4_texto){datos.opcion_nivel_4=comp.nivel_4_texto; p.opcion_nivel_4=comp.nivel_4_texto;}
+
+  // Cambiar tipo a niveles_competencia
+  datos.tipo_respuesta='niveles_competencia';
+  p.tipo_respuesta='niveles_competencia';
+
+  google.script.run.actualizarPregunta(App.token,pid,datos);
+  feRenderPregs();
+}
+
+function feSetTipo(pid,tipo){
+  var p=fePregs.find(function(x){return x.id===pid;});
+  if(!p||p.tipo_respuesta===tipo)return;
+  p.tipo_respuesta=tipo;
+  google.script.run.actualizarPregunta(App.token,pid,{tipo_respuesta:tipo});
+  feRenderPregs();
+}
+
+function feToggleOblig(pid,el){
+  var p=fePregs.find(function(x){return x.id===pid;});
+  if(!p)return;
+  var nv=!(p.obligatoria!==false&&p.obligatoria!=='false');
+  p.obligatoria=nv;
+  el.classList.toggle('on',nv);
+  google.script.run.actualizarPregunta(App.token,pid,{obligatoria:nv});
+}
+
+/* ---- Acciones ---- */
+function addPregunta(){
+  showToast('Agregando...','info');
+  google.script.run.withSuccessHandler(function(r){
+    if(r&&r.success){showToast('Pregunta agregada.','success');feLoad(feId);}
+    else showToast(r?r.error:'Error','error');
+  }).withFailureHandler(function(e){showToast('Error: '+(e?e.message:''),'error');
+  }).agregarPregunta(App.token,{
+    encuesta_id:feId,texto_pregunta:'',tipo_respuesta:'alternativas',
+    conducta_id:'',competencia_id:'',foco_desarrollo:'',
+    opcion_nivel_1:'',opcion_nivel_2:'',opcion_nivel_3:'',opcion_nivel_4:''
+  });
+}
+
+function feDuplicar(pid){
+  var p=fePregs.find(function(x){return x.id===pid;});
+  if(!p)return;
+  showToast('Duplicando...','info');
+  google.script.run.withSuccessHandler(function(r){
+    if(r&&r.success){showToast('Pregunta duplicada.','success');feLoad(feId);}
+    else showToast(r?r.error:'Error','error');
+  }).agregarPregunta(App.token,{
+    encuesta_id:feId,texto_pregunta:p.texto_pregunta||'',tipo_respuesta:p.tipo_respuesta||'alternativas',
+    conducta_id:p.conducta_id||'',competencia_id:p.competencia_id||'',foco_desarrollo:p.foco_desarrollo||'',
+    opcion_nivel_1:p.opcion_nivel_1||'',opcion_nivel_2:p.opcion_nivel_2||'',
+    opcion_nivel_3:p.opcion_nivel_3||'',opcion_nivel_4:p.opcion_nivel_4||''
+  });
+}
+
+function feEliminar(pid){
+  if(!confirm('Eliminar esta pregunta?'))return;
+  google.script.run.withSuccessHandler(function(r){
+    if(r&&r.success){fePregs=fePregs.filter(function(x){return x.id!==pid;});feRenderPregs();showToast('Eliminada.','success');}
+  }).eliminarPregunta(App.token,pid);
+}
+
+function feActivar(){
+  if(!confirm('Activar encuesta?'))return;
+  google.script.run.withSuccessHandler(function(r){
+    if(r&&r.success){showToast('Activada.','success');feEnc.estado='activa';feRender();}
+    else showToast(r?r.error:'Error','error');
+  }).activarEncuesta(App.token,feId);
+}
+
+function feCerrar(){
+  if(!confirm('Cerrar encuesta?'))return;
+  google.script.run.withSuccessHandler(function(r){
+    if(r&&r.success){showToast('Cerrada.','success');feEnc.estado='cerrada';feRender();}
+    else showToast(r?r.error:'Error','error');
+  }).cerrarEncuesta(App.token,feId);
+}
+</script>

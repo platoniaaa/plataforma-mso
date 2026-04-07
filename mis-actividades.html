@@ -1,0 +1,667 @@
+<!-- Vista: Mis Actividades (Participante + Jefatura) - Unificada: Encuestas Internas + Actividades Externas -->
+<div>
+  <!-- Actividades Pendientes -->
+  <div class="mb-4">
+    <h2 style="color:var(--color-primario);margin-bottom:16px;">Pendientes</h2>
+    <div id="actividades-pendientes">
+      <div class="text-center p-4"><div class="spinner spinner-lg"></div><p class="text-muted mt-2">Cargando...</p></div>
+    </div>
+  </div>
+
+  <!-- Formulario de Encuesta Interna (oculto, se muestra al responder) -->
+  <div id="encuesta-form-container" class="hidden">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 id="enc-form-titulo">Encuesta</h2>
+          <span class="text-sm text-muted" id="enc-form-programa"></span>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="volverALista()">Volver</button>
+      </div>
+      <div class="card-body">
+        <div id="enc-instrucciones" class="alert alert-info mb-3 hidden"></div>
+
+        <div class="progress-bar-container mb-3">
+          <div class="progress-bar" id="enc-progress" style="width:0%;"></div>
+        </div>
+        <p class="text-sm text-muted mb-3" id="enc-progress-text">Pregunta 0 de 0</p>
+
+        <div id="enc-preguntas"></div>
+
+        <div class="mt-4">
+          <button class="btn btn-primary btn-block" id="btn-enviar-respuestas" onclick="enviarRespuestasEncuesta()">
+            Enviar Respuestas
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completadas -->
+  <div id="seccion-completadas">
+    <h2 style="color:var(--color-primario);margin-bottom:16px;">Completadas</h2>
+    <div id="actividades-completadas">
+      <p class="text-muted text-sm">Cargando...</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalle de actividad -->
+<div class="modal-overlay" id="modal-ver-actividad">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <h3 id="ver-act-titulo">Actividad</h3>
+      <button class="modal-close" onclick="closeModal('modal-ver-actividad')">&times;</button>
+    </div>
+    <div class="modal-body" id="ver-act-body">
+      Cargando...
+    </div>
+    <div class="modal-footer" id="ver-act-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-ver-actividad')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .actividad-card {
+    border: 1px solid var(--color-borde);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    background: var(--color-tarjeta);
+    transition: box-shadow 0.2s;
+  }
+
+  .actividad-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  }
+
+  .actividad-card-completada {
+    opacity: 0.75;
+    border-left: 3px solid var(--color-exito);
+  }
+
+  .tipo-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .tipo-icon-ms_forms { background: #E8DAEF; color: #7D3C98; }
+  .tipo-icon-enlace_externo { background: #D4E6F1; color: #2471A3; }
+  .tipo-icon-contenido { background: #FDEBD0; color: #D68910; }
+  .tipo-icon-tarea { background: #D4EFDF; color: #1E8449; }
+  .tipo-icon-encuesta_interna { background: #FADBD8; color: #C0392B; }
+  .tipo-icon-encuesta_pre { background: #D4E6F1; color: #2471A3; }
+  .tipo-icon-encuesta_post { background: #D4EFDF; color: #1E8449; }
+
+  .btn-abrir-enlace {
+    background: var(--color-secundario);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+
+  .btn-abrir-enlace:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+  }
+
+  .btn-completar-act {
+    background: var(--color-exito);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+
+  .btn-completar-act:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+  }
+
+  .btn-responder-enc {
+    background: var(--color-primario);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+
+  .btn-responder-enc:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+  }
+
+  .fecha-limite-warning {
+    background: #FEF9E7;
+    color: #D68910;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .fecha-limite-danger {
+    background: #FDEDEC;
+    color: #C0392B;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+</style>
+
+<script>
+  var misActividadesData = [];   // actividades externas
+  var encuestasPendientes = [];  // encuestas internas
+  var todasPendientes = [];      // unificado
+  var todasCompletadas = [];
+  var encuestaActualId = null;
+  var preguntasActuales = [];
+  var dataLoaded = { actividades: false, encuestas: false };
+
+  (function() {
+    cargarTodo();
+  })();
+
+  function cargarTodo() {
+    dataLoaded = { actividades: false, encuestas: false };
+
+    // Cargar actividades externas
+    google.script.run
+      .withSuccessHandler(function(r) {
+        misActividadesData = (r.success ? r.data : []) || [];
+        dataLoaded.actividades = true;
+        mergeYRender();
+      })
+      .withFailureHandler(function() {
+        misActividadesData = [];
+        dataLoaded.actividades = true;
+        mergeYRender();
+      })
+      .listarMisActividades(App.token);
+
+    // Cargar encuestas internas pendientes
+    google.script.run
+      .withSuccessHandler(function(r) {
+        encuestasPendientes = (r.success ? r.data : []) || [];
+        dataLoaded.encuestas = true;
+        mergeYRender();
+      })
+      .withFailureHandler(function() {
+        encuestasPendientes = [];
+        dataLoaded.encuestas = true;
+        mergeYRender();
+      })
+      .obtenerEncuestaPendiente(App.token);
+  }
+
+  function mergeYRender() {
+    if (!dataLoaded.actividades || !dataLoaded.encuestas) return;
+
+    // Convertir encuestas internas a formato unificado (pendientes)
+    var encItems = encuestasPendientes.map(function(e) {
+      return {
+        id: e.id,
+        nombre: e.nombre,
+        tipo: 'encuesta_' + e.tipo, // encuesta_pre o encuesta_post
+        tipo_original: e.tipo,
+        programa_nombre: e.programa_nombre,
+        descripcion: e.instrucciones || '',
+        fecha_limite: e.fecha_cierre,
+        enlace: null,
+        completada: false,
+        es_encuesta_interna: true
+      };
+    });
+
+    // Actividades externas pendientes
+    var actPendientes = misActividadesData.filter(function(a) { return !a.completada; });
+    var actCompletadas = misActividadesData.filter(function(a) { return a.completada; });
+
+    // Merge: encuestas internas pendientes + actividades externas pendientes
+    todasPendientes = encItems.concat(actPendientes);
+
+    // Ordenar por fecha limite (las que vencen antes, primero)
+    todasPendientes.sort(function(a, b) {
+      if (!a.fecha_limite && !b.fecha_limite) return 0;
+      if (!a.fecha_limite) return 1;
+      if (!b.fecha_limite) return -1;
+      return a.fecha_limite.localeCompare(b.fecha_limite);
+    });
+
+    todasCompletadas = actCompletadas;
+
+    renderPendientesUnificado();
+    renderCompletadasUnificado();
+  }
+
+  // ============================================
+  // RENDER: PENDIENTES UNIFICADO
+  // ============================================
+
+  function getTipoIcon(tipo) {
+    var icons = {
+      'ms_forms': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>',
+      'enlace_externo': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
+      'contenido': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
+      'tarea': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10l2 2 4-4"/><path d="M8 16h8"/></svg>',
+      'encuesta_pre': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>',
+      'encuesta_post': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>'
+    };
+    return icons[tipo] || icons['tarea'];
+  }
+
+  function getTipoLabel(tipo) {
+    var labels = {
+      'ms_forms': 'Encuesta (MS Forms)',
+      'enlace_externo': 'Formulario Externo',
+      'contenido': 'Material / Contenido',
+      'tarea': 'Tarea / Entregable',
+      'encuesta_pre': 'Encuesta PRE',
+      'encuesta_post': 'Encuesta POST'
+    };
+    return labels[tipo] || tipo;
+  }
+
+  function getFechaLimiteTag(fecha) {
+    if (!fecha) return '';
+    var hoy = new Date();
+    var limite = new Date(fecha + 'T23:59:59');
+    var diffDias = Math.ceil((limite - hoy) / (1000 * 60 * 60 * 24));
+
+    if (diffDias < 0) {
+      return '<span class="fecha-limite-danger">Vencida</span>';
+    } else if (diffDias <= 3) {
+      return '<span class="fecha-limite-warning">Vence en ' + diffDias + ' d&iacute;a' + (diffDias !== 1 ? 's' : '') + '</span>';
+    }
+    return '<span class="text-xs text-muted">Vence: ' + formatDate(fecha) + '</span>';
+  }
+
+  function renderPendientesUnificado() {
+    var div = document.getElementById('actividades-pendientes');
+
+    if (todasPendientes.length === 0) {
+      div.innerHTML = '<div class="empty-state">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;margin-bottom:16px;opacity:0.4;">' +
+          '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10l2 2 4-4"/><path d="M8 16h8"/>' +
+        '</svg>' +
+        '<p>No tienes actividades pendientes. &#161;Buen trabajo!</p>' +
+      '</div>';
+      return;
+    }
+
+    div.innerHTML = todasPendientes.map(function(a) {
+      var fechaTag = getFechaLimiteTag(a.fecha_limite);
+      var esEncuesta = a.es_encuesta_interna;
+
+      // Botones de accion
+      var botones = '';
+      if (esEncuesta) {
+        botones += '<button class="btn-responder-enc" onclick="abrirEncuesta(\'' + a.id + '\')">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+          ' Responder</button>';
+      } else {
+        if (a.enlace) {
+          botones += '<button class="btn-abrir-enlace" onclick="window.open(\'' + escapeHtml(a.enlace) + '\', \'_blank\')">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+            ' Abrir Enlace</button>';
+        }
+        botones += '<button class="btn-completar-act" onclick="marcarCompletada(\'' + a.id + '\')">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>' +
+          ' Marcar Completada</button>';
+      }
+
+      var tipoBadge = esEncuesta
+        ? (a.tipo_original === 'pre'
+          ? '<span class="badge badge-info">PRE</span>'
+          : '<span class="badge badge-success">POST</span>')
+        : '';
+
+      return '<div class="actividad-card">' +
+        '<div style="display:flex;gap:16px;align-items:flex-start;">' +
+          '<div class="tipo-icon tipo-icon-' + a.tipo + '">' + getTipoIcon(a.tipo) + '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div class="flex-between mb-2">' +
+              '<div>' +
+                '<strong style="font-size:15px;">' + escapeHtml(a.nombre) + '</strong> ' + tipoBadge +
+                '<div style="display:flex;gap:8px;align-items:center;margin-top:4px;">' +
+                  '<span class="text-xs text-muted">' + getTipoLabel(a.tipo) + '</span>' +
+                  '<span class="text-xs text-muted">&bull;</span>' +
+                  '<span class="text-xs text-muted">' + escapeHtml(a.programa_nombre) + '</span>' +
+                  (fechaTag ? '<span class="text-xs text-muted">&bull;</span>' + fechaTag : '') +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            (a.descripcion ? '<p class="text-sm" style="color:var(--color-texto-sec);margin-bottom:12px;">' + escapeHtml(a.descripcion.length > 150 ? a.descripcion.substring(0, 150) + '...' : a.descripcion) + '</p>' : '') +
+            '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+              botones +
+              (!esEncuesta ? '<button class="btn btn-sm btn-outline" onclick="verDetalleActPart(\'' + a.id + '\')" style="margin-left:auto;">Ver detalle</button>' : '') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderCompletadasUnificado() {
+    var div = document.getElementById('actividades-completadas');
+
+    // Combinar: encuestas completadas (del progreso) + actividades completadas
+    var items = todasCompletadas.slice();
+
+    if (items.length === 0) {
+      div.innerHTML = '<div class="empty-state"><p>A&uacute;n no has completado ninguna actividad.</p></div>';
+      return;
+    }
+
+    div.innerHTML = items.map(function(a) {
+      var tipoLabel = getTipoLabel(a.tipo);
+      return '<div class="actividad-card actividad-card-completada">' +
+        '<div style="display:flex;gap:16px;align-items:center;">' +
+          '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E8449" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>' +
+          '<div style="flex:1;">' +
+            '<strong class="text-sm">' + escapeHtml(a.nombre) + '</strong>' +
+            '<div style="display:flex;gap:8px;align-items:center;margin-top:2px;">' +
+              '<span class="text-xs text-muted">' + tipoLabel + '</span>' +
+              '<span class="text-xs text-muted">&bull;</span>' +
+              '<span class="text-xs text-muted">' + escapeHtml(a.programa_nombre) + '</span>' +
+              '<span class="text-xs text-muted">&bull;</span>' +
+              '<span class="text-xs" style="color:#1E8449;">Completada ' + (a.fecha_completada ? formatDate(a.fecha_completada) : '') + '</span>' +
+            '</div>' +
+          '</div>' +
+          (a.enlace ? '<a href="' + escapeHtml(a.enlace) + '" target="_blank" rel="noopener" class="btn btn-sm btn-outline" style="flex-shrink:0;">Abrir</a>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // ============================================
+  // MARCAR ACTIVIDAD COMO COMPLETADA
+  // ============================================
+
+  function marcarCompletada(actId) {
+    if (!confirmar('\u00bfConfirmas que completaste esta actividad?')) return;
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          showToast('Actividad marcada como completada.', 'success');
+          cargarTodo();
+        } else {
+          showToast(r.error || 'Error al marcar.', 'error');
+        }
+      })
+      .withFailureHandler(function() {
+        showToast('Error de conexi&oacute;n.', 'error');
+      })
+      .marcarActividadCompletada(App.token, actId);
+  }
+
+  // ============================================
+  // ENCUESTA INTERNA: RESPONDER
+  // ============================================
+
+  function abrirEncuesta(encuestaId) {
+    encuestaActualId = encuestaId;
+
+    // Ocultar listas, mostrar formulario
+    document.getElementById('actividades-pendientes').parentElement.style.display = 'none';
+    document.getElementById('seccion-completadas').style.display = 'none';
+    document.getElementById('encuesta-form-container').classList.remove('hidden');
+
+    var enc = encuestasPendientes.find(function(e) { return e.id === encuestaId; });
+    if (enc) {
+      document.getElementById('enc-form-titulo').textContent = enc.nombre;
+      document.getElementById('enc-form-programa').textContent = 'Programa: ' + enc.programa_nombre;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          var encData = r.data;
+          preguntasActuales = encData.preguntas || [];
+
+          if (encData.instrucciones) {
+            var instrDiv = document.getElementById('enc-instrucciones');
+            instrDiv.textContent = encData.instrucciones;
+            instrDiv.classList.remove('hidden');
+          } else {
+            document.getElementById('enc-instrucciones').classList.add('hidden');
+          }
+
+          renderPreguntas(preguntasActuales);
+        } else {
+          showToast(r.error, 'error');
+        }
+      })
+      .withFailureHandler(function() {
+        showToast('Error al cargar encuesta.', 'error');
+      })
+      .obtenerEncuestaCompleta(App.token, encuestaId);
+  }
+
+  function renderPreguntas(preguntas) {
+    var div = document.getElementById('enc-preguntas');
+    var total = preguntas.length;
+    document.getElementById('enc-progress-text').textContent = 'Pregunta 0 de ' + total;
+    document.getElementById('enc-progress').style.width = '0%';
+
+    div.innerHTML = preguntas.map(function(p, idx) {
+      var obligTag = p.obligatoria !== false ? ' <span class="text-danger">*</span>' : '';
+      var html = '<div class="card mb-3"><div class="card-body">';
+      html += '<p class="mb-2"><strong>' + (idx + 1) + '. ' + escapeHtml(p.texto_pregunta) + '</strong>' + obligTag + '</p>';
+
+      if (p.conducta_nombre) {
+        html += '<p class="text-xs text-muted mb-2">Conducta: ' + escapeHtml(p.conducta_nombre) + '</p>';
+      }
+
+      html += renderInputPorTipo(p.id, p.tipo_respuesta);
+      html += '</div></div>';
+      return html;
+    }).join('');
+
+    setTimeout(function() {
+      var inputs = div.querySelectorAll('input, textarea');
+      inputs.forEach(function(input) {
+        input.addEventListener('change', actualizarProgreso);
+        input.addEventListener('input', actualizarProgreso);
+      });
+    }, 100);
+  }
+
+  function renderInputPorTipo(preguntaId, tipo) {
+    var name = 'resp_' + preguntaId;
+
+    switch (tipo) {
+      case 'escala_1_5':
+        var html = '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
+        for (var i = 1; i <= 5; i++) {
+          html += '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="' + i + '"> ' +
+            '<span>' + i + '</span>' +
+          '</label>';
+        }
+        html += '</div>';
+        html += '<div style="display:flex;justify-content:space-between;margin-top:4px;">' +
+          '<span class="text-xs text-muted">Muy bajo</span>' +
+          '<span class="text-xs text-muted">Muy alto</span></div>';
+        return html;
+
+      case 'si_no':
+        return '<div style="display:flex;gap:16px;">' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="si"> S&iacute;</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="no"> No</label>' +
+        '</div>';
+
+      case 'logrado_parcial_no':
+        return '<div style="display:flex;gap:16px;flex-wrap:wrap;">' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="logrado"> Logrado</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="parcial"> Parcial</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="no"> No logrado</label>' +
+        '</div>';
+
+      case 'texto_breve':
+        return '<textarea name="' + name + '" class="form-control" placeholder="Escribe tu respuesta..." rows="3"></textarea>';
+
+      default:
+        return '<input type="text" name="' + name + '" class="form-control" placeholder="Respuesta...">';
+    }
+  }
+
+  function actualizarProgreso() {
+    var total = preguntasActuales.length;
+    if (total === 0) return;
+
+    var respondidas = 0;
+    preguntasActuales.forEach(function(p) {
+      var name = 'resp_' + p.id;
+      var inputs = document.querySelectorAll('[name="' + name + '"]');
+      var tieneValor = false;
+      inputs.forEach(function(input) {
+        if (input.type === 'radio' && input.checked) tieneValor = true;
+        if (input.type === 'textarea' && input.value.trim()) tieneValor = true;
+        if (input.type === 'text' && input.value.trim()) tieneValor = true;
+      });
+      if (tieneValor) respondidas++;
+    });
+
+    var pct = Math.round(respondidas / total * 100);
+    document.getElementById('enc-progress').style.width = pct + '%';
+    document.getElementById('enc-progress-text').textContent = 'Pregunta ' + respondidas + ' de ' + total + ' (' + pct + '%)';
+  }
+
+  function enviarRespuestasEncuesta() {
+    var respuestas = [];
+    preguntasActuales.forEach(function(p) {
+      var name = 'resp_' + p.id;
+      var inputs = document.querySelectorAll('[name="' + name + '"]');
+      var valor = null;
+      inputs.forEach(function(input) {
+        if (input.type === 'radio' && input.checked) valor = input.value;
+        if (input.type === 'textarea' || input.type === 'text') {
+          if (input.value.trim()) valor = input.value.trim();
+        }
+      });
+      if (valor !== null) {
+        respuestas.push({ preguntaId: p.id, valor: valor });
+      }
+    });
+
+    var btn = document.getElementById('btn-enviar-respuestas');
+    btnLoading(btn, true);
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btnLoading(btn, false);
+        if (r.success) {
+          showToast(r.data.message || 'Respuestas enviadas.', 'success');
+          volverALista();
+          cargarTodo();
+        } else {
+          showToast(r.error, 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        btnLoading(btn, false);
+        showToast('Error al enviar respuestas.', 'error');
+      })
+      .enviarRespuestas(App.token, encuestaActualId, respuestas);
+  }
+
+  function volverALista() {
+    document.getElementById('encuesta-form-container').classList.add('hidden');
+    document.getElementById('actividades-pendientes').parentElement.style.display = '';
+    document.getElementById('seccion-completadas').style.display = '';
+    encuestaActualId = null;
+    preguntasActuales = [];
+  }
+
+  // ============================================
+  // DETALLE DE ACTIVIDAD EXTERNA
+  // ============================================
+
+  function verDetalleActPart(id) {
+    var a = misActividadesData.find(function(x) { return x.id === id; });
+    if (!a) return;
+
+    document.getElementById('ver-act-titulo').textContent = a.nombre;
+
+    var html = '';
+
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Tipo</span><br>' +
+      '<span class="text-sm">' + getTipoLabel(a.tipo) + '</span></div>';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Programa</span><br>' +
+      '<span class="text-sm">' + escapeHtml(a.programa_nombre) + '</span></div>';
+    if (a.fecha_limite) {
+      html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Fecha l&iacute;mite</span><br>' +
+        '<span class="text-sm">' + formatDate(a.fecha_limite) + '</span> ' + getFechaLimiteTag(a.fecha_limite) + '</div>';
+    }
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Estado</span><br>' +
+      (a.completada
+        ? '<span class="text-sm" style="color:#1E8449;font-weight:500;">Completada</span>'
+        : '<span class="text-sm" style="color:#D68910;font-weight:500;">Pendiente</span>') +
+    '</div>';
+    html += '</div>';
+
+    if (a.descripcion) {
+      html += '<div class="mb-3">';
+      html += '<span class="text-muted text-xs" style="text-transform:uppercase;">Instrucciones</span>';
+      html += '<div style="background:var(--color-fondo-alt);padding:14px 16px;border-radius:8px;margin-top:6px;">';
+      html += '<p class="text-sm" style="white-space:pre-wrap;">' + escapeHtml(a.descripcion) + '</p>';
+      html += '</div></div>';
+    }
+
+    if (a.enlace) {
+      html += '<div class="mb-3">';
+      html += '<span class="text-muted text-xs" style="text-transform:uppercase;">Enlace</span>';
+      html += '<div style="background:var(--color-fondo-alt);padding:10px 14px;border-radius:8px;margin-top:4px;display:flex;align-items:center;justify-content:space-between;">';
+      html += '<a href="' + escapeHtml(a.enlace) + '" target="_blank" rel="noopener" style="color:var(--color-secundario);word-break:break-all;font-size:13px;">' +
+        escapeHtml(a.enlace.length > 60 ? a.enlace.substring(0, 60) + '...' : a.enlace) + '</a>';
+      html += '<button class="btn-abrir-enlace" onclick="window.open(\'' + escapeHtml(a.enlace) + '\', \'_blank\')" style="flex-shrink:0;margin-left:8px;">Abrir</button>';
+      html += '</div></div>';
+    }
+
+    var footer = '<button class="btn btn-outline" onclick="closeModal(\'modal-ver-actividad\')">Cerrar</button>';
+    if (!a.completada) {
+      footer += ' <button class="btn btn-primary" onclick="marcarCompletada(\'' + a.id + '\');closeModal(\'modal-ver-actividad\');">Marcar Completada</button>';
+    }
+
+    document.getElementById('ver-act-body').innerHTML = html;
+    document.getElementById('ver-act-footer').innerHTML = footer;
+    openModal('modal-ver-actividad');
+  }
+</script>

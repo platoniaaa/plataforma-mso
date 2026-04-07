@@ -1,0 +1,516 @@
+<!-- Vista: Gestión de Usuarios (Solo Admin) -->
+<div>
+  <div class="flex-between mb-4">
+    <div class="filter-bar" style="flex:1;">
+      <input type="text" class="form-control search-input" id="buscar-usuario"
+             placeholder="Buscar por nombre o email..." oninput="filtrarUsuarios()">
+      <select class="form-control" id="filtro-empresa" onchange="filtrarUsuarios()" style="max-width:180px;">
+        <option value="">Todas las empresas</option>
+      </select>
+      <select class="form-control" id="filtro-rol" onchange="filtrarUsuarios()" style="max-width:140px;">
+        <option value="">Todos los roles</option>
+        <option value="admin">Admin</option>
+        <option value="jefatura">Jefatura</option>
+        <option value="participante">Participante</option>
+      </select>
+      <select class="form-control" id="filtro-estado" onchange="filtrarUsuarios()" style="max-width:140px;">
+        <option value="">Todos</option>
+        <option value="activo">Activo</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="inactivo">Inactivo</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline" onclick="abrirModalCargaMasiva()">Carga Masiva</button>
+      <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo Usuario</button>
+    </div>
+  </div>
+
+  <!-- Alerta de pendientes -->
+  <div id="alerta-pendientes" class="alert alert-warning hidden">
+    <strong id="count-pendientes">0</strong> usuario(s) pendiente(s) de aprobaci&oacute;n.
+  </div>
+
+  <div class="card">
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Empresa</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-usuarios">
+          <tr><td colspan="6" class="text-center text-muted p-4">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Crear/Editar Usuario -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-usuario-titulo">Nuevo Usuario</h3>
+      <button class="modal-close" onclick="closeModal('modal-usuario')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-usuario">
+        <input type="hidden" id="usuario-edit-id" name="id">
+
+        <div class="form-group">
+          <label>Nombre completo *</label>
+          <input type="text" name="nombre_completo" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" name="email" class="form-control" required id="input-email-usuario">
+        </div>
+
+        <div class="form-group" id="grupo-password">
+          <label>Contrase&ntilde;a (dejar vac&iacute;o para usar "mso2026")</label>
+          <input type="password" name="password" class="form-control" placeholder="mso2026">
+        </div>
+
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" name="cargo" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Empresa *</label>
+          <select name="cliente_id" class="form-control" id="select-empresa-usuario" required onchange="cargarJefaturasEmpresa(this.value)">
+            <option value="">Selecciona...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Rol *</label>
+          <select name="rol" class="form-control" required>
+            <option value="">Selecciona...</option>
+            <option value="participante">Participante</option>
+            <option value="jefatura">Jefatura</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>&Aacute;rea</label>
+          <input type="text" name="area" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Equipo</label>
+          <input type="text" name="equipo" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Jefatura asignada</label>
+          <select name="jefatura_id" class="form-control" id="select-jefatura">
+            <option value="">Sin asignar</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-usuario')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-usuario" onclick="guardarUsuario()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Aprobar usuario pendiente -->
+<div class="modal-overlay" id="modal-aprobar">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h3>Aprobar Usuario</h3>
+      <button class="modal-close" onclick="closeModal('modal-aprobar')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="mb-3">Aprobar a: <strong id="aprobar-nombre"></strong></p>
+      <input type="hidden" id="aprobar-id">
+
+      <div class="form-group">
+        <label>Asignar rol *</label>
+        <select class="form-control" id="aprobar-rol" required>
+          <option value="participante">Participante</option>
+          <option value="jefatura">Jefatura</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Jefatura asignada</label>
+        <select class="form-control" id="aprobar-jefatura">
+          <option value="">Sin asignar</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-aprobar')">Cancelar</button>
+      <button class="btn btn-success" id="btn-aprobar" onclick="ejecutarAprobacion()">Aprobar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Carga Masiva -->
+<div class="modal-overlay" id="modal-carga-masiva">
+  <div class="modal" style="max-width:550px;">
+    <div class="modal-header">
+      <h3>Carga Masiva de Usuarios</h3>
+      <button class="modal-close" onclick="closeModal('modal-carga-masiva')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Empresa destino *</label>
+        <select class="form-control" id="carga-empresa" required>
+          <option value="">Selecciona empresa...</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Archivo Excel (.xlsx)</label>
+        <input type="file" id="carga-archivo" accept=".xlsx,.xls" class="form-control"
+               onchange="previsualizarExcel(this)">
+      </div>
+
+      <div class="text-sm text-muted mb-3">
+        Columnas requeridas: <strong>nombre_completo, email, rol</strong><br>
+        Opcionales: cargo, area, equipo, jefatura_email<br>
+        Contrase&ntilde;a por defecto: <code>mso2026</code>
+      </div>
+
+      <div id="preview-carga" class="hidden">
+        <p class="text-sm mb-2"><strong id="preview-count">0</strong> registros detectados:</p>
+        <div class="table-container" style="max-height:200px;overflow-y:auto;">
+          <table class="data-table" id="tabla-preview">
+            <thead><tr></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="resultado-carga" class="hidden mt-3"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-carga-masiva')">Cerrar</button>
+      <button class="btn btn-primary hidden" id="btn-ejecutar-carga" onclick="ejecutarCargaMasiva()">Cargar Usuarios</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var usuariosData = [];
+  var clientesLista = [];
+  var datosExcelParseados = [];
+
+  (function() {
+    cargarUsuarios();
+    cargarClientesParaFiltros();
+  })();
+
+  function cargarClientesParaFiltros() {
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          clientesLista = result.data;
+          var selectFiltro = document.getElementById('filtro-empresa');
+          var selectForm = document.getElementById('select-empresa-usuario');
+          var selectCarga = document.getElementById('carga-empresa');
+
+          clientesLista.forEach(function(c) {
+            if (c.estado !== 'Activo') return;
+            [selectFiltro, selectForm, selectCarga].forEach(function(sel) {
+              var opt = document.createElement('option');
+              opt.value = c.id;
+              opt.textContent = c.nombre;
+              sel.appendChild(opt);
+            });
+          });
+        }
+      })
+      .listarClientes(App.token);
+  }
+
+  function cargarUsuarios() {
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          usuariosData = result.data;
+          renderUsuarios(usuariosData);
+
+          // Contar pendientes
+          var pendientes = usuariosData.filter(function(u) { return u.estado === 'pendiente'; });
+          if (pendientes.length > 0) {
+            document.getElementById('count-pendientes').textContent = pendientes.length;
+            document.getElementById('alerta-pendientes').classList.remove('hidden');
+          } else {
+            document.getElementById('alerta-pendientes').classList.add('hidden');
+          }
+        }
+      })
+      .listarUsuarios(App.token, {});
+  }
+
+  function renderUsuarios(usuarios) {
+    var tbody = document.getElementById('tbody-usuarios');
+    if (!usuarios.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-4">No hay usuarios.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = usuarios.map(function(u) {
+      var acciones = '';
+      if (u.estado === 'pendiente') {
+        acciones = '<button class="btn btn-sm btn-success" onclick="abrirAprobar(\'' + u.id + '\')">Aprobar</button> ';
+      }
+      acciones += '<button class="btn btn-sm btn-outline" onclick="editarUsuario(\'' + u.id + '\')">Editar</button> ';
+      if (u.estado !== 'inactivo') {
+        acciones += '<button class="btn btn-sm btn-danger" onclick="confirmarDesactivarUsuario(\'' + u.id + '\')">Desactivar</button>';
+      }
+
+      return '<tr>' +
+        '<td><strong>' + escapeHtml(u.nombre_completo) + '</strong>' +
+          (u.cargo ? '<br><span class="text-xs text-muted">' + escapeHtml(u.cargo) + '</span>' : '') + '</td>' +
+        '<td>' + escapeHtml(u.email) + '</td>' +
+        '<td>' + escapeHtml(u.cliente_nombre || '-') + '</td>' +
+        '<td>' + getBadge(u.rol) + '</td>' +
+        '<td>' + getBadge(u.estado) + '</td>' +
+        '<td>' + acciones + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function filtrarUsuarios() {
+    var busqueda = document.getElementById('buscar-usuario').value.toLowerCase();
+    var empresa = document.getElementById('filtro-empresa').value;
+    var rol = document.getElementById('filtro-rol').value;
+    var estado = document.getElementById('filtro-estado').value;
+
+    var filtrados = usuariosData.filter(function(u) {
+      var matchBusq = !busqueda ||
+        u.nombre_completo.toLowerCase().indexOf(busqueda) !== -1 ||
+        u.email.toLowerCase().indexOf(busqueda) !== -1;
+      var matchEmp = !empresa || u.cliente_id === empresa;
+      var matchRol = !rol || u.rol === rol;
+      var matchEst = !estado || u.estado === estado;
+      return matchBusq && matchEmp && matchRol && matchEst;
+    });
+
+    renderUsuarios(filtrados);
+  }
+
+  function cargarJefaturasEmpresa(clienteId) {
+    var sel = document.getElementById('select-jefatura');
+    sel.innerHTML = '<option value="">Sin asignar</option>';
+    if (!clienteId) return;
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.success) {
+          r.data.forEach(function(j) {
+            var opt = document.createElement('option');
+            opt.value = j.id;
+            opt.textContent = j.nombre + ' (' + j.email + ')';
+            sel.appendChild(opt);
+          });
+        }
+      })
+      .withFailureHandler(function() {})
+      .obtenerJefaturasCliente(App.token, clienteId);
+  }
+
+  function abrirModalUsuario() {
+    document.getElementById('modal-usuario-titulo').textContent = 'Nuevo Usuario';
+    resetForm('form-usuario');
+    document.getElementById('usuario-edit-id').value = '';
+    document.getElementById('grupo-password').classList.remove('hidden');
+    document.getElementById('input-email-usuario').readOnly = false;
+    openModal('modal-usuario');
+  }
+
+  function editarUsuario(id) {
+    var usuario = usuariosData.find(function(u) { return u.id === id; });
+    if (!usuario) return;
+
+    document.getElementById('modal-usuario-titulo').textContent = 'Editar Usuario';
+    document.getElementById('usuario-edit-id').value = id;
+    document.getElementById('grupo-password').classList.add('hidden');
+    document.getElementById('input-email-usuario').readOnly = true;
+    fillForm('form-usuario', usuario);
+    if (usuario.cliente_id) {
+      cargarJefaturasEmpresa(usuario.cliente_id);
+      // Esperar a que carguen y seleccionar la actual
+      setTimeout(function() {
+        var sel = document.getElementById('select-jefatura');
+        if (usuario.jefatura_id) sel.value = usuario.jefatura_id;
+      }, 1500);
+    }
+    openModal('modal-usuario');
+  }
+
+  function guardarUsuario() {
+    var datos = getFormData('form-usuario');
+    var id = document.getElementById('usuario-edit-id').value;
+    var btn = document.getElementById('btn-guardar-usuario');
+
+    btnLoading(btn, true);
+
+    if (id) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          btnLoading(btn, false);
+          if (r.success) { closeModal('modal-usuario'); showToast('Usuario actualizado.', 'success'); cargarUsuarios(); }
+          else showToast(r.error, 'error');
+        })
+        .withFailureHandler(function() { btnLoading(btn, false); showToast('Error.', 'error'); })
+        .actualizarUsuario(App.token, id, datos);
+    } else {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          btnLoading(btn, false);
+          if (r.success) { closeModal('modal-usuario'); showToast('Usuario creado.', 'success'); cargarUsuarios(); }
+          else showToast(r.error, 'error');
+        })
+        .withFailureHandler(function() { btnLoading(btn, false); showToast('Error.', 'error'); })
+        .crearUsuarioManual(App.token, datos);
+    }
+  }
+
+  function abrirAprobar(id) {
+    var usuario = usuariosData.find(function(u) { return u.id === id; });
+    if (!usuario) return;
+
+    document.getElementById('aprobar-id').value = id;
+    document.getElementById('aprobar-nombre').textContent = usuario.nombre_completo + ' (' + usuario.email + ')';
+
+    // Cargar jefaturas del mismo cliente
+    google.script.run
+      .withSuccessHandler(function(r) {
+        var sel = document.getElementById('aprobar-jefatura');
+        sel.innerHTML = '<option value="">Sin asignar</option>';
+        if (r.success) {
+          r.data.forEach(function(j) {
+            var opt = document.createElement('option');
+            opt.value = j.id;
+            opt.textContent = j.nombre;
+            sel.appendChild(opt);
+          });
+        }
+      })
+      .obtenerJefaturasCliente(App.token, usuario.cliente_id);
+
+    openModal('modal-aprobar');
+  }
+
+  function ejecutarAprobacion() {
+    var id = document.getElementById('aprobar-id').value;
+    var rol = document.getElementById('aprobar-rol').value;
+    var jefaturaId = document.getElementById('aprobar-jefatura').value;
+    var btn = document.getElementById('btn-aprobar');
+
+    btnLoading(btn, true);
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btnLoading(btn, false);
+        if (r.success) { closeModal('modal-aprobar'); showToast('Usuario aprobado.', 'success'); cargarUsuarios(); }
+        else showToast(r.error, 'error');
+      })
+      .withFailureHandler(function() { btnLoading(btn, false); showToast('Error.', 'error'); })
+      .aprobarUsuario(App.token, id, rol, jefaturaId);
+  }
+
+  function confirmarDesactivarUsuario(id) {
+    if (confirmar('¿Desactivar este usuario?')) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (r.success) { showToast('Usuario desactivado.', 'success'); cargarUsuarios(); }
+          else showToast(r.error, 'error');
+        })
+        .desactivarUsuario(App.token, id);
+    }
+  }
+
+  // === Carga Masiva ===
+  function abrirModalCargaMasiva() {
+    document.getElementById('carga-archivo').value = '';
+    document.getElementById('preview-carga').classList.add('hidden');
+    document.getElementById('resultado-carga').classList.add('hidden');
+    document.getElementById('btn-ejecutar-carga').classList.add('hidden');
+    datosExcelParseados = [];
+    openModal('modal-carga-masiva');
+  }
+
+  function previsualizarExcel(input) {
+    var file = input.files[0];
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var workbook = XLSX.read(e.target.result, { type: 'binary' });
+      var sheet = workbook.Sheets[workbook.SheetNames[0]];
+      var json = XLSX.utils.sheet_to_json(sheet);
+
+      datosExcelParseados = json;
+      document.getElementById('preview-count').textContent = json.length;
+
+      if (json.length > 0) {
+        var headers = Object.keys(json[0]);
+        var thead = document.querySelector('#tabla-preview thead tr');
+        thead.innerHTML = headers.map(function(h) { return '<th>' + escapeHtml(h) + '</th>'; }).join('');
+
+        var tbody = document.querySelector('#tabla-preview tbody');
+        var previewRows = json.slice(0, 5);
+        tbody.innerHTML = previewRows.map(function(row) {
+          return '<tr>' + headers.map(function(h) {
+            return '<td>' + escapeHtml(String(row[h] || '')) + '</td>';
+          }).join('') + '</tr>';
+        }).join('');
+
+        if (json.length > 5) {
+          tbody.innerHTML += '<tr><td colspan="' + headers.length + '" class="text-center text-muted">... y ' + (json.length - 5) + ' m\u00e1s</td></tr>';
+        }
+
+        document.getElementById('preview-carga').classList.remove('hidden');
+        document.getElementById('btn-ejecutar-carga').classList.remove('hidden');
+      }
+    };
+    reader.readAsBinaryString(file);
+  }
+
+  function ejecutarCargaMasiva() {
+    var clienteId = document.getElementById('carga-empresa').value;
+    if (!clienteId) { showToast('Selecciona una empresa.', 'error'); return; }
+    if (!datosExcelParseados.length) { showToast('No hay datos.', 'error'); return; }
+
+    var btn = document.getElementById('btn-ejecutar-carga');
+    btnLoading(btn, true);
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btnLoading(btn, false);
+        var div = document.getElementById('resultado-carga');
+        div.classList.remove('hidden');
+
+        if (r.success) {
+          var html = '<div class="alert alert-success">' + r.data.message + '</div>';
+          if (r.data.errores && r.data.errores.length) {
+            html += '<div class="alert alert-warning"><strong>Errores:</strong><ul style="margin:8px 0 0 16px;">';
+            r.data.errores.forEach(function(err) { html += '<li>' + escapeHtml(err) + '</li>'; });
+            html += '</ul></div>';
+          }
+          div.innerHTML = html;
+          cargarUsuarios();
+        } else {
+          div.innerHTML = '<div class="alert alert-error">' + escapeHtml(r.error) + '</div>';
+        }
+      })
+      .withFailureHandler(function() { btnLoading(btn, false); showToast('Error en carga masiva.', 'error'); })
+      .cargaMasivaUsuarios(App.token, clienteId, datosExcelParseados);
+  }
+</script>
