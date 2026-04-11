@@ -11,7 +11,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const BASE_DIR = __dirname;
 const BASE_URL = `http://localhost:${PORT}`;
 
