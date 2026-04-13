@@ -226,7 +226,7 @@
   function mergeYRender() {
     if (!dataLoaded.actividades || !dataLoaded.encuestas) return;
 
-    // Convertir encuestas internas a formato unificado (pendientes)
+    // Convertir encuestas internas a formato unificado, respetando el estado real
     var encItems = encuestasPendientes.map(function(e) {
       return {
         id: e.id,
@@ -237,17 +237,20 @@
         descripcion: e.instrucciones || '',
         fecha_limite: e.fecha_cierre,
         enlace: null,
-        completada: false,
+        completada: e.estado === 'completada',
         es_encuesta_interna: true
       };
     });
+
+    var encPendientes = encItems.filter(function(e) { return !e.completada; });
+    var encCompletadas = encItems.filter(function(e) { return e.completada; });
 
     // Actividades externas pendientes
     var actPendientes = misActividadesData.filter(function(a) { return !a.completada; });
     var actCompletadas = misActividadesData.filter(function(a) { return a.completada; });
 
     // Merge: encuestas internas pendientes + actividades externas pendientes
-    todasPendientes = encItems.concat(actPendientes);
+    todasPendientes = encPendientes.concat(actPendientes);
 
     // Ordenar por fecha limite (las que vencen antes, primero)
     todasPendientes.sort(function(a, b) {
@@ -257,7 +260,8 @@
       return a.fecha_limite.localeCompare(b.fecha_limite);
     });
 
-    todasCompletadas = actCompletadas;
+    // Completadas: encuestas internas completadas + actividades externas completadas
+    todasCompletadas = encCompletadas.concat(actCompletadas);
 
     renderPendientesUnificado();
     renderCompletadasUnificado();
