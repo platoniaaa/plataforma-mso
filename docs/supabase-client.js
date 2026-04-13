@@ -1938,6 +1938,7 @@ var GROQ_API_KEY = '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';
 var GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 function callGroqFromBrowser(messages) {
+  console.log('[Groq] key prefix:', (GROQ_API_KEY || '').substring(0, 12) + '...', 'length:', (GROQ_API_KEY || '').length);
   return fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -1951,13 +1952,18 @@ function callGroqFromBrowser(messages) {
       max_tokens: 2048
     })
   })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.choices && data.choices[0]) {
-      return { success: true, response: data.choices[0].message.content };
-    }
-    if (data.error) throw new Error(data.error.message);
-    throw new Error('Respuesta inesperada de Groq');
+  .then(function(r) {
+    console.log('[Groq] HTTP status:', r.status);
+    return r.text().then(function(txt) {
+      console.log('[Groq] raw response body:', txt);
+      var data;
+      try { data = JSON.parse(txt); } catch (e) { throw new Error('Respuesta no-JSON: ' + txt.substring(0, 200)); }
+      if (data.choices && data.choices[0]) {
+        return { success: true, response: data.choices[0].message.content };
+      }
+      if (data.error) throw new Error('Groq ' + r.status + ': ' + (data.error.message || JSON.stringify(data.error)));
+      throw new Error('Respuesta inesperada de Groq (status ' + r.status + ')');
+    });
   });
 }
 
