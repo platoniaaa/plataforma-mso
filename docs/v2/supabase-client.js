@@ -1509,8 +1509,85 @@ var backendFunctions = {
     return { success: true, data: data };
   },
 
-  obtenerMiProgreso: async function() {
-    return { success: true, data: { comparacion: [], feedback: [] } };
+  obtenerMiProgreso: async function(token) {
+    try {
+      var u = null; try { u = JSON.parse(sessionStorage.getItem('tpt_usuario') || 'null'); } catch (e) {}
+      if (!u || !u.id) return { success: true, data: { comparacion: [], feedback: [] } };
+      var userId = u.id;
+
+      // 1. Programa(s) del usuario
+      var pp = await _supabase.from('participantes_programa')
+        .select('programa_id').eq('usuario_id', userId);
+      var progIds = (pp.data || []).map(function(p) { return p.programa_id; });
+      if (progIds.length === 0) return { success: true, data: { comparacion: [], feedback: [] } };
+
+      // 2. Competencias del primer programa (participantes normalmente estan en uno)
+      var compsR = await _supabase.from('competencias')
+        .select('id, nombre').in('programa_id', progIds).order('orden');
+      var comps = compsR.data || [];
+      if (comps.length === 0) return { success: true, data: { comparacion: [], feedback: [] } };
+
+      // 3. Encuestas PRE y POST
+      var encsR = await _supabase.from('encuestas')
+        .select('id, tipo').in('programa_id', progIds);
+      var preIds = [], postIds = [];
+      (encsR.data || []).forEach(function(e) {
+        if (e.tipo === 'pre') preIds.push(e.id);
+        else if (e.tipo === 'post') postIds.push(e.id);
+      });
+      var allEncIds = preIds.concat(postIds);
+      if (allEncIds.length === 0) return { success: true, data: { comparacion: [], feedback: [] } };
+
+      // 4. Preguntas -> competencia
+      var pregsR = await _supabase.from('preguntas')
+        .select('id, competencia_id, encuesta_id').in('encuesta_id', allEncIds);
+      var pregMap = {};
+      (pregsR.data || []).forEach(function(p) {
+        if (p.competencia_id) pregMap[p.id] = p.competencia_id;
+      });
+      var pregIdsArr = Object.keys(pregMap);
+      if (pregIdsArr.length === 0) return { success: true, data: { comparacion: [], feedback: [] } };
+
+      // 5. Respuestas donde YO soy el evaluado (recibidas sobre mi)
+      var respsR = await _supabase.from('respuestas')
+        .select('encuesta_id, pregunta_id, valor').eq('evaluado_id', userId).in('pregunta_id', pregIdsArr);
+
+      // 6. Agregar por competencia / PRE vs POST
+      var preSet = {}; preIds.forEach(function(id) { preSet[id] = true; });
+      var acum = {}; // compId -> { pre: [], post: [] }
+      comps.forEach(function(c) { acum[c.id] = { pre: [], post: [] }; });
+      (respsR.data || []).forEach(function(r) {
+        var compId = pregMap[r.pregunta_id];
+        if (!compId || !acum[compId]) return;
+        var n = parseFloat(r.valor);
+        if (isNaN(n) || n < 1 || n > 4) return;
+        if (preSet[r.encuesta_id]) acum[compId].pre.push(n);
+        else acum[compId].post.push(n);
+      });
+
+      function avg(arr) {
+        if (!arr.length) return null;
+        var s = arr.reduce(function(a, b) { return a + b; }, 0);
+        return Math.round((s / arr.length) * 10) / 10;
+      }
+
+      var comparacion = comps.map(function(c) {
+        var ag = acum[c.id] || { pre: [], post: [] };
+        return {
+          conducta_nombre: c.nombre,
+          promedioPre: avg(ag.pre),
+          promedioPost: avg(ag.post)
+        };
+      }).filter(function(row) {
+        return row.promedioPre !== null || row.promedioPost !== null;
+      });
+
+      // Feedback: no hay tabla todavia. Placeholder vacio.
+      return { success: true, data: { comparacion: comparacion, feedback: [] } };
+    } catch (e) {
+      console.error('[obtenerMiProgreso] exception', e);
+      return { success: false, error: (e && e.message) || 'Error en obtenerMiProgreso' };
+    }
   },
 
   obtenerResumenPrograma: async function(token, progId) {
