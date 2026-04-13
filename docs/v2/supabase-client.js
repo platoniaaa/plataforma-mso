@@ -1107,57 +1107,62 @@ var backendFunctions = {
 
   obtenerMapaCalor: async function(token, progId) {
     if (!progId) return { success: true, data: [] };
-    // Lideres del programa
-    var parts = await _supabase.from('participantes_programa')
-      .select('usuario_id, rol_programa, usuarios!participantes_programa_usuario_id_fkey(nombre)')
-      .eq('programa_id', progId).eq('rol_programa', 'lider');
-    var lideres = parts.data || [];
-    if (lideres.length === 0) return { success: true, data: [] };
 
-    // Competencias
+    // Competencias del programa
     var comps = await _supabase.from('competencias').select('id, nombre').eq('programa_id', progId).order('orden');
     if (!comps.data || comps.data.length === 0) return { success: true, data: [] };
 
     // Encuestas POST del programa
     var encs = await _supabase.from('encuestas').select('id').eq('programa_id', progId).eq('tipo', 'post');
     var encIds = (encs.data || []).map(function(e) { return e.id; });
-    if (encIds.length === 0) return { success: true, data: [] };
+    if (encIds.length === 0) {
+      // Sin POST aun: devolver cada conducta con nivel 0 / color rojo
+      return {
+        success: true,
+        data: comps.data.map(function(c) {
+          return { conducta_nombre: c.nombre, nivel: 0, color: 'bajo' };
+        })
+      };
+    }
 
-    // Preguntas
-    var pregs = await _supabase.from('preguntas').select('id, competencia_id, encuesta_id').in('encuesta_id', encIds);
+    // Preguntas vinculadas a competencias
+    var pregs = await _supabase.from('preguntas')
+      .select('id, competencia_id').in('encuesta_id', encIds);
     var pregMap = {};
-    (pregs.data || []).forEach(function(p) { pregMap[p.id] = p; });
+    (pregs.data || []).forEach(function(p) {
+      if (p.competencia_id) pregMap[p.id] = p.competencia_id;
+    });
+    var pregIds = Object.keys(pregMap);
+    if (pregIds.length === 0) {
+      return {
+        success: true,
+        data: comps.data.map(function(c) {
+          return { conducta_nombre: c.nombre, nivel: 0, color: 'bajo' };
+        })
+      };
+    }
 
-    // Respuestas POST
-    var resps = await _supabase.from('respuestas').select('pregunta_id, valor, evaluado_id').in('pregunta_id', Object.keys(pregMap));
-
-    // Agrupar: evaluado_id -> competencia_id -> valores
-    var acum = {};
+    // Respuestas POST: agregar valores por competencia
+    var resps = await _supabase.from('respuestas').select('pregunta_id, valor').in('pregunta_id', pregIds);
+    var acum = {}; // competencia_id -> [valores]
     (resps.data || []).forEach(function(r) {
-      var p = pregMap[r.pregunta_id];
-      if (!p || !p.competencia_id) return;
+      var compId = pregMap[r.pregunta_id];
+      if (!compId) return;
       var n = parseFloat(r.valor);
-      if (isNaN(n)) return;
-      if (!acum[r.evaluado_id]) acum[r.evaluado_id] = {};
-      if (!acum[r.evaluado_id][p.competencia_id]) acum[r.evaluado_id][p.competencia_id] = [];
-      acum[r.evaluado_id][p.competencia_id].push(n);
+      if (isNaN(n) || n < 1 || n > 4) return;
+      if (!acum[compId]) acum[compId] = [];
+      acum[compId].push(n);
     });
 
-    var data = lideres.map(function(l) {
-      var porComp = acum[l.usuario_id] || {};
-      var niveles = comps.data.map(function(c) {
-        var vals = porComp[c.id] || [];
-        var avg = 0;
-        if (vals.length > 0) {
-          avg = vals.reduce(function(a, b) { return a + b; }, 0) / vals.length;
-          avg = Math.round(avg * 10) / 10;
-        }
-        return { competencia: c.nombre, nivel: avg };
-      });
-      return {
-        nombre: l.usuarios ? l.usuarios.nombre : 'Usuario',
-        niveles: niveles
-      };
+    var data = comps.data.map(function(c) {
+      var vals = acum[c.id] || [];
+      var nivel = 0;
+      if (vals.length > 0) {
+        var avg = vals.reduce(function(a, b) { return a + b; }, 0) / vals.length;
+        nivel = Math.round(((avg - 1) / 3) * 100);
+      }
+      var color = nivel >= 70 ? 'alto' : nivel >= 40 ? 'medio' : 'bajo';
+      return { conducta_nombre: c.nombre, nivel: nivel, color: color };
     });
     return { success: true, data: data };
   },
@@ -1431,9 +1436,10 @@ var backendFunctions = {
 
   obtenerResumenPorEquipo: async function(token, progId) {
     if (!progId) return { success: true, data: [] };
-    // Agrupar lideres por "equipo" (usando cargo como proxy ya que no hay campo equipo)
+
+    // Asociados del programa agrupados por cargo
     var parts = await _supabase.from('participantes_programa')
-      .select('usuario_id, rol_programa, usuarios!participantes_programa_usuario_id_fkey(nombre, cargo)')
+      .select('usuario_id, rol_programa, usuarios!participantes_programa_usuario_id_fkey(id, nombre, cargo)')
       .eq('programa_id', progId);
     var asociados = parts.data || [];
 
@@ -1441,19 +1447,49 @@ var backendFunctions = {
     asociados.forEach(function(a) {
       if (!a.usuarios) return;
       var equipo = a.usuarios.cargo || 'Sin asignar';
-      if (!grupos[equipo]) grupos[equipo] = { equipo: equipo, area: '-', participantes: 0, lideres: 0, colaboradores: 0 };
-      grupos[equipo].participantes++;
+      if (!grupos[equipo]) {
+        grupos[equipo] = { equipo: equipo, area: '-', numParticipantes: 0, lideres: 0, colaboradores: 0, userIds: [] };
+      }
+      grupos[equipo].numParticipantes++;
+      grupos[equipo].userIds.push(a.usuario_id);
       if (a.rol_programa === 'lider') grupos[equipo].lideres++;
       else grupos[equipo].colaboradores++;
     });
 
+    // Calcular nivel de aplicacion por equipo usando respuestas POST
+    // (promedio de valores 1..4 normalizado a 0..100)
+    var encs = await _supabase.from('encuestas').select('id').eq('programa_id', progId).eq('tipo', 'post');
+    var encIds = (encs.data || []).map(function(e) { return e.id; });
+    var nivelPorUser = {};
+    if (encIds.length > 0) {
+      var resps = await _supabase.from('respuestas')
+        .select('valor, evaluado_id').in('encuesta_id', encIds);
+      var acum = {};
+      (resps.data || []).forEach(function(r) {
+        var n = parseFloat(r.valor);
+        if (isNaN(n) || n < 1 || n > 4) return;
+        if (!acum[r.evaluado_id]) acum[r.evaluado_id] = [];
+        acum[r.evaluado_id].push(n);
+      });
+      Object.keys(acum).forEach(function(uid) {
+        var vals = acum[uid];
+        var avg = vals.reduce(function(a, b) { return a + b; }, 0) / vals.length;
+        nivelPorUser[uid] = ((avg - 1) / 3) * 100;
+      });
+    }
+
     var data = Object.values(grupos).map(function(g) {
+      var niveles = g.userIds.map(function(uid) { return nivelPorUser[uid]; }).filter(function(v) { return typeof v === 'number'; });
+      var nivelProm = 0;
+      if (niveles.length > 0) {
+        nivelProm = Math.round(niveles.reduce(function(a, b) { return a + b; }, 0) / niveles.length);
+      }
       return {
         equipo: g.equipo,
         area: g.area,
-        participantes: g.participantes,
-        nivelAplicacion: 0,
-        estado: g.participantes > 0 ? 'Activo' : 'Pendiente'
+        numParticipantes: g.numParticipantes,
+        nivelAplicacion: nivelProm,
+        estado: g.numParticipantes > 0 ? 'Activo' : 'Pendiente'
       };
     });
     return { success: true, data: data };
