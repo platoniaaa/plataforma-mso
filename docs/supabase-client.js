@@ -1932,17 +1932,17 @@ var backendFunctions = {
 };
 
 // ============================================
-// Groq AI - via Edge Function proxy (no key en el frontend)
+// Groq AI - direct desde browser (key expuesta, requiere unblock de secret scanning)
 // ============================================
+var GROQ_API_KEY = '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';
 var GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 function callGroqFromBrowser(messages) {
-  return fetch(SUPABASE_URL + '/functions/v1/groq-proxy', {
+  return fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
-      'apikey': SUPABASE_KEY
+      'Authorization': 'Bearer ' + GROQ_API_KEY
     },
     body: JSON.stringify({
       model: GROQ_MODEL,
@@ -1953,8 +1953,11 @@ function callGroqFromBrowser(messages) {
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    if (data && data.success) return data;
-    throw new Error((data && data.error) || 'Respuesta inesperada de groq-proxy');
+    if (data.choices && data.choices[0]) {
+      return { success: true, response: data.choices[0].message.content };
+    }
+    if (data.error) throw new Error(data.error.message);
+    throw new Error('Respuesta inesperada de Groq');
   });
 }
 
