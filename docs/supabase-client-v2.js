@@ -1932,18 +1932,18 @@ var backendFunctions = {
 };
 
 // ============================================
-// Groq AI - direct desde browser (key expuesta, requiere unblock de secret scanning)
+// Groq AI via Edge Function proxy (v2 - bulletproof, no key en frontend)
 // ============================================
-var GROQ_API_KEY = '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';
 var GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 function callGroqFromBrowser(messages) {
-  console.log('[Groq] key prefix:', (GROQ_API_KEY || '').substring(0, 12) + '...', 'length:', (GROQ_API_KEY || '').length);
-  return fetch('https://api.groq.com/openai/v1/chat/completions', {
+  console.log('[Groq-v2] via proxy');
+  return fetch(SUPABASE_URL + '/functions/v1/groq-proxy', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + GROQ_API_KEY
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'apikey': SUPABASE_KEY
     },
     body: JSON.stringify({
       model: GROQ_MODEL,
@@ -1953,16 +1953,13 @@ function callGroqFromBrowser(messages) {
     })
   })
   .then(function(r) {
-    console.log('[Groq] HTTP status:', r.status);
+    console.log('[Groq-v2] proxy HTTP status:', r.status);
     return r.text().then(function(txt) {
-      console.log('[Groq] raw response body:', txt);
+      console.log('[Groq-v2] proxy raw body:', txt.substring(0, 500));
       var data;
       try { data = JSON.parse(txt); } catch (e) { throw new Error('Respuesta no-JSON: ' + txt.substring(0, 200)); }
-      if (data.choices && data.choices[0]) {
-        return { success: true, response: data.choices[0].message.content };
-      }
-      if (data.error) throw new Error('Groq ' + r.status + ': ' + (data.error.message || JSON.stringify(data.error)));
-      throw new Error('Respuesta inesperada de Groq (status ' + r.status + ')');
+      if (data && data.success) return data;
+      throw new Error((data && data.error) || 'Respuesta inesperada de groq-proxy');
     });
   });
 }
