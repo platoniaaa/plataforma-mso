@@ -670,20 +670,28 @@ var backendFunctions = {
     if (candidates.length === 0) return { success: true, data: [] };
 
     // Identificar que encuestas ya fueron respondidas por este usuario
+    // y quedarse con la fecha mas reciente de respuesta por encuesta
     var encIds = candidates.map(function(e) { return e.id; });
     var resp = await _supabase.from('respuestas')
-      .select('encuesta_id').eq('evaluador_id', userId).in('encuesta_id', encIds);
-    var respondidas = {};
-    (resp.data || []).forEach(function(r) { respondidas[r.encuesta_id] = true; });
+      .select('encuesta_id, created_at').eq('evaluador_id', userId).in('encuesta_id', encIds);
+    var ultimaFechaPorEncuesta = {};
+    (resp.data || []).forEach(function(r) {
+      var prev = ultimaFechaPorEncuesta[r.encuesta_id];
+      if (!prev || (r.created_at && r.created_at > prev)) {
+        ultimaFechaPorEncuesta[r.encuesta_id] = r.created_at;
+      }
+    });
 
     var data = candidates.map(function(e) {
+      var fechaResp = ultimaFechaPorEncuesta[e.id] || null;
       return {
         id: e.id,
         nombre: e.nombre,
         programa_nombre: e.programas ? e.programas.nombre : '',
         tipo: e.tipo,
         tipo_cuestionario: e.tipo_cuestionario,
-        estado: respondidas[e.id] ? 'completada' : 'pendiente',
+        estado: fechaResp ? 'completada' : 'pendiente',
+        fecha_completada: fechaResp,
         fecha_cierre: e.fecha_cierre || ''
       };
     });
