@@ -1894,7 +1894,89 @@ var backendFunctions = {
     return { success: true, data: { id: r.data.id } };
   },
   listarCronograma: async function() { return { success: true, data: { hitos: [], fases: {} } }; },
-  obtenerResultadosEncuesta: async function() { return { success: true, data: { respuestas: [], estadisticas: {} } }; },
+  obtenerResultadosEncuesta: async function(token, encuestaId) {
+    if (!encuestaId) return { success: false, error: 'Encuesta no identificada' };
+    // 1. Encuesta + programa
+    var encR = await _supabase.from('encuestas')
+      .select('id, nombre, programa_id, tipo, tipo_cuestionario').eq('id', encuestaId).single();
+    if (encR.error || !encR.data) return { success: false, error: 'Encuesta no encontrada' };
+    var encuesta = encR.data;
+
+    // 2. Competencias del programa (columnas de la tabla)
+    var compsR = await _supabase.from('competencias')
+      .select('id, nombre').eq('programa_id', encuesta.programa_id).order('orden');
+    var competencias = (compsR.data || []).map(function(c) {
+      return { id: c.id, nombre: c.nombre };
+    });
+
+    // 3. Preguntas de esta encuesta (map pregunta -> competencia)
+    var pregsR = await _supabase.from('preguntas')
+      .select('id, competencia_id, tipo_respuesta').eq('encuesta_id', encuestaId);
+    var pregMap = {};
+    (pregsR.data || []).forEach(function(p) {
+      pregMap[p.id] = { competencia_id: p.competencia_id, tipo_respuesta: p.tipo_respuesta };
+    });
+    var pregIds = Object.keys(pregMap);
+
+    // 4. Participantes esperados segun tipo_cuestionario (lider/colaborador)
+    var rolEsperado = encuesta.tipo_cuestionario === 'coevaluacion' ? 'colaborador' : 'lider';
+    var partsR = await _supabase.from('participantes_programa')
+      .select('usuario_id, rol_programa, usuarios!participantes_programa_usuario_id_fkey(id, nombre, cargo, email)')
+      .eq('programa_id', encuesta.programa_id).eq('rol_programa', rolEsperado);
+    var participantes = (partsR.data || [])
+      .filter(function(p) { return p.usuarios; })
+      .map(function(p) {
+        return {
+          id: p.usuarios.id,
+          nombre: p.usuarios.nombre,
+          cargo: p.usuarios.cargo || '',
+          email: p.usuarios.email || ''
+        };
+      });
+
+    // 5. Respuestas de esta encuesta
+    var respuestas = [];
+    if (pregIds.length > 0) {
+      var respsR = await _supabase.from('respuestas')
+        .select('pregunta_id, valor, evaluador_id, evaluado_id, created_at').in('pregunta_id', pregIds);
+      // Agregar por (participante, competencia): promedio de niveles 1-4
+      var acum = {}; // "userId::compId" -> [vals]
+      (respsR.data || []).forEach(function(r) {
+        var p = pregMap[r.pregunta_id];
+        if (!p || !p.competencia_id) return;
+        // Para coevaluacion evaluador != evaluado; para autoevaluacion son iguales.
+        // El "participante" de la tabla es el rol esperado (lider o colaborador).
+        // En auto: evaluador == participante (lider).
+        // En co: evaluador == colaborador (participante de la tabla).
+        var partId = r.evaluador_id;
+        var n = parseFloat(r.valor);
+        if (isNaN(n) || n < 1 || n > 4) return;
+        var key = partId + '::' + p.competencia_id;
+        if (!acum[key]) acum[key] = [];
+        acum[key].push(n);
+      });
+      Object.keys(acum).forEach(function(key) {
+        var parts = key.split('::');
+        var vals = acum[key];
+        var avg = vals.reduce(function(a, b) { return a + b; }, 0) / vals.length;
+        respuestas.push({
+          participante_id: parts[0],
+          competencia_id: parts[1],
+          nivel: Math.round(avg * 10) / 10
+        });
+      });
+    }
+
+    return {
+      success: true,
+      data: {
+        encuesta: { id: encuesta.id, nombre: encuesta.nombre, tipo: encuesta.tipo, tipo_cuestionario: encuesta.tipo_cuestionario },
+        participantes: participantes,
+        competencias: competencias,
+        respuestas: respuestas
+      }
+    };
+  },
   resetearPassword: async function() { return { success: true }; },
   generarPreguntasDesdeCompetencias: async function() { return { success: true, data: { count: 0 } }; },
   actualizarPreguntasEncuesta: async function() { return { success: true }; },
