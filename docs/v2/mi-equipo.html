@@ -109,9 +109,11 @@
       }).withFailureHandler(function() { renderWhenReady(); })
       .listarFeedbackEquipo(App.token, progId);
 
-    }).withFailureHandler(function() {
+    }).withFailureHandler(function(err) {
+      console.error('[mi-equipo] listarParticipantesPrograma failed', err);
+      var msg = (err && err.message) ? err.message : 'Error al cargar equipo.';
       document.getElementById('equipo-lista').innerHTML =
-        '<div class="empty-state"><p>Error al cargar equipo.</p></div>';
+        '<div class="empty-state"><p>' + escapeHtml(msg) + '</p></div>';
     }).listarParticipantesPrograma(App.token, progId);
   }
 

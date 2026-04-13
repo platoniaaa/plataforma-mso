@@ -409,22 +409,36 @@ var backendFunctions = {
   },
 
   listarParticipantesPrograma: async function(token, progId) {
-    var r = await _supabase.from('participantes_programa')
-      .select('*, usuarios!participantes_programa_usuario_id_fkey(id, nombre, email, cargo, rol)')
-      .eq('programa_id', progId);
-    var data = (r.data || []).map(function(a) {
-      if (!a.usuarios) return null;
-      return {
-        id: a.usuarios.id,
-        usuario_id: a.usuarios.id,
-        nombre: a.usuarios.nombre,
-        email: a.usuarios.email,
-        cargo: a.usuarios.cargo,
-        rol_programa: a.rol_programa,
-        lider_id: a.lider_id || null
-      };
-    }).filter(Boolean);
-    return { success: true, data: data };
+    try {
+      if (!progId) return { success: true, data: [] };
+      if (!_supabase) return { success: false, error: 'Supabase no inicializado' };
+      var r = await _supabase.from('participantes_programa')
+        .select('*, usuarios!participantes_programa_usuario_id_fkey(id, nombre, email, cargo, rol)')
+        .eq('programa_id', progId);
+      if (r.error) {
+        console.error('[listarParticipantesPrograma] supabase error', r.error);
+        return { success: false, error: r.error.message || 'Error al consultar participantes' };
+      }
+      var data = (r.data || []).map(function(a) {
+        var u = a.usuarios;
+        // Supabase a veces devuelve el join como array si hay ambiguedad
+        if (Array.isArray(u)) u = u[0];
+        if (!u) return null;
+        return {
+          id: u.id,
+          usuario_id: u.id,
+          nombre: u.nombre || '',
+          email: u.email || '',
+          cargo: u.cargo || '',
+          rol_programa: a.rol_programa,
+          lider_id: a.lider_id || null
+        };
+      }).filter(Boolean);
+      return { success: true, data: data };
+    } catch (e) {
+      console.error('[listarParticipantesPrograma] exception', e);
+      return { success: false, error: (e && e.message) || 'Error inesperado' };
+    }
   },
 
   obtenerUsuariosDisponibles: async function(token, progId) {
