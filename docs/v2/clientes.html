@@ -1,0 +1,264 @@
+<!-- Vista: Gestión de Clientes (Solo Admin) -->
+<div>
+  <div class="flex-between mb-4">
+    <div class="filter-bar" style="flex:1;">
+      <input type="text" class="form-control search-input" id="buscar-cliente"
+             placeholder="Buscar por nombre..." oninput="filtrarClientes()">
+      <select class="form-control" id="filtro-estado-cliente" onchange="filtrarClientes()" style="max-width:160px;">
+        <option value="">Todos los estados</option>
+        <option value="Activo">Activo</option>
+        <option value="Inactivo">Inactivo</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalCliente()">
+      + Nuevo Cliente
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="table-container">
+      <table class="data-table" id="tabla-clientes">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Rubro</th>
+            <th>Contacto</th>
+            <th>Email Contacto</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-clientes">
+          <tr><td colspan="6" class="text-center text-muted p-4">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Crear/Editar Cliente -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-cliente-titulo">Nuevo Cliente</h3>
+      <button class="modal-close" onclick="closeModal('modal-cliente')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-cliente">
+        <input type="hidden" id="cliente-id" name="id">
+
+        <div class="form-group">
+          <label>Nombre de la empresa *</label>
+          <input type="text" name="nombre" class="form-control" required
+                 placeholder="Ej: Empresa S.A.">
+        </div>
+
+        <div class="form-group">
+          <label>Raz&oacute;n social</label>
+          <input type="text" name="razon_social" class="form-control"
+                 placeholder="Raz&oacute;n social legal">
+        </div>
+
+        <div class="form-group">
+          <label>Rubro / Industria</label>
+          <input type="text" name="rubro" class="form-control"
+                 placeholder="Ej: Minera, Retail, Banca">
+        </div>
+
+        <div class="form-group">
+          <label>Pa&iacute;s</label>
+          <input type="text" name="pais" class="form-control" value="Chile"
+                 placeholder="Pa&iacute;s">
+        </div>
+
+        <div class="form-group">
+          <label>Nombre del contacto *</label>
+          <input type="text" name="contacto_nombre" class="form-control" required
+                 placeholder="Nombre y apellido del contacto">
+        </div>
+
+        <div class="form-group">
+          <label>Email del contacto *</label>
+          <input type="email" name="contacto_email" class="form-control" required
+                 placeholder="contacto@empresa.cl">
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-cliente')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-cliente" onclick="guardarCliente()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var clientesData = [];
+
+  // Cargar clientes al abrir la vista
+  (function() {
+    cargarClientes();
+  })();
+
+  function cargarClientes() {
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          clientesData = result.data;
+          renderClientes(clientesData);
+        } else {
+          showToast(result.error, 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        showToast('Error al cargar clientes.', 'error');
+      })
+      .listarClientes(App.token);
+  }
+
+  function renderClientes(clientes) {
+    var tbody = document.getElementById('tbody-clientes');
+
+    if (!clientes || clientes.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-4">No hay clientes registrados.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = clientes.map(function(c) {
+      return '<tr>' +
+        '<td><strong>' + escapeHtml(c.nombre) + '</strong></td>' +
+        '<td>' + escapeHtml(c.rubro || '-') + '</td>' +
+        '<td>' + escapeHtml(c.contacto_nombre) + '</td>' +
+        '<td>' + escapeHtml(c.contacto_email) + '</td>' +
+        '<td>' + getBadge(c.estado) + '</td>' +
+        '<td style="white-space:nowrap;">' +
+          '<div style="display:inline-flex;gap:6px;align-items:center;">' +
+          '<button class="btn btn-sm btn-outline" onclick="editarCliente(\'' + c.id + '\')">Editar</button>' +
+          (c.estado === 'Activo' ?
+            '<button class="btn btn-sm" style="background:#F59E0B;color:#fff;" onclick="confirmarDesactivar(\'' + c.id + '\', \'' + escapeHtml(c.nombre) + '\')">Desactivar</button>' :
+            '<button class="btn btn-sm btn-success" onclick="confirmarDesactivar(\'' + c.id + '\', \'' + escapeHtml(c.nombre) + '\')">Activar</button>') +
+          '<button class="btn btn-sm btn-danger" onclick="confirmarEliminar(\'' + c.id + '\', \'' + escapeHtml(c.nombre) + '\')">Eliminar</button>' +
+          '</div>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function filtrarClientes() {
+    var busqueda = document.getElementById('buscar-cliente').value.toLowerCase();
+    var estado = document.getElementById('filtro-estado-cliente').value;
+
+    var filtrados = clientesData.filter(function(c) {
+      var matchNombre = !busqueda || c.nombre.toLowerCase().indexOf(busqueda) !== -1;
+      var matchEstado = !estado || c.estado === estado;
+      return matchNombre && matchEstado;
+    });
+
+    renderClientes(filtrados);
+  }
+
+  function abrirModalCliente() {
+    document.getElementById('modal-cliente-titulo').textContent = 'Nuevo Cliente';
+    resetForm('form-cliente');
+    document.getElementById('cliente-id').value = '';
+    openModal('modal-cliente');
+  }
+
+  function editarCliente(id) {
+    var cliente = clientesData.find(function(c) { return c.id === id; });
+    if (!cliente) return;
+
+    document.getElementById('modal-cliente-titulo').textContent = 'Editar Cliente';
+    document.getElementById('cliente-id').value = id;
+    fillForm('form-cliente', cliente);
+    openModal('modal-cliente');
+  }
+
+  function guardarCliente() {
+    var datos = getFormData('form-cliente');
+    var id = document.getElementById('cliente-id').value;
+    var btn = document.getElementById('btn-guardar-cliente');
+
+    if (!datos.nombre || !datos.contacto_nombre || !datos.contacto_email) {
+      showToast('Completa los campos obligatorios.', 'error');
+      return;
+    }
+
+    btnLoading(btn, true);
+
+    if (id) {
+      // Actualizar
+      google.script.run
+        .withSuccessHandler(function(result) {
+          btnLoading(btn, false);
+          if (result.success) {
+            closeModal('modal-cliente');
+            showToast('Cliente actualizado.', 'success');
+            cargarClientes();
+          } else {
+            showToast(result.error, 'error');
+          }
+        })
+        .withFailureHandler(function() {
+          btnLoading(btn, false);
+          showToast('Error al actualizar.', 'error');
+        })
+        .actualizarCliente(App.token, id, datos);
+    } else {
+      // Crear
+      google.script.run
+        .withSuccessHandler(function(result) {
+          btnLoading(btn, false);
+          if (result.success) {
+            closeModal('modal-cliente');
+            showToast('Cliente creado exitosamente.', 'success');
+            cargarClientes();
+          } else {
+            showToast(result.error, 'error');
+          }
+        })
+        .withFailureHandler(function() {
+          btnLoading(btn, false);
+          showToast('Error al crear.', 'error');
+        })
+        .crearCliente(App.token, datos);
+    }
+  }
+
+  function confirmarEliminar(id, nombre) {
+    if (confirmar('¿Eliminar el cliente "' + nombre + '"? Esta acción no se puede deshacer.')) {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            showToast('Cliente eliminado.', 'success');
+            cargarClientes();
+          } else {
+            showToast(result.error, 'error');
+          }
+        })
+        .withFailureHandler(function() {
+          showToast('Error al eliminar.', 'error');
+        })
+        .eliminarCliente(App.token, id);
+    }
+  }
+
+  function confirmarDesactivar(id, nombre) {
+    var cliente = clientesData.find(function(c) { return c.id === id; });
+    var accion = cliente && cliente.estado === 'Activo' ? 'desactivar' : 'activar';
+    if (confirmar('¿' + accion.charAt(0).toUpperCase() + accion.slice(1) + ' el cliente "' + nombre + '"?')) {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            showToast('Cliente ' + accion + 'do.', 'success');
+            cargarClientes();
+          } else {
+            showToast(result.error, 'error');
+          }
+        })
+        .withFailureHandler(function() {
+          showToast('Error al desactivar.', 'error');
+        })
+        .desactivarCliente(App.token, id);
+    }
+  }
+</script>

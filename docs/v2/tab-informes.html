@@ -1,0 +1,1524 @@
+<!-- Tab: Informes del Programa (Panel Programa) -->
+<style>
+  .informes-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-primario);
+    margin: 0;
+  }
+  .informes-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .informe-action-card {
+    border: 1px solid var(--color-borde);
+    border-radius: 10px;
+    padding: 22px 18px;
+    background: #fff;
+    text-align: center;
+    cursor: pointer;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .informe-action-card:hover {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+    border-color: var(--color-secundario);
+  }
+  .informe-action-card .action-icon {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-fondo-alt);
+    border-radius: 10px;
+    color: var(--color-secundario);
+  }
+  .informe-action-card .action-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-texto);
+    margin-bottom: 4px;
+  }
+  .informe-action-card .action-desc {
+    font-size: 12px;
+    color: var(--color-texto-sec, #64748b);
+  }
+  .informe-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-borde);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: #fff;
+    transition: box-shadow 0.15s;
+  }
+  .informe-row:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .informe-row-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .informe-row-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-texto);
+    word-break: break-word;
+  }
+  .informe-row-meta {
+    font-size: 12px;
+    color: var(--color-texto-sec, #64748b);
+    margin-top: 2px;
+  }
+  .informe-row-actions {
+    flex-shrink: 0;
+  }
+  .participante-selector-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--color-borde);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .participante-selector-item:hover {
+    background: var(--color-fondo-alt);
+  }
+  .participante-selector-item:last-child {
+    border-bottom: none;
+  }
+
+  /* ===== ESTILOS PDF REPLICANDO EJEMPLO ===== */
+  .rpt-container { background: white; border-radius: 8px; box-shadow: 0 2px 16px rgba(0,0,0,0.1); overflow: hidden; }
+
+  .rpt {
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    color: #2D3436;
+    line-height: 1.6;
+    font-size: 13px;
+  }
+
+  .rpt-hero {
+    background: linear-gradient(135deg, rgba(26,60,110,0.92) 0%, rgba(26,60,110,0.85) 100%),
+                url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=400&fit=crop') center/cover;
+    color: white;
+    padding: 48px 50px 40px;
+  }
+
+  .rpt-hero h1 { font-size: 28px; font-weight: 800; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .rpt-hero h2 { font-size: 18px; font-weight: 400; margin: 0 0 6px; font-style: italic; opacity: 0.9; }
+  .rpt-hero .rpt-meta { font-size: 12px; opacity: 0.7; margin-top: 12px; }
+
+  .rpt-body { padding: 40px 50px; }
+
+  .rpt-intro { font-size: 13px; color: #555; margin-bottom: 30px; line-height: 1.7; }
+  .rpt-intro strong { color: #1A3C6E; }
+
+  .rpt-section { margin-bottom: 36px; page-break-inside: avoid; }
+  .rpt-section-title { font-size: 22px; font-weight: 700; color: #2D3436; margin: 0 0 20px; }
+  .rpt-subsection-title { font-size: 15px; font-weight: 600; color: #1A3C6E; margin: 0 0 10px; }
+
+  .rpt-kpi-row { display: flex; gap: 0; margin: 20px 0; }
+  .rpt-kpi-big { flex: 1; text-align: center; padding: 20px 16px; }
+  .rpt-kpi-big-value { font-size: 48px; font-weight: 800; color: #1A3C6E; line-height: 1; }
+  .rpt-kpi-big-label { font-size: 13px; color: #718096; margin-top: 6px; }
+
+  .rpt-tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
+  @media (max-width: 700px) { .rpt-tables-grid { grid-template-columns: 1fr; } }
+
+  .rpt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .rpt-table caption { text-align: left; font-weight: 600; color: #1A3C6E; margin-bottom: 8px; font-size: 14px; caption-side: top; }
+  .rpt-table th { background: #E8F4FD; color: #1A3C6E; padding: 10px 14px; text-align: left; font-weight: 600; border-bottom: 2px solid #B3D9F2; }
+  .rpt-table td { padding: 9px 14px; border-bottom: 1px solid #EDF2F7; }
+  .rpt-table tr:last-child td { border-bottom: none; font-weight: 600; }
+  .rpt-table-highlight { background: #E8F4FD; }
+
+  .rpt-hbar-container { margin: 20px 0; }
+  .rpt-hbar-row { display: grid; grid-template-columns: 140px 1fr 40px; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .rpt-hbar-label { font-size: 12px; font-weight: 500; text-align: right; color: #555; }
+  .rpt-hbar-track { height: 28px; background: #EDF2F7; border-radius: 4px; overflow: hidden; position: relative; }
+  .rpt-hbar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; font-weight: 700; color: white; transition: width 0.5s; }
+  .rpt-hbar-fill-auto { background: #1A3C6E; }
+  .rpt-hbar-fill-co { background: #5DADE2; }
+  .rpt-hbar-value { font-size: 12px; font-weight: 600; color: #555; }
+
+  .rpt-findings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 16px 0; }
+  .rpt-finding-card { background: #F7FBFE; border: 1px solid #D4E6F1; border-top: 4px solid #5DADE2; border-radius: 8px; padding: 16px; }
+  .rpt-finding-card h4 { font-size: 14px; font-weight: 700; color: #1A3C6E; margin: 0 0 8px; }
+  .rpt-finding-card p { font-size: 12px; color: #555; margin: 0; line-height: 1.5; }
+
+  .rpt-profiles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .rpt-profile-card { background: #F7FBFE; border: 1px solid #D4E6F1; border-radius: 8px; padding: 14px 16px; }
+  .rpt-profile-card h4 { font-size: 13px; font-weight: 700; color: #1A3C6E; margin: 0 0 4px; }
+  .rpt-profile-card p { font-size: 12px; color: #718096; margin: 0; }
+
+  .rpt-conclusion-item { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+  .rpt-conclusion-arrow { color: #5DADE2; font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+  .rpt-conclusion-text { font-size: 13px; color: #555; line-height: 1.6; }
+  .rpt-conclusion-text strong { color: #1A3C6E; }
+
+  .rpt-recs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .rpt-rec-card { border: 1px solid #D4E6F1; border-radius: 8px; overflow: hidden; }
+  .rpt-rec-num { background: #5DADE2; color: white; text-align: center; padding: 8px; font-size: 18px; font-weight: 700; }
+  .rpt-rec-body { padding: 14px 16px; }
+  .rpt-rec-body h4 { font-size: 14px; font-weight: 700; color: #1A3C6E; margin: 0 0 6px; }
+  .rpt-rec-body p { font-size: 12px; color: #555; margin: 0; line-height: 1.5; }
+
+  .rpt-cierre { background: #F7FBFE; border-left: 4px solid #1A3C6E; padding: 20px 24px; border-radius: 0 8px 8px 0; margin: 20px 0; }
+  .rpt-cierre p { font-size: 13px; color: #555; margin: 0 0 8px; line-height: 1.7; }
+  .rpt-cierre strong { color: #1A3C6E; }
+  .rpt-cierre .rpt-cierre-highlight { font-size: 14px; font-weight: 700; color: #1A3C6E; }
+
+  .rpt-context-box { background: #1A3C6E; color: white; border-radius: 12px; padding: 24px; }
+  .rpt-context-box h3 { font-size: 15px; margin: 0 0 10px; }
+  .rpt-context-box ul { margin: 8px 0 0; padding-left: 20px; }
+  .rpt-context-box li { margin-bottom: 4px; font-size: 13px; opacity: 0.9; }
+
+  .rpt-competencias { }
+  .rpt-competencia-item { padding: 10px 0; border-bottom: 2px solid #5DADE2; }
+  .rpt-competencia-num { font-size: 12px; color: #718096; }
+  .rpt-competencia-name { font-size: 15px; font-weight: 700; color: #2D3436; }
+
+  .rpt-brecha-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+  .rpt-brecha-card { border: 1px solid #D4E6F1; border-radius: 8px; padding: 14px; }
+  .rpt-brecha-card h4 { font-size: 13px; font-weight: 700; margin: 0 0 4px; }
+  .rpt-brecha-card p { font-size: 12px; color: #555; margin: 0; }
+  .rpt-brecha-card .brecha-val { font-size: 11px; display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: 600; margin-bottom: 6px; }
+  .brecha-neg { background: #D4EFDF; color: #1E8449; }
+  .brecha-pos { background: #FDEBD0; color: #D68910; }
+  .brecha-zero { background: #D4E6F1; color: #2471A3; }
+
+  .rpt-insight-box { background: #F7FBFE; border: 1px solid #D4E6F1; border-radius: 12px; padding: 24px; text-align: center; margin: 20px 0; }
+  .rpt-insight-box p { font-size: 12px; color: #718096; margin: 0 0 8px; }
+  .rpt-insight-box .insight-main { font-size: 20px; font-weight: 700; color: #5DADE2; font-style: italic; margin: 0 0 16px; }
+  .rpt-insight-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+  .rpt-insight-step { background: #5DADE2; color: white; padding: 10px; text-align: center; font-size: 12px; }
+  .rpt-insight-step:first-child { border-radius: 8px 0 0 8px; }
+  .rpt-insight-step:last-child { border-radius: 0 8px 8px 0; }
+  .rpt-insight-step .step-num { font-size: 16px; font-weight: 700; }
+  .rpt-insight-step .step-from { font-weight: 700; }
+  .rpt-insight-step .step-to { opacity: 0.8; }
+
+  .rpt-compromiso { background: #F7FBFE; border: 1px solid #D4E6F1; border-radius: 8px; padding: 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+  .rpt-compromiso-icon { flex-shrink: 0; color: #5DADE2; }
+  .rpt-compromiso p { font-size: 13px; color: #555; margin: 0 0 4px; }
+  .rpt-compromiso strong { color: #1A3C6E; }
+
+  .rpt-footer { padding: 20px 50px; border-top: 2px solid #E2E8F0; text-align: center; font-size: 10px; color: #A0AEC0; }
+
+  .rpt-chart { position: relative; height: 260px; margin: 16px 0; }
+</style>
+
+<div id="tab-informes-wrapper">
+  <!-- Guard de acceso: solo admin -->
+  <div id="informes-sin-acceso" class="hidden">
+    <div class="card"><div class="card-body text-center" style="padding:40px;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:12px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <h3 style="color:#e74c3c;margin:0 0 8px;">Acceso restringido</h3>
+      <p class="text-muted">Solo los administradores pueden generar informes.</p>
+    </div></div>
+  </div>
+
+  <div id="informes-contenido-principal">
+    <div id="informes-disponibilidad" class="card mb-4 hidden"><div class="card-body">
+      <h4 style="margin:0 0 12px;font-size:14px;color:var(--color-primario);">Estado de encuestas del programa</h4>
+      <div id="informes-disponibilidad-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;"></div>
+    </div></div>
+
+    <div class="flex-between mb-4">
+      <h3 class="informes-section-title">Informes PRE <span class="badge badge-info" style="font-size:10px;">LINEA BASE</span></h3>
+    </div>
+    <p class="text-muted text-sm mb-3">Diagn&oacute;stico inicial del programa. Disponible una vez cerradas las encuestas Auto PRE y Coeval PRE.</p>
+
+    <div class="informes-actions-grid">
+      <div class="informe-action-card" id="card-individual-pre" onclick="window._informeIndividualPre &amp;&amp; window._informeIndividualPre()">
+        <div class="action-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="action-title">Informe Individual PRE</div>
+        <div class="action-desc">L&iacute;nea base de un l&iacute;der: promedios PRE, brecha inicial y focos a desarrollar.</div>
+      </div>
+      <div class="informe-action-card" id="card-consolidado-pre" onclick="window._informeConsolidadoPre &amp;&amp; window._informeConsolidadoPre()">
+        <div class="action-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="action-title">Informe Consolidado PRE</div>
+        <div class="action-desc">Diagn&oacute;stico grupal inicial: promedios por competencia y brechas PRE.</div>
+      </div>
+    </div>
+
+    <div class="flex-between mb-4" style="margin-top:32px;">
+      <h3 class="informes-section-title">Informes POST <span class="badge badge-success" style="font-size:10px;">EVOLUCI&Oacute;N</span></h3>
+    </div>
+    <p class="text-muted text-sm mb-3">Informe completo con evoluci&oacute;n PRE&rarr;POST. Requiere que ya existan datos PRE cargados.</p>
+
+    <div class="informes-actions-grid">
+      <div class="informe-action-card" id="card-individual-post" onclick="window._informeIndividualPost &amp;&amp; window._informeIndividualPost()">
+        <div class="action-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="action-title">Informe Individual POST</div>
+        <div class="action-desc">Informe completo: PRE, POST, evoluci&oacute;n y cierre de brecha.</div>
+      </div>
+      <div class="informe-action-card" id="card-consolidado-post" onclick="window._informeConsolidadoPost &amp;&amp; window._informeConsolidadoPost()">
+        <div class="action-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="action-title">Informe Consolidado POST</div>
+        <div class="action-desc">Informe global con evoluci&oacute;n grupal, ranking y cierre de brechas.</div>
+      </div>
+    </div>
+
+    <div class="informes-actions-grid" style="margin-top:24px;grid-template-columns:1fr;max-width:400px;">
+      <div class="informe-action-card" onclick="window._informeExportar &amp;&amp; window._informeExportar()">
+        <div class="action-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <div class="action-title">Exportar Datos Excel</div>
+        <div class="action-desc">Descarga los datos crudos del programa en formato Excel.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading state for AI report generation -->
+  <div id="informe-ia-loading" class="hidden">
+    <div class="card"><div class="card-body text-center" style="padding:60px 20px;">
+      <div class="spinner spinner-lg"></div>
+      <p class="text-muted mt-3" id="informe-ia-loading-text">Analizando datos del programa...</p>
+      <div class="progress-bar-container mt-3" style="max-width:400px;margin:0 auto;">
+        <div class="progress-bar" id="informe-ia-progress" style="width:0%;transition:width 0.5s;"></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Preview del reporte generado con IA -->
+  <div id="informe-ia-preview" class="hidden">
+    <div class="card mb-3"><div class="card-body" style="padding:8px 16px;display:flex;align-items:center;justify-content:space-between;">
+      <span class="text-sm text-muted">Vista previa del informe generado con IA. Haz clic en "Descargar PDF" para obtener el archivo.</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm btn-outline" onclick="window._informeCerrar &amp;&amp; window._informeCerrar()">Cerrar</button>
+        <button class="btn btn-sm btn-primary" onclick="window._informePDF &amp;&amp; window._informePDF()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar PDF
+        </button>
+      </div>
+    </div></div>
+    <div id="informe-ia-contenido" class="rpt-container"></div>
+  </div>
+
+  <!-- Previously generated reports -->
+  <div class="flex-between mb-4">
+    <h3 class="informes-section-title">Informes Generados</h3>
+    <button class="btn btn-outline btn-sm" onclick="window._informeActualizar &amp;&amp; window._informeActualizar()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Actualizar
+    </button>
+  </div>
+
+  <div id="informes-lista-container">
+    <div class="text-center p-4"><div class="spinner"></div><p class="text-muted text-sm" style="margin-top:8px;">Cargando informes...</p></div>
+  </div>
+</div>
+
+<!-- Modal: Selector de Participante -->
+<div class="modal-overlay" id="modal-selector-participante">
+  <div class="modal" style="max-width: 520px;">
+    <div class="modal-header">
+      <h3>Seleccionar Participante</h3>
+      <button class="modal-close" onclick="closeModal('modal-selector-participante')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-muted mb-3">Selecciona el participante para generar su informe individual con IA.</p>
+      <input type="text" class="form-control mb-3" id="buscar-participante-informe"
+             placeholder="Buscar por nombre o email..." oninput="window.filtrarParticipantesInforme &amp;&amp; window.filtrarParticipantesInforme()">
+      <div id="lista-participantes-informe" style="max-height: 350px; overflow-y: auto;">
+        <div class="text-center p-3"><div class="spinner"></div></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-selector-participante')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  console.log('[TAB-INFORMES] Script executing...');
+  var informesGenerados = [];
+  var participantesInforme = [];
+  var reporteCharts = [];
+  var informeIATipo = '';
+  var informeIAPartId = '';
+  var informeIAMomento = 'post'; // 'pre' o 'post'
+  var informesDisponibilidad = null;
+
+  (function() {
+    // Guard de acceso: solo admin
+    var rol = null;
+    try {
+      if (typeof App !== 'undefined' && App.getRol) rol = App.getRol();
+      else {
+        var u = JSON.parse(sessionStorage.getItem('tpt_usuario') || 'null');
+        if (u) rol = u.rol;
+      }
+    } catch (e) {}
+    if (rol !== 'admin') {
+      document.getElementById('informes-contenido-principal').classList.add('hidden');
+      document.getElementById('informes-sin-acceso').classList.remove('hidden');
+      return;
+    }
+    cargarDisponibilidadEncuestas();
+    cargarInformesGenerados();
+  })();
+
+  /* ==========================================
+     DISPONIBILIDAD DE ENCUESTAS (gating)
+     ========================================== */
+
+  function cargarDisponibilidadEncuestas() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r || !r.success) return;
+        var encs = r.data || [];
+        var disp = {
+          pre_auto: encs.find(function(e) { return e.tipo === 'pre' && (e.tipo_cuestionario || 'autoevaluacion') === 'autoevaluacion'; }),
+          pre_co: encs.find(function(e) { return e.tipo === 'pre' && e.tipo_cuestionario === 'coevaluacion'; }),
+          post_auto: encs.find(function(e) { return e.tipo === 'post' && (e.tipo_cuestionario || 'autoevaluacion') === 'autoevaluacion'; }),
+          post_co: encs.find(function(e) { return e.tipo === 'post' && e.tipo_cuestionario === 'coevaluacion'; })
+        };
+        informesDisponibilidad = disp;
+        renderDisponibilidadGrid(disp);
+        aplicarGatingCards(disp);
+        // Traer cobertura real para mostrar badge informativo
+        google.script.run
+          .withSuccessHandler(function(r2) {
+            if (r2 && r2.success && r2.data) agregarBadgeCobertura(r2.data);
+          })
+          .obtenerDatosInformeConsolidado(App.token, panelProgramaId, 'post');
+      })
+      .listarEncuestas(App.token, panelProgramaId);
+  }
+
+  function renderDisponibilidadGrid(disp) {
+    function item(label, enc) {
+      var estado = enc ? (enc.estado || 'borrador') : null;
+      var color, texto;
+      if (!enc) { color = '#95a5a6'; texto = 'No creada'; }
+      else if (estado === 'cerrada') { color = '#27ae60'; texto = 'Cerrada'; }
+      else if (estado === 'activa') { color = '#f39c12'; texto = 'En curso'; }
+      else { color = '#95a5a6'; texto = 'Borrador'; }
+      return '<div style="padding:10px 12px;border:1px solid var(--color-borde);border-radius:8px;background:#f9fafb;">' +
+        '<div style="font-size:11px;color:#7f8c8d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">' + label + '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:' + color + ';"></span>' +
+        '<span style="font-size:13px;font-weight:600;color:' + color + ';">' + texto + '</span></div>' +
+      '</div>';
+    }
+    var grid = document.getElementById('informes-disponibilidad-grid');
+    grid.innerHTML = item('Auto PRE', disp.pre_auto) + item('Coeval PRE', disp.pre_co) + item('Auto POST', disp.post_auto) + item('Coeval POST', disp.post_co);
+    document.getElementById('informes-disponibilidad').classList.remove('hidden');
+  }
+
+  function aplicarGatingCards(disp) {
+    // Encuesta existe + al menos esta activa (no borrador) => se puede intentar generar
+    // Cerrada es el estado ideal pero permitimos activa para generar preview
+    function encListo(enc) {
+      if (!enc) return false;
+      var e = enc.estado || 'borrador';
+      return e === 'activa' || e === 'cerrada';
+    }
+    function mensaje(enc, nombre) {
+      if (!enc) return 'La encuesta ' + nombre + ' aun no ha sido creada';
+      if (enc.estado === 'borrador') return 'La encuesta ' + nombre + ' esta en borrador. Actualiza su estado para generar el informe.';
+      return '';
+    }
+    var preAutoOk = encListo(disp.pre_auto);
+    var preCoOk = encListo(disp.pre_co);
+    var postAutoOk = encListo(disp.post_auto);
+    var postCoOk = encListo(disp.post_co);
+    var preOk = preAutoOk || preCoOk;
+    var postOk = postAutoOk || postCoOk;
+
+    function setCardGate(id, disponible, msg) {
+      var card = document.getElementById(id);
+      if (!card) return;
+      if (disponible) {
+        card.style.opacity = '';
+        card.style.cursor = 'pointer';
+        card.removeAttribute('data-gated');
+      } else {
+        card.style.opacity = '0.5';
+        card.style.cursor = 'not-allowed';
+        card.setAttribute('data-gated', msg);
+      }
+    }
+    var msgPre = preOk ? '' : 'Necesitas crear y activar al menos una encuesta PRE';
+    var msgPost = postOk ? '' : 'Necesitas crear y activar al menos una encuesta POST';
+    setCardGate('card-individual-pre', preOk, msgPre);
+    setCardGate('card-consolidado-pre', preOk, msgPre);
+    setCardGate('card-individual-post', postOk, msgPost);
+    setCardGate('card-consolidado-post', postOk, msgPost);
+  }
+
+  function agregarBadgeCobertura(datos) {
+    // Actualiza un badge en la card de disponibilidad mostrando cobertura real
+    if (!datos) return;
+    var txt = datos.totalLideres + ' l\u00edderes \u00b7 ' + datos.lideresConAuto + ' con auto \u00b7 ' + datos.colabConCo + ' con coeval';
+    var badgeEl = document.getElementById('informes-badge-cobertura');
+    if (!badgeEl) {
+      var host = document.getElementById('informes-disponibilidad');
+      if (host) {
+        var span = document.createElement('div');
+        span.id = 'informes-badge-cobertura';
+        span.style.cssText = 'margin-top:12px;padding:8px 12px;background:#eff6ff;border-radius:6px;font-size:12px;color:#1e3a8a;';
+        span.innerHTML = '<strong>Cobertura actual:</strong> ' + txt;
+        host.querySelector('.card-body').appendChild(span);
+      }
+    } else {
+      badgeEl.innerHTML = '<strong>Cobertura actual:</strong> ' + txt;
+    }
+  }
+
+  function verificarGate(cardId) {
+    var card = document.getElementById(cardId);
+    if (card && card.getAttribute('data-gated')) {
+      showToast(card.getAttribute('data-gated'), 'warning');
+      return false;
+    }
+    return true;
+  }
+
+  /* ==========================================
+     INFORMES GENERADOS
+     ========================================== */
+
+  function cargarInformesGenerados() {
+    var container = document.getElementById('informes-lista-container');
+    container.innerHTML = '<div class="text-center p-4"><div class="spinner"></div><p class="text-muted text-sm" style="margin-top:8px;">Cargando informes...</p></div>';
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.success) {
+          informesGenerados = r.data || [];
+          renderInformesGenerados(informesGenerados);
+        } else {
+          container.innerHTML = '<p class="text-center text-danger p-4">' + (r ? escapeHtml(r.error) : 'Error al cargar informes') + '</p>';
+        }
+      })
+      .withFailureHandler(function(err) {
+        container.innerHTML = '<p class="text-center text-danger p-4">Error de conexi&oacute;n al cargar informes.</p>';
+      })
+      .listarInformesGenerados(App.token, panelProgramaId);
+  }
+
+  function renderInformesGenerados(informes) {
+    var container = document.getElementById('informes-lista-container');
+
+    if (!informes || !informes.length) {
+      container.innerHTML = '<div class="empty-state">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;margin-bottom:16px;opacity:0.35;">' +
+          '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>' +
+        '</svg>' +
+        '<p style="font-size:15px;font-weight:500;margin-bottom:6px;">Los informes se generar&aacute;n autom&aacute;ticamente cuando las evaluaciones est&eacute;n completas</p>' +
+        '<p style="font-size:13px;color:var(--color-texto-sec);">Tambi&eacute;n puedes generar informes individuales o consolidados usando las opciones de arriba.</p>' +
+      '</div>';
+      return;
+    }
+
+    var html = informes.map(function(inf) {
+      var tipoBadge = getTipoInformeBadge(inf.tipo);
+      var fecha = inf.fecha || inf.fecha_creacion || '';
+      var fechaStr = fecha ? formatDate(fecha) : '';
+
+      return '<div class="informe-row">' +
+        '<div class="informe-row-info">' +
+          '<div class="informe-row-nombre">' + escapeHtml(inf.nombre || 'Informe sin nombre') + '</div>' +
+          '<div class="informe-row-meta">' + tipoBadge + (fechaStr ? ' &middot; ' + escapeHtml(fechaStr) : '') + '</div>' +
+        '</div>' +
+        '<div class="informe-row-actions">' +
+          (inf.url ? '<a href="' + escapeHtml(inf.url) + '" target="_blank" class="btn btn-sm btn-primary">Descargar</a>' : '<span class="badge badge-warning">Procesando</span>') +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    container.innerHTML = html;
+  }
+
+  function getTipoInformeBadge(tipo) {
+    var map = {
+      'individual':   { cls: 'badge-info',      label: 'Individual' },
+      'consolidado':  { cls: 'badge-success',   label: 'Consolidado' },
+      'exportacion':  { cls: 'badge-secondary', label: 'Exportaci&oacute;n' }
+    };
+    var info = map[(tipo || '').toLowerCase()] || { cls: 'badge-secondary', label: tipo || 'Informe' };
+    return '<span class="badge ' + info.cls + '">' + info.label + '</span>';
+  }
+
+  /* ==========================================
+     CERRAR VISTA PREVIA
+     ========================================== */
+
+  function cerrarVistaPrevia() {
+    document.getElementById('informe-ia-preview').classList.add('hidden');
+    document.getElementById('informe-ia-contenido').innerHTML = '';
+  }
+
+  /* ==========================================
+     GENERAR INFORME INDIVIDUAL (con IA)
+     ========================================== */
+
+  function abrirSelectorParticipante(momento) {
+    informeIAMomento = momento || 'post';
+    if (informeIAMomento === 'pre' && !verificarGate('card-individual-pre')) return;
+    if (informeIAMomento === 'post' && !verificarGate('card-individual-post')) return;
+    var container = document.getElementById('lista-participantes-informe');
+    document.getElementById('buscar-participante-informe').value = '';
+    openModal('modal-selector-participante');
+
+    /* Use panelData.participantes if available */
+    if (typeof panelData !== 'undefined' && panelData.participantes && panelData.participantes.length) {
+      participantesInforme = panelData.participantes;
+      renderParticipantesInforme(participantesInforme);
+      return;
+    }
+
+    /* Fallback: load from server */
+    container.innerHTML = '<div class="text-center p-3"><div class="spinner"></div></div>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.success) {
+          participantesInforme = r.data || [];
+          renderParticipantesInforme(participantesInforme);
+        } else {
+          container.innerHTML = '<p class="text-center text-danger p-3">Error al cargar participantes.</p>';
+        }
+      })
+      .withFailureHandler(function(err) {
+        container.innerHTML = '<p class="text-center text-danger p-3">Error de conexi&oacute;n.</p>';
+      })
+      .listarParticipantesPrograma(App.token, panelProgramaId);
+  }
+
+  function renderParticipantesInforme(participantes) {
+    var container = document.getElementById('lista-participantes-informe');
+
+    if (!participantes || !participantes.length) {
+      container.innerHTML = '<p class="text-center text-muted p-3">No hay participantes en este programa.</p>';
+      return;
+    }
+
+    container.innerHTML = participantes.map(function(p) {
+      var nombre = escapeHtml(p.nombre_completo || p.nombre || '');
+      var email = escapeHtml(p.email || '');
+      var rol = p.rol ? escapeHtml(p.rol) : '';
+      var pid = p.id || p.usuario_id || p.user_id || '';
+
+      return '<div class="participante-selector-item item-participante-informe" data-participant-id="' + pid + '" style="cursor:pointer;">' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:14px;font-weight:600;color:var(--color-texto);">' + nombre + '</div>' +
+          '<div class="text-sm text-muted">' + email + (rol ? ' &middot; ' + rol : '') + '</div>' +
+        '</div>' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-texto-sec, #94a3b8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+      '</div>';
+    }).join('');
+
+    // Event delegation for participant clicks
+    container.querySelectorAll('.item-participante-informe').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var pid = this.getAttribute('data-participant-id');
+        if (pid) seleccionarParticipanteInforme(pid);
+      });
+    });
+  }
+
+  function filtrarParticipantesInforme() {
+    var busqueda = document.getElementById('buscar-participante-informe').value.toLowerCase();
+    var items = document.querySelectorAll('.item-participante-informe');
+    items.forEach(function(item) {
+      var texto = item.textContent.toLowerCase();
+      item.style.display = texto.indexOf(busqueda) !== -1 ? '' : 'none';
+    });
+  }
+
+  function seleccionarParticipanteInforme(participanteId) {
+    if (!participanteId) return;
+    closeModal('modal-selector-participante');
+
+    var part = participantesInforme.find(function(p) { return (p.id || p.usuario_id || p.user_id) === participanteId; });
+    if (!part) {
+      showToast('No se encontr\u00f3 el participante seleccionado.', 'error');
+      return;
+    }
+
+    informeIATipo = 'individual';
+    informeIAPartId = participanteId;
+
+    var prog = {
+      id: panelProgramaId,
+      nombre: (typeof panelData !== 'undefined' && panelData.programa) ? (panelData.programa.nombre || 'Programa') : 'Programa',
+      cliente_nombre: (typeof panelData !== 'undefined' && panelData.programa) ? (panelData.programa.cliente_nombre || panelData.programa.cliente || '') : ''
+    };
+
+    /* Show loading */
+    document.getElementById('informe-ia-preview').classList.add('hidden');
+    document.getElementById('informe-ia-loading').classList.remove('hidden');
+
+    var progress = document.getElementById('informe-ia-progress');
+    var loadText = document.getElementById('informe-ia-loading-text');
+    progress.style.width = '15%';
+    loadText.textContent = 'Recopilando datos del participante...';
+    setTimeout(function() { progress.style.width = '40%'; loadText.textContent = 'Consultando IA...'; }, 800);
+
+    // Primero obtener datos reales del participante
+    google.script.run
+      .withSuccessHandler(function(rDatos) {
+        var datosReales = (rDatos && rDatos.success) ? rDatos.data : null;
+        var prompt = buildIndividualPrompt(prog, part, datosReales);
+
+        callGroqFromBrowser([{ role: 'user', content: prompt }])
+          .then(function(data) {
+            progress.style.width = '80%';
+            loadText.textContent = 'Generando informe individual...';
+
+            var iaData = {};
+            if (data.success && data.response) {
+              try {
+                var json = data.response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                iaData = JSON.parse(json);
+              } catch (e) {
+                iaData = { resumen: data.response };
+              }
+            }
+            // Adjuntar datos reales para el render
+            iaData._datosReales = datosReales;
+
+            setTimeout(function() {
+              progress.style.width = '100%';
+              setTimeout(function() {
+                renderIndividual(prog, part, iaData);
+                document.getElementById('informe-ia-loading').classList.add('hidden');
+                document.getElementById('informe-ia-preview').classList.remove('hidden');
+                progress.style.width = '0%';
+                // Registrar historial
+                google.script.run.registrarInformeGenerado(App.token, panelProgramaId, 'individual', informeIAMomento, participanteId);
+                setTimeout(cargarInformesGenerados, 800);
+              }, 500);
+            }, 600);
+          })
+          .catch(function(err) {
+            document.getElementById('informe-ia-loading').classList.add('hidden');
+            progress.style.width = '0%';
+            showToast('Error al generar informe: ' + (err.message || err), 'error');
+          });
+      })
+      .withFailureHandler(function() {
+        document.getElementById('informe-ia-loading').classList.add('hidden');
+        progress.style.width = '0%';
+        showToast('Error al obtener datos del participante', 'error');
+      })
+      .obtenerDatosInformeIndividual(App.token, panelProgramaId, participanteId, informeIAMomento);
+  }
+
+  /* ==========================================
+     GENERAR INFORME CONSOLIDADO (con IA)
+     ========================================== */
+
+  function generarInformeConsolidado(momento) {
+    informeIAMomento = momento || 'post';
+    if (informeIAMomento === 'pre' && !verificarGate('card-consolidado-pre')) return;
+    if (informeIAMomento === 'post' && !verificarGate('card-consolidado-post')) return;
+    informeIATipo = 'consolidado';
+    informeIAPartId = '';
+
+    var prog = {
+      id: panelProgramaId,
+      nombre: (typeof panelData !== 'undefined' && panelData.programa) ? (panelData.programa.nombre || 'Programa') : 'Programa',
+      cliente_nombre: (typeof panelData !== 'undefined' && panelData.programa) ? (panelData.programa.cliente_nombre || panelData.programa.cliente || '') : ''
+    };
+
+    /* Show loading */
+    document.getElementById('informe-ia-preview').classList.add('hidden');
+    document.getElementById('informe-ia-loading').classList.remove('hidden');
+
+    var progress = document.getElementById('informe-ia-progress');
+    var loadText = document.getElementById('informe-ia-loading-text');
+    progress.style.width = '15%';
+    loadText.textContent = 'Recopilando datos del programa...';
+    setTimeout(function() { progress.style.width = '40%'; loadText.textContent = 'Consultando IA...'; }, 800);
+
+    google.script.run
+      .withSuccessHandler(function(rDatos) {
+        var datosReales = (rDatos && rDatos.success) ? rDatos.data : null;
+        var prompt = buildConsolidadoPrompt(prog, datosReales);
+
+        callGroqFromBrowser([{ role: 'user', content: prompt }])
+          .then(function(data) {
+            progress.style.width = '80%';
+            loadText.textContent = 'Generando informe consolidado...';
+
+            var iaData = {};
+            if (data.success && data.response) {
+              try {
+                var json = data.response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                iaData = JSON.parse(json);
+              } catch (e) {
+                iaData = { resumen: data.response };
+              }
+            }
+            iaData._datosReales = datosReales;
+
+            setTimeout(function() {
+              progress.style.width = '100%';
+              setTimeout(function() {
+                renderConsolidado(prog, iaData);
+                document.getElementById('informe-ia-loading').classList.add('hidden');
+                document.getElementById('informe-ia-preview').classList.remove('hidden');
+                progress.style.width = '0%';
+                google.script.run.registrarInformeGenerado(App.token, panelProgramaId, 'consolidado', informeIAMomento, null);
+                setTimeout(cargarInformesGenerados, 800);
+              }, 500);
+            }, 600);
+          })
+          .catch(function(err) {
+            document.getElementById('informe-ia-loading').classList.add('hidden');
+            progress.style.width = '0%';
+            showToast('Error al generar informe: ' + (err.message || err), 'error');
+          });
+      })
+      .withFailureHandler(function() {
+        document.getElementById('informe-ia-loading').classList.add('hidden');
+        progress.style.width = '0%';
+        showToast('Error al obtener datos del programa', 'error');
+      })
+      .obtenerDatosInformeConsolidado(App.token, panelProgramaId, informeIAMomento);
+  }
+
+  /* ==========================================
+     EXPORTAR DATOS EXCEL
+     ========================================== */
+
+  function exportarDatosExcel() {
+    if (typeof XLSX === 'undefined') {
+      showToast('Libreria XLSX no disponible', 'error');
+      return;
+    }
+    showToast('Preparando exportaci\u00f3n de datos...', 'info');
+
+    // Obtener datos POST del consolidado para tener la matriz completa
+    google.script.run
+      .withSuccessHandler(function(rPost) {
+        var datos = (rPost && rPost.success) ? rPost.data : null;
+        if (!datos) { showToast('No se pudieron obtener los datos.', 'error'); return; }
+
+        var wb = XLSX.utils.book_new();
+        var nombrePrograma = datos.programa.nombre || 'Programa';
+        var hoy = new Date().toISOString().slice(0, 10);
+
+        // Hoja 1: Resumen del programa
+        var resumen = [
+          ['Programa', datos.programa.nombre || ''],
+          ['Cliente', datos.programa.cliente_nombre || ''],
+          ['Fecha inicio', datos.programa.fecha_inicio || ''],
+          ['Fecha termino', datos.programa.fecha_termino || ''],
+          ['Objetivo', datos.programa.objetivo || ''],
+          [],
+          ['Total Lideres', datos.totalLideres],
+          ['Total Colaboradores', datos.totalColaboradores],
+          ['Total Respuestas', datos.totalRespuestas],
+          ['Lideres con Autoevaluacion', datos.lideresConAuto],
+          ['Colaboradores con Coevaluacion', datos.colabConCo],
+          [],
+          ['Fecha exportacion', hoy]
+        ];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'Resumen');
+
+        // Hoja 2: Competencias con promedios PRE y POST
+        var comps = [['Competencia', 'Foco Desarrollo', 'Auto PRE', 'Coeval PRE', 'Brecha PRE', 'Auto POST', 'Coeval POST', 'Brecha POST', 'Evolucion Auto', 'Evolucion Coeval', 'Cierre Brecha']];
+        (datos.competencias || []).forEach(function(c) {
+          comps.push([
+            c.nombre || '',
+            c.foco_desarrollo || '',
+            c.auto_pre, c.co_pre, c.brecha_pre,
+            c.auto_post, c.co_post, c.brecha_post,
+            c.evolucion_auto, c.evolucion_co, c.cierre_brecha
+          ]);
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(comps), 'Competencias');
+
+        // Hoja 3: Participantes (desde panelData si existe)
+        if (typeof panelData !== 'undefined' && panelData.participantes) {
+          var parts = [['Nombre', 'Email', 'Cargo', 'Rol Programa']];
+          panelData.participantes.forEach(function(p) {
+            parts.push([
+              p.nombre || '',
+              p.email || '',
+              p.cargo || '',
+              p.rol_programa || ''
+            ]);
+          });
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(parts), 'Participantes');
+        }
+
+        var filename = 'Datos_' + nombrePrograma.replace(/[^a-zA-Z0-9]/g, '_') + '_' + hoy + '.xlsx';
+        XLSX.writeFile(wb, filename);
+        showToast('Excel descargado: ' + filename, 'success');
+        // Registrar en historial
+        google.script.run.registrarInformeGenerado(App.token, panelProgramaId, 'exportacion', 'post', null);
+        setTimeout(cargarInformesGenerados, 800);
+      })
+      .withFailureHandler(function(err) {
+        showToast('Error de conexi\u00f3n: ' + (err && err.message || ''), 'error');
+      })
+      .obtenerDatosInformeConsolidado(App.token, panelProgramaId, 'post');
+  }
+
+  /* ==========================================
+     PROMPTS
+     ========================================== */
+
+  function buildConsolidadoPrompt(prog, datos) {
+    var dataJson = datos ? JSON.stringify(datos, null, 2) : '{}';
+    var momento = (datos && datos.momento) || 'post';
+    var esPost = momento === 'post';
+    var tituloInforme = esPost ? 'INFORME EJECUTIVO CONSOLIDADO POST' : 'INFORME DIAGNOSTICO CONSOLIDADO PRE (LINEA BASE)';
+    var instrMomento = esPost
+      ? 'Este es un informe POST: analiza la EVOLUCION del programa comparando PRE (auto_pre, co_pre) vs POST (auto_post, co_post). Cita evolucion_auto, evolucion_co y cierre_brecha. Si sinPreHistorico=true, NO inventes evolucion: indica que no hay linea base PRE para comparar y analiza solo los datos POST.'
+      : 'Este es un informe PRE de linea base: analiza SOLO los datos PRE (auto_pre, co_pre, brecha_pre). NO menciones evolucion, POST, ni cierre de brecha porque no existen todavia. El objetivo es diagnosticar la situacion inicial y definir focos de desarrollo.';
+
+    return 'Eres un consultor experto en desarrollo de liderazgo. Genera un ' + tituloInforme + ' del programa "' + prog.nombre + '" basandote en los DATOS REALES siguientes.\n\n' +
+      'DATOS DEL PROGRAMA:\n' + dataJson + '\n\n' +
+      'Los valores van de 1 a 4 (1=no aplica, 2=aplica con guia, 3=aplica consistente, 4=es referente). ' +
+      'brecha_pre/post = autopercepcion - percepcion de colaboradores. Valores positivos indican sobrestimacion. Null = sin dato.\n\n' +
+      instrMomento + '\n\n' +
+      'Responde SOLO con JSON (sin markdown ni backticks) con esta estructura exacta:\n' +
+      '{"intro":"<html breve describiendo el informe citando nombre del programa y numero de lideres>",' +
+      '"hallazgos":[{"titulo":"...","texto":"..."},{"titulo":"...","texto":"..."},{"titulo":"...","texto":"..."}],' +
+      '"lectura_global":"<html parrafo analisis global del grupo usando los promedios reales>",' +
+      '"conclusiones":["<conclusion 1 basada en datos>","<conclusion 2>","<conclusion 3>","<conclusion 4>"],' +
+      '"recomendaciones":[{"titulo":"...","texto":"..."},{"titulo":"...","texto":"..."},{"titulo":"...","texto":"..."},{"titulo":"...","texto":"..."}],' +
+      '"cierre":"<html cierre ejecutivo>"}.\n' +
+      'Usa <strong> para negritas. Cita numeros concretos (ej: "la brecha de 0.33 en Delegacion"). ' +
+      'Si totalRespuestas=0, el informe debe indicar que aun no hay datos cargados y ofrecer recomendaciones generales sobre el programa y las competencias.';
+  }
+
+  function buildIndividualPrompt(prog, part, datos) {
+    var dataJson = datos ? JSON.stringify(datos, null, 2) : '{}';
+    var nombre = part ? (part.nombre_completo || part.nombre || 'Participante') : 'Participante';
+    var momento = (datos && datos.momento) || 'post';
+    var esPost = momento === 'post';
+    var tituloInforme = esPost ? 'INFORME INDIVIDUAL POST (completo con evolucion)' : 'INFORME INDIVIDUAL PRE (linea base / diagnostico inicial)';
+    var instrMomento = esPost
+      ? 'Este es un informe POST: analiza la EVOLUCION del lider comparando PRE vs POST (evolucion_auto, evolucion_co, cierre_brecha). Si sinPreHistorico=true, indica que no hay linea base PRE y analiza solo los datos POST.'
+      : 'Este es un informe PRE de linea base: analiza SOLO los datos PRE (auto_pre, co_pre, brecha_pre). NO menciones evolucion ni POST porque no existen. El objetivo es identificar focos de desarrollo iniciales del lider.';
+
+    return 'Eres un coach ejecutivo. Genera un ' + tituloInforme + ' para "' + nombre + '" en el programa "' + prog.nombre + '" basandote en los DATOS REALES siguientes.\n\n' +
+      'DATOS DEL PARTICIPANTE:\n' + dataJson + '\n\n' +
+      'Los valores van de 1 a 4. auto_pre/post = autoevaluacion del lider. co_pre/post = evaluacion de sus colaboradores. ' +
+      'brecha = auto - co (positivo = se sobrevalora). Null = sin dato.\n\n' +
+      instrMomento + '\n\n' +
+      'Responde SOLO con JSON (sin markdown ni backticks) con esta estructura exacta:\n' +
+      '{"lectura_global":"<html lectura global del perfil del lider citando datos concretos>",' +
+      '"analisis_competencias":[{"nombre":"<nombre competencia real>","brecha":"<descripcion cuantificada>","interpretacion":"...","evolucion":["<punto 1>","<punto 2>"]}],' +
+      '"insight":"<frase clave del siguiente nivel de desarrollo>",' +
+      '"recomendaciones":[{"titulo":"...","items":["...","..."]},{"titulo":"...","items":["...","..."]},{"titulo":"...","items":["...","..."]}],' +
+      '"compromiso":"<html compromiso de desarrollo especifico>"}.\n' +
+      'Genera un objeto en analisis_competencias por CADA competencia real. Si es PRE, en "evolucion" pon observaciones iniciales (no cambios). Usa <strong> para negritas. ' +
+      'Si totalRespuestas=0, indicalo y ofrece recomendaciones generales basadas en el nombre y foco de las competencias.';
+  }
+
+  /* ==========================================
+     RENDER: CONSOLIDADO
+     ========================================== */
+
+  function renderConsolidado(prog, ia) {
+    reporteCharts.forEach(function(c) { c.destroy(); }); reporteCharts = [];
+    var hoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    var datosReales = ia && ia._datosReales;
+    var momento = datosReales ? (datosReales.momento || 'post') : 'post';
+    var esPost = momento === 'post';
+    var dims, autoPromedio, coPromedio, brechaGeneral;
+    function num(v) { return (v === null || v === undefined || isNaN(v)) ? 0 : v; }
+    function fmt(v) { return (v === null || v === undefined) ? 's/d' : (typeof v === 'number' ? v.toFixed(2) : v); }
+    if (datosReales && datosReales.competencias && datosReales.competencias.length > 0) {
+      dims = datosReales.competencias.map(function(c) {
+        // En PRE solo hay *_pre. En POST priorizamos *_post pero caemos a *_pre si POST es null
+        var auto = esPost ? (c.auto_post !== null ? c.auto_post : c.auto_pre) : c.auto_pre;
+        var co = esPost ? (c.co_post !== null ? c.co_post : c.co_pre) : c.co_pre;
+        return {
+          nombre: c.nombre,
+          auto: num(auto), co: num(co),
+          brecha: (auto !== null && co !== null) ? Math.round((auto - co) * 100) / 100 : null,
+          evolucion_auto: esPost ? c.evolucion_auto : null,
+          evolucion_co: esPost ? c.evolucion_co : null,
+          sinDato: (auto === null && co === null)
+        };
+      });
+      var dimsConDato = dims.filter(function(d) { return !d.sinDato; });
+      var totalAuto = dimsConDato.reduce(function(a, b) { return a + b.auto; }, 0);
+      var totalCo = dimsConDato.reduce(function(a, b) { return a + b.co; }, 0);
+      autoPromedio = dimsConDato.length > 0 ? Math.round((totalAuto / dimsConDato.length) * 100) / 100 : 0;
+      coPromedio = dimsConDato.length > 0 ? Math.round((totalCo / dimsConDato.length) * 100) / 100 : 0;
+      brechaGeneral = Math.round((autoPromedio - coPromedio) * 100) / 100;
+    } else {
+      dims = []; autoPromedio = 0; coPromedio = 0; brechaGeneral = 0;
+    }
+
+    var html = '<div class="rpt" id="pdf-page">';
+
+    /* Hero */
+    html += '<div class="rpt-hero">';
+    html += '<h1>INFORME ' + (esPost ? 'EJECUTIVO CONSOLIDADO POST' : 'DIAGN\u00d3STICO CONSOLIDADO PRE') + '</h1>';
+    html += '<h2>Evaluaci\u00f3n de Liderazgo \u2013 ' + escapeHtml(prog.nombre) + '</h2>';
+    html += '<div class="rpt-meta">' + escapeHtml(prog.cliente_nombre) + ' | Generado el ' + hoy + '</div>';
+    html += '</div>';
+
+    html += '<div class="rpt-body">';
+
+    /* Intro */
+    html += '<div class="rpt-intro">' + (ia.intro || 'El presente informe consolida los resultados de evaluaci\u00f3n de liderazgo, considerando las competencias del modelo aplicado. El an\u00e1lisis considera autoevaluaciones, coevaluaciones cuando est\u00e1n disponibles y la identificaci\u00f3n de brechas de percepci\u00f3n.') + '</div>';
+
+    /* Cobertura KPIs (desde datos reales) */
+    var totalLideres = datosReales ? (datosReales.totalLideres || 0) : 0;
+    var lideresConAuto = datosReales ? (datosReales.lideresConAuto || 0) : 0;
+    var colabConCo = datosReales ? (datosReales.colabConCo || 0) : 0;
+    var totalColab = datosReales ? (datosReales.totalColaboradores || 0) : 0;
+    html += '<div class="rpt-section"><div class="rpt-section-title">Cobertura de evaluaci\u00f3n</div>';
+    html += '<div class="rpt-kpi-row">';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + totalLideres + '</div><div class="rpt-kpi-big-label">L\u00edderes en el programa</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + lideresConAuto + '/' + totalLideres + '</div><div class="rpt-kpi-big-label">Autoevaluaciones completadas</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + colabConCo + '/' + totalColab + '</div><div class="rpt-kpi-big-label">Coevaluaciones completadas</div></div>';
+    html += '</div></div>';
+
+    /* Advertencia si POST sin PRE historico */
+    if (datosReales && datosReales.sinPreHistorico) {
+      html += '<div style="background:#fef3e2;border-left:4px solid #f39c12;padding:12px 16px;margin:16px 0;border-radius:6px;">' +
+        '<strong style="color:#e67e22;">\u26A0 Sin l\u00ednea base PRE:</strong> ' +
+        '<span style="color:#7d5a1a;">Este informe POST no puede calcular evoluci\u00f3n porque no existen datos PRE cargados. Se presentan solo los resultados POST.</span>' +
+      '</div>';
+    }
+    if (datosReales && datosReales.totalRespuestas === 0) {
+      html += '<div style="background:#eff6ff;border-left:4px solid #3b82f6;padding:12px 16px;margin:16px 0;border-radius:6px;">' +
+        '<strong style="color:#1e40af;">\u2139 Sin respuestas cargadas:</strong> ' +
+        '<span style="color:#1e3a8a;">A\u00fan no hay evaluaciones completadas en este programa. El informe muestra la estructura y recomendaciones generales.</span>' +
+      '</div>';
+    }
+
+    /* Resultados: tablas lado a lado */
+    html += '<div class="rpt-section"><div class="rpt-section-title">Resultados consolidados</div>';
+    html += '<div class="rpt-tables-grid">';
+
+    /* Tabla autoevaluacion */
+    html += '<table class="rpt-table"><caption>Autoevaluaci\u00f3n promedio</caption><thead><tr><th>Dimensi\u00f3n</th><th>Promedio</th></tr></thead><tbody>';
+    dims.forEach(function(d) { html += '<tr><td>' + d.nombre + '</td><td>' + d.auto.toFixed(2) + '</td></tr>'; });
+    html += '<tr class="rpt-table-highlight"><td><strong>Promedio general</strong></td><td><strong>' + autoPromedio.toFixed(2) + '</strong></td></tr>';
+    html += '</tbody></table>';
+
+    /* Tabla coevaluacion + brecha */
+    html += '<div>';
+    html += '<table class="rpt-table"><caption>Coevaluaci\u00f3n promedio</caption><thead><tr><th>Dimensi\u00f3n</th><th>Promedio</th></tr></thead><tbody>';
+    dims.forEach(function(d) { html += '<tr><td>' + d.nombre + '</td><td>' + d.co.toFixed(2) + '</td></tr>'; });
+    html += '<tr class="rpt-table-highlight"><td><strong>Promedio general</strong></td><td><strong>' + coPromedio.toFixed(2) + '</strong></td></tr>';
+    html += '</tbody></table>';
+
+    html += '<table class="rpt-table" style="margin-top:16px;"><caption>Brecha promedio</caption><thead><tr><th>Dimensi\u00f3n</th><th>Brecha</th></tr></thead><tbody>';
+    dims.forEach(function(d) { html += '<tr><td>' + d.nombre + '</td><td>' + d.brecha.toFixed(2) + '</td></tr>'; });
+    html += '<tr class="rpt-table-highlight"><td><strong>Brecha general</strong></td><td><strong>' + brechaGeneral.toFixed(2) + '</strong></td></tr>';
+    html += '</tbody></table>';
+    html += '</div></div>';
+
+    /* Barras horizontales */
+    html += '<div class="rpt-hbar-container">';
+    html += '<div style="margin-bottom:8px;font-size:11px;"><span style="display:inline-block;width:12px;height:12px;background:#1A3C6E;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Autoevaluaci\u00f3n &nbsp;&nbsp;<span style="display:inline-block;width:12px;height:12px;background:#5DADE2;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Coevaluaci\u00f3n</div>';
+    var allDims = dims.concat([{ nombre: 'Promedio general', auto: autoPromedio, co: coPromedio }]);
+    allDims.forEach(function(d) {
+      var maxVal = 5;
+      html += '<div class="rpt-hbar-row"><div class="rpt-hbar-label">' + d.nombre + '</div><div>' +
+        '<div class="rpt-hbar-track"><div class="rpt-hbar-fill rpt-hbar-fill-auto" style="width:' + (d.auto / maxVal * 100) + '%;">' + d.auto.toFixed(2) + '</div></div>' +
+        '<div class="rpt-hbar-track" style="margin-top:3px;"><div class="rpt-hbar-fill rpt-hbar-fill-co" style="width:' + (d.co / maxVal * 100) + '%;">' + d.co.toFixed(2) + '</div></div>' +
+      '</div><div></div></div>';
+    });
+    html += '</div></div>';
+
+    /* Hallazgos */
+    html += '<div class="rpt-section"><div class="rpt-section-title">Hallazgos, Conclusiones y Recomendaciones</div>';
+    html += '<div class="rpt-subsection-title">Principales hallazgos</div>';
+    html += '<div class="rpt-findings-grid">';
+    var hallazgos = ia.hallazgos || [
+      { titulo: 'Sobreestimaci\u00f3n del desempe\u00f1o', texto: 'Tendencia general a evaluarse por sobre lo percibido por el entorno.' },
+      { titulo: 'Conversaciones: punto cr\u00edtico', texto: 'Brecha consistente en m\u00faltiples casos individuales.' },
+      { titulo: 'Colaboraci\u00f3n: alta variabilidad', texto: 'No es problema transversal sino focalizado en ciertos casos.' }
+    ];
+    hallazgos.forEach(function(h) {
+      html += '<div class="rpt-finding-card"><h4>' + h.titulo + '</h4><p>' + h.texto + '</p></div>';
+    });
+    html += '</div>';
+
+    /* Lectura global */
+    html += '<div class="rpt-subsection-title" style="margin-top:24px;">Lectura global del grupo</div>';
+    html += '<p style="font-size:13px;color:#555;margin-bottom:16px;">' + (ia.lectura_global || 'El grupo presenta un nivel de liderazgo adecuado y funcional. El principal desaf\u00edo est\u00e1 en la <strong>alineaci\u00f3n entre la percepci\u00f3n del l\u00edder y la experiencia real del equipo</strong>.') + '</p>';
+
+    html += '<div class="rpt-profiles-grid">';
+    html += '<div class="rpt-profile-card"><h4>L\u00edderes consistentes</h4><p>Con baja brecha entre autoevaluaci\u00f3n y coevaluaci\u00f3n</p></div>';
+    html += '<div class="rpt-profile-card"><h4>L\u00edderes con sobreestimaci\u00f3n</h4><p>Diferencia relevante entre percepci\u00f3n e impacto</p></div>';
+    html += '<div class="rpt-profile-card"><h4>L\u00edderes subestimados</h4><p>Mayor valoraci\u00f3n externa que interna</p></div>';
+    html += '<div class="rpt-profile-card"><h4>L\u00edderes sin contraste</h4><p>An\u00e1lisis limitado al autodiagn\u00f3stico</p></div>';
+    html += '</div>';
+
+    /* Conclusiones */
+    html += '<div class="rpt-subsection-title" style="margin-top:24px;">Conclusiones generales</div>';
+    var conclusiones = ia.conclusiones || [
+      'El liderazgo del grupo es s\u00f3lido en su base, pero a\u00fan no alcanza impacto consistente.',
+      'Existe brecha entre intenci\u00f3n del liderazgo y su percepci\u00f3n por el entorno.',
+      'Las conversaciones se posicionan como la <strong>principal palanca de desarrollo</strong>.',
+      'La falta de coevaluaci\u00f3n en algunos casos debiera corregirse.'
+    ];
+    conclusiones.forEach(function(c) {
+      html += '<div class="rpt-conclusion-item"><span class="rpt-conclusion-arrow">\u2192</span><div class="rpt-conclusion-text">' + c + '</div></div>';
+    });
+
+    /* Recomendaciones */
+    html += '<div class="rpt-subsection-title" style="margin-top:24px;">Recomendaciones</div>';
+    html += '<div class="rpt-recs-grid">';
+    var recs = ia.recomendaciones || [
+      { titulo: 'Programa de conversaciones', texto: 'Implementar desarrollo de conversaciones enfocado en feedback y escucha activa.' },
+      { titulo: 'Intervenci\u00f3n focalizada', texto: 'Intervenir en l\u00edderes con mayores brechas.' },
+      { titulo: 'Evaluaci\u00f3n continua', texto: 'Establecer sistema de medici\u00f3n peri\u00f3dica.' },
+      { titulo: 'Coevaluaci\u00f3n est\u00e1ndar', texto: 'Asegurar coevaluaci\u00f3n en futuras mediciones.' }
+    ];
+    recs.forEach(function(r, i) {
+      html += '<div class="rpt-rec-card"><div class="rpt-rec-num">' + (i + 1) + '</div><div class="rpt-rec-body"><h4>' + r.titulo + '</h4><p>' + r.texto + '</p></div></div>';
+    });
+    html += '</div>';
+
+    /* Cierre */
+    html += '<div class="rpt-section-title" style="margin-top:28px;">Cierre ejecutivo</div>';
+    html += '<div class="rpt-cierre">' + (ia.cierre
+      ? '<p>' + ia.cierre + '</p>'
+      : '<p>El grupo evaluado cuenta con una base de liderazgo adecuada, pero requiere evolucionar hacia un modelo donde el foco no est\u00e9 solo en la ejecuci\u00f3n, sino en el <strong>impacto en las personas</strong>.</p><p class="rpt-cierre-highlight">Ese ajuste representa la principal oportunidad de desarrollo organizacional.</p>'
+    ) + '</div>';
+
+    html += '</div>'; /* rpt-body */
+    html += '</div>'; /* rpt-section (hallazgos) */
+
+    /* Footer */
+    html += '<div class="rpt-footer">Informe generado por MSO Chile \u2013 Plataforma TPT | Asistido por Inteligencia Artificial | ' + hoy + '</div>';
+    html += '</div>'; /* rpt */
+
+    document.getElementById('informe-ia-contenido').innerHTML = html;
+
+    // Seccion de analisis cualitativo (asincronico, no bloquea el render cuantitativo)
+    renderAnalisisCualitativoConsolidado(prog.id, momento).catch(function(e) {
+      console.error('[analisis cualitativo]', e);
+    });
+  }
+
+  /* ==========================================
+     ANALISIS CUALITATIVO DE RESPUESTAS ABIERTAS
+     ========================================== */
+
+  async function renderAnalisisCualitativoConsolidado(programaId, momento) {
+    var contenido = document.getElementById('informe-ia-contenido');
+    if (!contenido) return;
+
+    var section = document.createElement('div');
+    section.className = 'rpt-section analisis-cual-section';
+    section.style.marginTop = '24px';
+    section.innerHTML =
+      '<h2 style="border-top:2px solid #eee;padding-top:16px;">An&aacute;lisis Cualitativo de Respuestas Abiertas</h2>' +
+      '<div id="analisis-cual-body"><p class="text-muted">Cargando an&aacute;lisis cualitativo...</p></div>';
+    contenido.appendChild(section);
+    var body = section.querySelector('#analisis-cual-body');
+
+    // 1) Buscar encuesta del momento (autoevaluacion principal)
+    var encs = await new Promise(function(res) {
+      google.script.run.withSuccessHandler(res).listarEncuestas(App.token, programaId);
+    });
+    var encList = (encs && encs.data) ? encs.data : (Array.isArray(encs) ? encs : []);
+    var enc = encList.find(function(e) {
+      return e.tipo === momento && e.tipo_cuestionario === 'autoevaluacion' && e.estado !== 'borrador';
+    });
+    if (!enc) {
+      body.innerHTML = '<p class="text-muted">No hay encuesta ' + momento.toUpperCase() + ' publicada para analizar.</p>';
+      return;
+    }
+
+    // 2) Preguntas abiertas
+    var preg = await new Promise(function(res) {
+      google.script.run.withSuccessHandler(res).listarPreguntasAbiertas(App.token, enc.id);
+    });
+    var abiertas = (preg && preg.data) || [];
+    if (!abiertas.length) {
+      body.innerHTML = '<p class="text-muted">Esta encuesta no tiene preguntas abiertas.</p>';
+      return;
+    }
+
+    body.innerHTML = '';
+    for (var i = 0; i < abiertas.length; i++) {
+      var p = abiertas[i];
+      var block = document.createElement('div');
+      block.className = 'analisis-pregunta';
+      block.style.cssText = 'margin-bottom:24px;padding:16px;background:#fafafa;border-radius:8px;border-left:4px solid #6b46c1;';
+      block.dataset.encuestaId = enc.id;
+      block.dataset.preguntaId = p.id;
+      block.innerHTML = '<h4 style="margin-top:0;">' + escapeHtml(p.texto_pregunta) + '</h4>' +
+        '<div class="analisis-content"><p class="text-muted">Analizando...</p></div>';
+      body.appendChild(block);
+      await cargarAnalisisPregunta(block, enc.id, p.id, false, 'individual');
+    }
+
+    // 3) Si POST, agregar comparativas PRE -> POST
+    if (momento === 'post') {
+      var sep = document.createElement('h3');
+      sep.style.cssText = 'margin-top:24px;border-top:1px dashed #ccc;padding-top:16px;';
+      sep.textContent = 'Evolucion Cualitativa PRE \u2192 POST';
+      body.appendChild(sep);
+
+      for (var j = 0; j < abiertas.length; j++) {
+        var pj = abiertas[j];
+        var cmp = document.createElement('div');
+        cmp.className = 'analisis-comparativo';
+        cmp.style.cssText = 'margin-bottom:16px;padding:14px;background:#f0f4ff;border-radius:8px;border-left:4px solid #2563eb;';
+        cmp.dataset.encuestaId = enc.id;
+        cmp.dataset.preguntaId = pj.id;
+        cmp.dataset.tipoAnalisis = 'comparativo_pre_post';
+        cmp.innerHTML = '<h5 style="margin-top:0;">' + escapeHtml(pj.texto_pregunta) + '</h5>' +
+          '<div class="analisis-content"><p class="text-muted">Comparando...</p></div>';
+        body.appendChild(cmp);
+        await cargarAnalisisPregunta(cmp, enc.id, pj.id, false, 'comparativo_pre_post');
+      }
+    }
+  }
+
+  async function cargarAnalisisPregunta(block, encuestaId, preguntaId, forzar, tipoAnalisis) {
+    tipoAnalisis = tipoAnalisis || 'individual';
+    var contentDiv = block.querySelector('.analisis-content');
+    if (!contentDiv) return;
+    contentDiv.innerHTML = '<p class="text-muted">' + (forzar ? 'Re-analizando...' : 'Cargando...') + '</p>';
+
+    var r = await new Promise(function(res) {
+      google.script.run.withSuccessHandler(res)
+        .analizarRespuestasAbiertas(App.token, encuestaId, preguntaId, {
+          forzarRegenerar: !!forzar,
+          tipoAnalisis: tipoAnalisis
+        });
+    });
+
+    if (!r || !r.success) {
+      var msg = r && r.error ? r.error : 'Analisis cualitativo no disponible';
+      contentDiv.innerHTML = '<p style="color:#b45309;">' + escapeHtml(msg) + ' ' +
+        '<button class="btn btn-sm btn-link" onclick="reanalizarBloque(this)">Reintentar</button></p>';
+      return;
+    }
+
+    var html = renderAnalisisJSON(r.data.resultado, r.data.tipo_analisis || tipoAnalisis);
+    if (App.isAdmin && App.isAdmin()) {
+      html += '<div style="margin-top:8px;"><button class="btn btn-sm btn-outline" onclick="reanalizarBloque(this)">Re-analizar</button>' +
+        (r.cached ? '<span class="text-muted" style="margin-left:8px;font-size:12px;">(desde cache)</span>' : '') +
+        '</div>';
+    }
+    contentDiv.innerHTML = html;
+  }
+
+  function reanalizarBloque(btn) {
+    var block = btn.closest('.analisis-pregunta') || btn.closest('.analisis-comparativo');
+    if (!block) return;
+    cargarAnalisisPregunta(
+      block,
+      block.dataset.encuestaId,
+      block.dataset.preguntaId,
+      true,
+      block.dataset.tipoAnalisis || 'individual'
+    );
+  }
+
+  function renderAnalisisJSON(a, tipo) {
+    if (!a) return '<p class="text-muted">Sin datos.</p>';
+    if (tipo === 'comparativo_pre_post') {
+      return '<p><strong>Evoluci&oacute;n:</strong> ' + escapeHtml(a.resumen_evolucion || '') + '</p>' +
+        '<p><strong>Temas nuevos:</strong> ' + (a.temas_aparecidos || []).map(escapeHtml).join(', ') + '</p>' +
+        '<p><strong>Temas desaparecidos:</strong> ' + (a.temas_desaparecidos || []).map(escapeHtml).join(', ') + '</p>' +
+        '<p><strong>Sentimiento:</strong> ' + escapeHtml(a.evolucion_sentimiento || '') + '</p>' +
+        (a.cambios_significativos && a.cambios_significativos.length
+          ? '<p><strong>Cambios significativos:</strong></p><ul>' +
+            a.cambios_significativos.map(function(s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul>'
+          : '') +
+        (a.recomendaciones_post && a.recomendaciones_post.length
+          ? '<p><strong>Recomendaciones POST:</strong></p><ul>' +
+            a.recomendaciones_post.map(function(s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul>'
+          : '');
+    }
+    var temas = (a.temas_recurrentes || []).map(function(t) {
+      return '<li><strong>' + escapeHtml(t.tema || '') + '</strong>' +
+        (t.frecuencia_aprox != null ? ' (' + t.frecuencia_aprox + ')' : '') +
+        (t.ejemplo ? ' &mdash; <em>' + escapeHtml(t.ejemplo) + '</em>' : '') + '</li>';
+    }).join('');
+    var citas = (a.citas_destacadas || []).map(function(c) {
+      return '<blockquote style="border-left:3px solid #9ca3af;padding-left:10px;margin:6px 0;color:#374151;">' + escapeHtml(c) + '</blockquote>';
+    }).join('');
+    var sent = a.sentimiento_general || {};
+    return '<p>' + escapeHtml(a.resumen_ejecutivo || '') + '</p>' +
+      (temas ? '<p><strong>Temas recurrentes:</strong></p><ul>' + temas + '</ul>' : '') +
+      '<p><strong>Sentimiento general:</strong> ' + escapeHtml(sent.clasificacion || 's/d') +
+      (sent.justificacion ? ' &mdash; ' + escapeHtml(sent.justificacion) : '') + '</p>' +
+      (citas ? '<p><strong>Citas destacadas:</strong></p>' + citas : '') +
+      (a.senales_alerta && a.senales_alerta.length
+        ? '<p><strong>Se&ntilde;ales de alerta:</strong></p><ul>' +
+          a.senales_alerta.map(function(s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul>'
+        : '') +
+      (a.recomendaciones && a.recomendaciones.length
+        ? '<p><strong>Recomendaciones:</strong></p><ul>' +
+          a.recomendaciones.map(function(s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul>'
+        : '');
+  }
+
+  // Exponer handler inline del boton
+  window.reanalizarBloque = reanalizarBloque;
+
+  /* ==========================================
+     RENDER: INDIVIDUAL
+     ========================================== */
+
+  function renderIndividual(prog, part, ia) {
+    reporteCharts.forEach(function(c) { c.destroy(); }); reporteCharts = [];
+    var hoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+    var nombre = part ? (part.nombre_completo || part.nombre || 'Participante') : 'Participante';
+
+    var datosReales = ia && ia._datosReales;
+    var momento = datosReales ? (datosReales.momento || 'post') : 'post';
+    var esPost = momento === 'post';
+    var dims, autoP, coP, brechaG;
+    function numI(v) { return (v === null || v === undefined || isNaN(v)) ? 0 : v; }
+    if (datosReales && datosReales.competencias && datosReales.competencias.length > 0) {
+      dims = datosReales.competencias.map(function(c) {
+        var auto = esPost ? (c.auto_post !== null ? c.auto_post : c.auto_pre) : c.auto_pre;
+        var co = esPost ? (c.co_post !== null ? c.co_post : c.co_pre) : c.co_pre;
+        return {
+          nombre: c.nombre,
+          auto: numI(auto), co: numI(co),
+          brecha: (auto !== null && co !== null) ? Math.round((auto - co) * 100) / 100 : null,
+          sinDato: (auto === null && co === null)
+        };
+      });
+      var dimsConDato = dims.filter(function(d) { return !d.sinDato; });
+      var tA = dimsConDato.reduce(function(a, b) { return a + b.auto; }, 0);
+      var tC = dimsConDato.reduce(function(a, b) { return a + b.co; }, 0);
+      autoP = dimsConDato.length > 0 ? Math.round((tA / dimsConDato.length) * 100) / 100 : 0;
+      coP = dimsConDato.length > 0 ? Math.round((tC / dimsConDato.length) * 100) / 100 : 0;
+      brechaG = Math.round((autoP - coP) * 100) / 100;
+    } else {
+      dims = []; autoP = 0; coP = 0; brechaG = 0;
+    }
+
+    var html = '<div class="rpt" id="pdf-page">';
+
+    /* Hero */
+    html += '<div class="rpt-hero">';
+    html += '<h1>' + (esPost ? 'Informe Individual POST' : 'Informe Individual PRE (L\u00ednea base)') + '</h1>';
+    html += '<h2>Evaluaci\u00f3n de Liderazgo \u2013 ' + escapeHtml(nombre) + '</h2>';
+    html += '<div class="rpt-meta">' + escapeHtml(prog.nombre) + ' | ' + escapeHtml(prog.cliente_nombre) + ' | ' + hoy + '</div>';
+    html += '</div>';
+
+    html += '<div class="rpt-body">';
+
+    /* Advertencia si POST sin PRE historico */
+    if (datosReales && datosReales.sinPreHistorico) {
+      html += '<div style="background:#fef3e2;border-left:4px solid #f39c12;padding:12px 16px;margin-bottom:20px;border-radius:6px;">' +
+        '<strong style="color:#e67e22;">\u26A0 Sin l\u00ednea base PRE:</strong> ' +
+        '<span style="color:#7d5a1a;">No existen datos PRE para este participante, por lo que no se puede calcular evoluci\u00f3n. Se presentan solo los resultados POST.</span>' +
+      '</div>';
+    }
+    if (datosReales && datosReales.totalRespuestas === 0) {
+      html += '<div style="background:#eff6ff;border-left:4px solid #3b82f6;padding:12px 16px;margin-bottom:20px;border-radius:6px;">' +
+        '<strong style="color:#1e40af;">\u2139 Sin respuestas cargadas:</strong> ' +
+        '<span style="color:#1e3a8a;">Este informe se genera sin datos de evaluaciones. Completa las encuestas del programa para obtener m\u00e9tricas reales.</span>' +
+      '</div>';
+    }
+
+    /* 1. Contexto + Competencias */
+    html += '<div class="rpt-section"><div class="rpt-section-title">1. Contexto de Evaluaci\u00f3n</div>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">';
+
+    html += '<div class="rpt-context-box"><h3>Contexto</h3><p style="font-size:13px;opacity:0.9;">El presente informe expone los resultados de la evaluaci\u00f3n final del l\u00edder, en el marco del programa de desarrollo basado en la aplicaci\u00f3n pr\u00e1ctica de competencias.</p>';
+    html += '<p style="font-size:12px;opacity:0.8;margin-top:10px;">El an\u00e1lisis considera:</p>';
+    html += '<ul><li>Autoevaluaci\u00f3n del l\u00edder</li><li>Coevaluaci\u00f3n de su jefatura directa</li><li>Identificaci\u00f3n de brechas de percepci\u00f3n</li></ul></div>';
+
+    html += '<div><div class="rpt-subsection-title">Competencias Evaluadas</div><div class="rpt-competencias">';
+    var competencias = ['Delegar con prop\u00f3sito estrat\u00e9gico', 'Conversaciones que desarrollan al l\u00edder', 'Articulaci\u00f3n colaborativa'];
+    competencias.forEach(function(c, i) {
+      html += '<div class="rpt-competencia-item"><div class="rpt-competencia-num">0' + (i + 1) + '</div><div class="rpt-competencia-name">' + c + '</div></div>';
+    });
+    html += '</div></div></div></div>';
+
+    /* 2. Resultado General */
+    html += '<div class="rpt-section"><div class="rpt-section-title">2. Resultado General</div>';
+    html += '<p style="font-size:13px;color:#555;">El l\u00edder presenta un desempe\u00f1o promedio de:</p>';
+    html += '<div class="rpt-kpi-row">';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + autoP.toFixed(2) + '</div><div class="rpt-kpi-big-label">Autoevaluaci\u00f3n</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + coP.toFixed(2) + '</div><div class="rpt-kpi-big-label">Coevaluaci\u00f3n</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + brechaG + '</div><div class="rpt-kpi-big-label">Brecha Global</div></div>';
+    html += '</div>';
+    html += '<p style="font-size:13px;color:#555;">No existe brecha global, lo que refleja: <strong>alta coherencia entre percepci\u00f3n propia y externa</strong>, un perfil equilibrado y buen nivel de autoconocimiento.</p>';
+    html += '</div>';
+
+    /* 3. Resultados Detallados */
+    html += '<div class="rpt-section"><div class="rpt-section-title">3. Resultados Detallados</div>';
+    html += '<table class="rpt-table"><thead><tr><th>Dimensi\u00f3n</th>';
+    dims.forEach(function(d) { html += '<th>' + d.nombre + '</th>'; });
+    html += '<th>Promedio</th></tr></thead><tbody>';
+    html += '<tr><td>Autoevaluaci\u00f3n</td>';
+    dims.forEach(function(d) { html += '<td>' + d.auto + '</td>'; });
+    html += '<td>' + autoP.toFixed(2) + '</td></tr>';
+    html += '<tr><td>Coevaluaci\u00f3n</td>';
+    dims.forEach(function(d) { html += '<td>' + d.co + '</td>'; });
+    html += '<td>' + coP.toFixed(2) + '</td></tr>';
+    html += '<tr><td><strong>Brecha</strong></td>';
+    dims.forEach(function(d) { html += '<td><strong>' + (d.brecha > 0 ? '+' : '') + d.brecha + '</strong></td>'; });
+    html += '<td><strong>' + brechaG + '</strong></td></tr>';
+    html += '</tbody></table></div>';
+
+    /* 4. Visualizacion barras */
+    html += '<div class="rpt-section"><div class="rpt-section-title">4. Visualizaci\u00f3n de Resultados</div>';
+    html += '<div class="rpt-hbar-container">';
+    html += '<div style="margin-bottom:8px;font-size:11px;"><span style="display:inline-block;width:12px;height:12px;background:#1A3C6E;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Autoevaluaci\u00f3n &nbsp;&nbsp;<span style="display:inline-block;width:12px;height:12px;background:#5DADE2;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Coevaluaci\u00f3n</div>';
+    dims.forEach(function(d) {
+      html += '<div class="rpt-hbar-row"><div class="rpt-hbar-label">' + d.nombre + '</div><div>' +
+        '<div class="rpt-hbar-track"><div class="rpt-hbar-fill rpt-hbar-fill-auto" style="width:' + (d.auto / 5 * 100) + '%;">' + d.auto + '</div></div>' +
+        '<div class="rpt-hbar-track" style="margin-top:3px;"><div class="rpt-hbar-fill rpt-hbar-fill-co" style="width:' + (d.co / 5 * 100) + '%;">' + d.co + '</div></div>' +
+      '</div><div></div></div>';
+    });
+    html += '</div></div>';
+
+    /* 5. Lectura de Resultados */
+    html += '<div class="rpt-section"><div class="rpt-section-title">5. Lectura de Resultados</div>';
+    html += '<div class="rpt-brecha-cards">';
+    dims.forEach(function(d) {
+      var cls = d.brecha < 0 ? 'brecha-neg' : d.brecha > 0 ? 'brecha-pos' : 'brecha-zero';
+      var interp = d.brecha < 0 ? 'El entorno eval\u00faa mejor \u2192 <strong>fortaleza</strong>'
+        : d.brecha > 0 ? 'Se eval\u00faa por sobre el entorno \u2192 <strong>oportunidad</strong>'
+        : 'Competencia <strong>alineada</strong>';
+      html += '<div class="rpt-brecha-card"><h4>' + d.nombre + ' (' + (d.brecha > 0 ? '+' : '') + d.brecha + ')</h4><span class="brecha-val ' + cls + '">BRECHA (' + (d.brecha > 0 ? '+' : '') + d.brecha + ')</span><p>' + interp + '</p></div>';
+    });
+    html += '</div></div>';
+
+    /* 6. Lectura Global */
+    html += '<div class="rpt-section"><div class="rpt-section-title">6. Lectura Global del Perfil</div>';
+    html += '<p style="font-size:13px;color:#555;">' + (ia.lectura_global || 'Nos encontramos frente a un l\u00edder que presenta <strong>coherencia global</strong> en su desempe\u00f1o, posee fortalezas reconocidas por su entorno y tiene oportunidades de mejora en el impacto de sus conversaciones.') + '</p>';
+    html += '</div>';
+
+    /* 7. Analisis por Competencia */
+    html += '<div class="rpt-section"><div class="rpt-section-title">7. An\u00e1lisis por Competencia</div>';
+    html += '<div class="rpt-findings-grid">';
+    var analisis = ia.analisis_competencias || [
+      { nombre: 'Delegar con prop\u00f3sito estrat\u00e9gico', brecha: '(-1)', interpretacion: 'Fortaleza reconocida por el entorno', evolucion: ['Mantener est\u00e1ndar', 'Escalar delegaci\u00f3n hacia mayor impacto'] },
+      { nombre: 'Conversaciones que desarrollan', brecha: '(+1)', interpretacion: 'Diferencia en percepci\u00f3n del impacto', evolucion: ['Feedback m\u00e1s espec\u00edfico', 'Mayor escucha activa', 'Conversaciones orientadas al desarrollo'] },
+      { nombre: 'Articulaci\u00f3n colaborativa', brecha: '(0)', interpretacion: 'Competencia estable', evolucion: ['Mantener nivel', 'Potenciar coordinaci\u00f3n transversal'] }
+    ];
+    analisis.forEach(function(a) {
+      html += '<div class="rpt-finding-card"><h4>' + a.nombre + '</h4><span class="brecha-val ' +
+        (a.brecha.indexOf('-') !== -1 ? 'brecha-neg' : a.brecha.indexOf('+') !== -1 || a.brecha.indexOf('1') !== -1 ? 'brecha-pos' : 'brecha-zero') +
+        '">BRECHA ' + a.brecha + '</span>' +
+        '<p><strong>Interpretaci\u00f3n:</strong> ' + a.interpretacion + '</p>' +
+        '<p><strong>Evoluci\u00f3n esperada:</strong></p><ul style="margin:4px 0;padding-left:16px;">' +
+        a.evolucion.map(function(e) { return '<li style="font-size:12px;">' + e + '</li>'; }).join('') +
+        '</ul></div>';
+    });
+    html += '</div></div>';
+
+    /* 8. Insight Clave */
+    html += '<div class="rpt-section"><div class="rpt-section-title">8. Insight Clave</div>';
+    html += '<div class="rpt-insight-box"><p>El siguiente nivel de desarrollo del l\u00edder est\u00e1 en:</p>';
+    html += '<div class="insight-main">' + (ia.insight || 'Ajustar el impacto de sus conversaciones con su equipo') + '</div>';
+    html += '<div class="rpt-insight-steps">';
+    html += '<div class="rpt-insight-step"><div class="step-num">1</div><div class="step-from">De comunicar</div><div class="step-to">\u2192 a desarrollar</div></div>';
+    html += '<div class="rpt-insight-step"><div class="step-num">2</div><div class="step-from">De interacci\u00f3n</div><div class="step-to">\u2192 a generaci\u00f3n de valor</div></div>';
+    html += '<div class="rpt-insight-step"><div class="step-num">3</div><div class="step-from">De percepci\u00f3n interna</div><div class="step-to">\u2192 a validaci\u00f3n externa</div></div>';
+    html += '</div></div></div>';
+
+    /* 9. Recomendaciones */
+    html += '<div class="rpt-section"><div class="rpt-section-title">9. Recomendaciones de Desarrollo</div>';
+    html += '<div class="rpt-findings-grid">';
+    var recs = ia.recomendaciones || [
+      { titulo: 'Conversaciones (prioridad)', items: ['Incorporar estructura (GROW)', 'Mejorar calidad del feedback', 'Validar comprensi\u00f3n'] },
+      { titulo: 'Delegaci\u00f3n', items: ['Mantener buenas pr\u00e1cticas', 'Transferir aprendizajes al equipo'] },
+      { titulo: 'Colaboraci\u00f3n', items: ['Mantener est\u00e1ndar', 'Escalar impacto'] }
+    ];
+    recs.forEach(function(r, i) {
+      html += '<div class="rpt-rec-card"><div class="rpt-rec-num">' + (i + 1) + '</div><div class="rpt-rec-body"><h4>' + r.titulo + '</h4><ul style="margin:6px 0;padding-left:16px;">';
+      r.items.forEach(function(item) { html += '<li style="font-size:12px;color:#555;">' + item + '</li>'; });
+      html += '</ul></div></div>';
+    });
+    html += '</div></div>';
+
+    /* 10. Compromiso */
+    html += '<div class="rpt-section"><div class="rpt-section-title">10. Compromiso de Desarrollo</div>';
+    html += '<div class="rpt-compromiso"><div class="rpt-compromiso-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10l2 2 4-4"/></svg></div>';
+    html += '<div><p>Desde hoy, el l\u00edder orienta su desarrollo hacia:</p><p><strong>' + (ia.compromiso || 'Fortalecer la calidad de sus conversaciones de liderazgo, para asegurar mayor impacto en el desarrollo de su equipo y consolidar un liderazgo equilibrado.') + '</strong></p></div>';
+    html += '</div></div>';
+
+    html += '</div>'; /* rpt-body */
+
+    /* Footer */
+    html += '<div class="rpt-footer">Informe generado por MSO Chile \u2013 Plataforma TPT | Asistido por Inteligencia Artificial | ' + hoy + '</div>';
+    html += '</div>';
+
+    document.getElementById('informe-ia-contenido').innerHTML = html;
+  }
+
+  /* ==========================================
+     DESCARGAR PDF
+     ========================================== */
+
+  function descargarPDF() {
+    var element = document.getElementById('pdf-page');
+    if (!element) { showToast('Genera un reporte primero.', 'error'); return; }
+
+    var progNombre = (typeof panelData !== 'undefined' && panelData.programa) ? (panelData.programa.nombre || 'Programa') : 'Programa';
+    var partObj = null;
+    if (informeIATipo === 'individual' && informeIAPartId) {
+      partObj = participantesInforme.find(function(p) { return (p.id || p.user_id) === informeIAPartId; });
+    }
+
+    var filename;
+    if (informeIATipo === 'individual' && partObj) {
+      var partName = partObj.nombre_completo || partObj.nombre || 'Participante';
+      filename = 'Informe_Individual_' + partName.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+    } else {
+      filename = 'Informe_Consolidado_' + progNombre.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+    }
+
+    showToast('Generando PDF...', 'success');
+
+    html2pdf().set({
+      margin: [0, 0, 0, 0],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    }).from(element).save().then(function() {
+      showToast('PDF descargado.', 'success');
+    }).catch(function() {
+      showToast('Error al generar PDF.', 'error');
+    });
+  }
+
+  // Register all functions globally (required for dynamic script execution)
+  window._informeIndividualPre = function() { abrirSelectorParticipante('pre'); };
+  window._informeIndividualPost = function() { abrirSelectorParticipante('post'); };
+  window._informeConsolidadoPre = function() { generarInformeConsolidado('pre'); };
+  window._informeConsolidadoPost = function() { generarInformeConsolidado('post'); };
+  // Legacy (por compatibilidad)
+  window._informeIndividual = function() { abrirSelectorParticipante('post'); };
+  window._informeConsolidado = function() { generarInformeConsolidado('post'); };
+  window._informeExportar = exportarDatosExcel;
+  window._informePDF = descargarPDFInforme;
+  window._informeCerrar = cerrarVistaPrevia;
+  window._informeActualizar = cargarInformesGenerados;
+  window.seleccionarParticipanteInforme = seleccionarParticipanteInforme;
+  window.filtrarParticipantesInforme = filtrarParticipantesInforme;
+</script>

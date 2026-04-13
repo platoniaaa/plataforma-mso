@@ -1,0 +1,590 @@
+<!-- ============================================
+     Panel Programa - Vista principal de un programa
+     Reemplaza el modal por un panel completo con tabs
+     ============================================ -->
+
+<!-- Breadcrumb -->
+<div style="margin-bottom: 16px;">
+  <nav style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-texto-sec);">
+    <a class="text-link" onclick="volverAListaProgramas()" style="font-size: 13px; cursor: pointer;">Programas</a>
+    <span style="color: var(--color-borde);">&#8250;</span>
+    <span id="breadcrumb-programa-nombre" style="color: var(--color-texto); font-weight: 500;">Cargando...</span>
+    <span id="breadcrumb-tab" style="color: var(--color-texto-sec);"></span>
+  </nav>
+</div>
+
+<!-- Tarjeta encabezado del programa — Edicion inline -->
+<div class="card mb-4" id="panel-programa-header">
+  <div class="card-body" style="padding: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+      <!-- Info principal -->
+      <div style="flex: 1; min-width: 280px;">
+        <!-- Nombre editable -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap;">
+          <h2 id="header-programa-nombre" class="campo-editable" onclick="editarCampo('nombre')"
+              style="font-size: 22px; font-weight: 700; color: var(--color-primario); margin: 0; cursor: pointer;">—</h2>
+          <input type="text" id="hdr-input-nombre" class="input-inline input-inline-titulo hidden"
+                 onblur="guardarCampo('nombre')" onkeydown="if(event.key==='Enter')this.blur()">
+          <span id="header-programa-estado" class="badge badge-secondary">—</span>
+        </div>
+
+        <!-- Cliente (no editable) -->
+        <p id="header-programa-cliente" style="font-size: 14px; color: var(--color-texto-sec); margin-bottom: 12px;">—</p>
+
+        <!-- Metadatos en grilla -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 24px; margin-top: 12px;">
+          <div>
+            <span class="text-xs text-muted" style="text-transform: uppercase; letter-spacing: 0.4px;">Fecha inicio</span>
+            <p id="header-programa-fecha-inicio" class="campo-editable" onclick="editarCampo('fecha_inicio')"
+               style="font-size: 14px; font-weight: 500; margin-top: 2px; cursor: pointer;">—</p>
+            <input type="date" id="hdr-input-fecha_inicio" class="input-inline hidden"
+                   onblur="guardarCampo('fecha_inicio')" onchange="this.blur()">
+          </div>
+          <div>
+            <span class="text-xs text-muted" style="text-transform: uppercase; letter-spacing: 0.4px;">Fecha termino</span>
+            <p id="header-programa-fecha-termino" class="campo-editable" onclick="editarCampo('fecha_termino')"
+               style="font-size: 14px; font-weight: 500; margin-top: 2px; cursor: pointer;">—</p>
+            <input type="date" id="hdr-input-fecha_termino" class="input-inline hidden"
+                   onblur="guardarCampo('fecha_termino')" onchange="this.blur()">
+          </div>
+          <div>
+            <span class="text-xs text-muted" style="text-transform: uppercase; letter-spacing: 0.4px;">Tipo</span>
+            <p id="header-programa-tipo" class="campo-editable" onclick="editarCampo('tipo')"
+               style="font-size: 14px; font-weight: 500; margin-top: 2px; cursor: pointer;">—</p>
+            <select id="hdr-input-tipo" class="input-inline hidden" onblur="guardarCampo('tipo')" onchange="this.blur()">
+              <option value="piloto">Piloto</option>
+              <option value="programa_completo">Programa completo</option>
+              <option value="intervencion">Intervenci&oacute;n</option>
+            </select>
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <span class="text-xs text-muted" style="text-transform: uppercase; letter-spacing: 0.4px;">Objetivo</span>
+            <p id="header-programa-objetivo" class="campo-editable" onclick="editarCampo('objetivo')"
+               style="font-size: 14px; font-weight: 500; margin-top: 2px; cursor: pointer; white-space: pre-wrap;">—</p>
+            <textarea id="hdr-input-objetivo" class="input-inline hidden" rows="2"
+                      onblur="guardarCampo('objetivo')"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de accion -->
+      <div style="display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap;">
+        <button id="btn-activar-programa" class="btn btn-success btn-sm hidden" onclick="activarProgramaPanel()">
+          Activar programa
+        </button>
+        <button id="btn-desactivar-programa" class="btn btn-warning btn-sm hidden" onclick="desactivarProgramaPanel()">
+          Suspender programa
+        </button>
+        <button id="btn-reactivar-programa" class="btn btn-success btn-sm hidden" onclick="activarProgramaPanel()">
+          Reactivar programa
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Barra de tabs (sticky) -->
+<div id="panel-tabs-bar" style="
+  background: white;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px 10px 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+">
+  <div style="display: flex; border-bottom: 2px solid var(--color-borde); padding: 0 8px;">
+    <button class="panel-tab active" data-tab="resumen" onclick="switchTab('resumen')">Resumen</button>
+    <button class="panel-tab" data-tab="competencias" onclick="switchTab('competencias')">Competencias</button>
+    <button class="panel-tab" data-tab="participantes" onclick="switchTab('participantes')">Participantes</button>
+    <button class="panel-tab" data-tab="encuestas" onclick="switchTab('encuestas')">Encuestas</button>
+    <button class="panel-tab" data-tab="cronograma" onclick="switchTab('cronograma')">Actividades y Recursos</button>
+    <button class="panel-tab" data-tab="seguimiento" onclick="switchTab('seguimiento')">Seguimiento</button>
+    <button class="panel-tab" data-tab="informes" onclick="switchTab('informes')">Informes</button>
+  </div>
+</div>
+
+<!-- Contenido de tabs -->
+<div id="panel-tab-content" class="card" style="border-radius: 0 0 10px 10px; border-top: none; min-height: 300px;">
+  <div class="card-body">
+    <div style="display: flex; align-items: center; justify-content: center; padding: 48px 24px; flex-direction: column; gap: 12px;">
+      <div class="spinner spinner-lg"></div>
+      <p class="text-muted text-sm">Cargando contenido...</p>
+    </div>
+  </div>
+</div>
+
+<!-- Estilos del panel -->
+<style>
+  .panel-tab {
+    background: none;
+    border: none;
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Inter', Arial, sans-serif;
+    color: var(--color-texto-sec);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+  }
+
+  .panel-tab:hover {
+    color: var(--color-texto);
+    background: var(--color-fondo-alt);
+  }
+
+  .panel-tab.active {
+    color: var(--color-primario);
+    font-weight: 600;
+    border-bottom-color: var(--color-secundario);
+  }
+
+  /* Campos editables inline */
+  .campo-editable {
+    border-bottom: 1px dashed transparent;
+    transition: border-color 0.2s, background 0.2s;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border-radius: 4px;
+  }
+  .campo-editable:hover {
+    border-bottom-color: var(--color-secundario);
+    background: rgba(46,134,193,0.06);
+  }
+  .input-inline {
+    font-size: 14px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border: 2px solid var(--color-secundario);
+    border-radius: 6px;
+    outline: none;
+    width: 100%;
+    margin-top: 2px;
+    background: white;
+    transition: box-shadow 0.2s;
+  }
+  .input-inline:focus {
+    box-shadow: 0 0 0 3px rgba(46,134,193,0.15);
+  }
+  .input-inline-titulo {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-primario);
+    padding: 4px 8px;
+    width: auto;
+    min-width: 200px;
+    max-width: 100%;
+  }
+
+  @media (max-width: 768px) {
+    #panel-programa-header .card-body > div {
+      flex-direction: column;
+    }
+
+    .panel-tab {
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+  }
+</style>
+
+<!-- Script del panel -->
+<script>
+  var panelProgramaId = null;
+  var panelData = null;
+
+  /**
+   * Inicializa el panel del programa cargando datos del servidor.
+   * @param {string} programaId - ID del programa a cargar
+   */
+  function initPanel(programaId) {
+    panelProgramaId = programaId;
+    panelData = null;
+
+    // Mostrar estado de carga en el header
+    document.getElementById('header-programa-nombre').textContent = 'Cargando...';
+    document.getElementById('header-programa-cliente').textContent = '';
+    document.getElementById('header-programa-estado').textContent = '';
+    document.getElementById('breadcrumb-programa-nombre').textContent = 'Cargando...';
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (!result || !result.success) {
+          showToast(result ? result.error : 'No se pudo cargar el programa', 'error');
+          return;
+        }
+        var d = result.data;
+        // Normalizar datos para renderHeader
+        panelData = {
+          id: d.programa.id,
+          nombre: d.programa.nombre,
+          cliente: d.programa.cliente_nombre,
+          clienteNombre: d.programa.cliente_nombre,
+          cliente_id: d.programa.cliente_id,
+          estado: d.programa.estado,
+          tipo: d.programa.tipo,
+          objetivo: d.programa.objetivo,
+          fechaInicio: d.programa.fecha_inicio,
+          fechaTermino: d.programa.fecha_termino,
+          fecha_medicion_pre: d.programa.fecha_medicion_pre,
+          fecha_medicion_post: d.programa.fecha_medicion_post,
+          participantes: d.participantes,
+          competencias: d.competencias,
+          encuestas: d.encuestas,
+          stats: d.stats
+        };
+        renderHeader(panelData);
+
+        // Siempre cargar el tab resumen primero
+        switchTab('resumen', function() {
+          if (panelData.nombre === 'Nuevo Programa') {
+            // Enfocar el campo nombre del tab-resumen (no del header)
+            var textoEl = document.getElementById('resumen-nombre');
+            var inputEl = document.getElementById('input-nombre-resumen');
+            if (!inputEl) {
+              // Crear input inline si no existe
+              inputEl = document.createElement('input');
+              inputEl.type = 'text';
+              inputEl.id = 'input-nombre-resumen';
+              inputEl.className = 'input-inline';
+              inputEl.style.cssText = 'font-size:22px;font-weight:700;width:100%;padding:6px 10px;';
+              inputEl.value = 'Nuevo Programa';
+              inputEl.onblur = function() {
+                var val = inputEl.value.trim() || 'Nuevo Programa';
+                textoEl.textContent = val;
+                textoEl.style.display = '';
+                inputEl.remove();
+                panelData.nombre = val;
+                // Actualizar breadcrumb y titulo
+                var bc = document.getElementById('breadcrumb-programa-nombre');
+                if (bc) bc.textContent = val;
+                var pt = document.getElementById('page-title');
+                if (pt) pt.textContent = val;
+                var hdr = document.getElementById('header-programa-nombre');
+                if (hdr) hdr.textContent = val;
+                // Guardar en backend
+                google.script.run
+                  .withSuccessHandler(function() {})
+                  .actualizarPrograma(App.token, panelProgramaId, { nombre: val });
+              };
+              inputEl.onkeydown = function(e) { if (e.key === 'Enter') inputEl.blur(); };
+              textoEl.style.display = 'none';
+              textoEl.parentNode.insertBefore(inputEl, textoEl.nextSibling);
+            }
+            inputEl.focus();
+            inputEl.select();
+          }
+        });
+      })
+      .withFailureHandler(function(err) {
+        showToast('Error al cargar el programa: ' + err.message, 'error');
+      })
+      .obtenerPanelPrograma(App.token, programaId);
+  }
+
+  /**
+   * Renderiza el encabezado del programa con los datos recibidos.
+   * @param {Object} data - Datos del programa
+   */
+  function renderHeader(data) {
+    var nombre = data.nombre || '';
+    var cliente = data.clienteNombre || data.cliente || '';
+    var estado = (data.estado || 'diseno').toLowerCase();
+    var tipo = data.tipo || '—';
+    var objetivo = data.objetivo || '—';
+    var fechaInicio = data.fechaInicio || '';
+    var fechaTermino = data.fechaTermino || '';
+
+    // Nombre, breadcrumb y titulo de pagina
+    document.getElementById('header-programa-nombre').textContent = nombre;
+    document.getElementById('breadcrumb-programa-nombre').textContent = nombre;
+    var pageTitle = document.getElementById('page-title');
+    if (pageTitle) pageTitle.textContent = nombre;
+
+    // Cliente
+    document.getElementById('header-programa-cliente').textContent = cliente;
+
+    // Badge estado
+    var badgeEl = document.getElementById('header-programa-estado');
+    var estadoMap = {
+      'diseno':      { cls: 'badge-info',      label: 'Diseno' },
+      'activo':      { cls: 'badge-success',   label: 'Activo' },
+      'finalizado':  { cls: 'badge-secondary', label: 'Finalizado' },
+      'suspendido':  { cls: 'badge-danger',    label: 'Suspendido' }
+    };
+    var badge = estadoMap[estado] || { cls: 'badge-secondary', label: estado };
+    badgeEl.className = 'badge ' + badge.cls;
+    badgeEl.textContent = badge.label;
+
+    // Metadatos
+    document.getElementById('header-programa-fecha-inicio').textContent = fechaInicio ? formatDate(fechaInicio) : 'Definir fecha';
+    document.getElementById('header-programa-fecha-termino').textContent = fechaTermino ? formatDate(fechaTermino) : 'Definir fecha';
+    document.getElementById('header-programa-tipo').textContent = tipo;
+    document.getElementById('header-programa-objetivo').textContent = objetivo;
+
+    // Mostrar/ocultar botones segun estado
+    var btnActivar = document.getElementById('btn-activar-programa');
+    var btnDesactivar = document.getElementById('btn-desactivar-programa');
+    var btnReactivar = document.getElementById('btn-reactivar-programa');
+    btnActivar.classList.add('hidden');
+    btnDesactivar.classList.add('hidden');
+    btnReactivar.classList.add('hidden');
+    if (estado === 'diseno') {
+      btnActivar.classList.remove('hidden');
+    } else if (estado === 'activo') {
+      btnDesactivar.classList.remove('hidden');
+    } else if (estado === 'suspendido') {
+      btnReactivar.classList.remove('hidden');
+    }
+  }
+
+  /**
+   * Cambia la tab activa y carga su contenido.
+   * @param {string} tabName - Nombre de la tab a activar
+   */
+  function switchTab(tabName, onLoaded) {
+    // Siempre ocultar header - se muestra dentro del tab resumen
+    document.getElementById('panel-programa-header').style.display = 'none';
+
+    // Breadcrumb tab
+    var tabLabels = { resumen: '', competencias: ' > Competencias', participantes: ' > Participantes',
+      encuestas: ' > Encuestas', cronograma: ' > Actividades y Recursos',
+      seguimiento: ' > Seguimiento', informes: ' > Informes' };
+    document.getElementById('breadcrumb-tab').textContent = tabLabels[tabName] || '';
+
+    // Actualizar tabs activas
+    var tabs = document.querySelectorAll('.panel-tab');
+    tabs.forEach(function(tab) {
+      if (tab.getAttribute('data-tab') === tabName) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+
+    // Mostrar spinner de carga
+    var contentArea = document.getElementById('panel-tab-content');
+    contentArea.innerHTML =
+      '<div class="card-body">' +
+        '<div style="display: flex; align-items: center; justify-content: center; padding: 48px 24px; flex-direction: column; gap: 12px;">' +
+          '<div class="spinner spinner-lg"></div>' +
+          '<p class="text-muted text-sm">Cargando ' + escapeHtml(tabName) + '...</p>' +
+        '</div>' +
+      '</div>';
+
+    // Mapear nombre de tab a archivo HTML
+    var tabMap = {
+      'resumen': 'tab-resumen',
+      'competencias': 'tab-competencias',
+      'participantes': 'tab-participantes',
+      'encuestas': 'tab-encuestas-programa',
+      'actividades': 'tab-cronograma',
+      'cronograma': 'tab-cronograma',
+      'seguimiento': 'tab-seguimiento',
+      'informes': 'tab-informes'
+    };
+    var tabFile = tabMap[tabName] || ('tab-' + tabName);
+
+    // Cargar contenido de la tab
+    google.script.run
+      .withSuccessHandler(function(html) {
+        contentArea.innerHTML = html || '<div class="empty-state"><p>Sin contenido disponible para esta seccion.</p></div>';
+        // Ejecutar scripts del contenido cargado
+        var scripts = contentArea.querySelectorAll('script');
+        scripts.forEach(function(oldScript) {
+          var newScript = document.createElement('script');
+          newScript.textContent = oldScript.textContent;
+          oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+        if (typeof onLoaded === 'function') {
+          setTimeout(onLoaded, 150);
+        }
+      })
+      .withFailureHandler(function(err) {
+        contentArea.innerHTML =
+          '<div class="alert alert-error" style="margin:24px;">' +
+            'Error al cargar la seccion: ' + escapeHtml(err.message) +
+          '</div>';
+      })
+      .getVistaHTML(tabFile);
+  }
+
+  /**
+   * Edicion inline: muestra el input y oculta el texto
+   */
+  function editarCampo(campo) {
+    if (!panelData) return;
+
+    var campoMap = {
+      'nombre':        { valor: panelData.nombre || '' },
+      'fecha_inicio':  { valor: panelData.fechaInicio || '' },
+      'fecha_termino': { valor: panelData.fechaTermino || '' },
+      'tipo':          { valor: panelData.tipo || '' },
+      'objetivo':      { valor: panelData.objetivo || '' }
+    };
+
+    var config = campoMap[campo];
+    if (!config) return;
+
+    // Ocultar el texto, mostrar el input
+    var textoIds = {
+      'nombre': 'header-programa-nombre',
+      'fecha_inicio': 'header-programa-fecha-inicio',
+      'fecha_termino': 'header-programa-fecha-termino',
+      'tipo': 'header-programa-tipo',
+      'objetivo': 'header-programa-objetivo'
+    };
+
+    var textoEl = document.getElementById(textoIds[campo]);
+    var inputEl = document.getElementById('hdr-input-' + campo);
+
+    textoEl.classList.add('hidden');
+    inputEl.classList.remove('hidden');
+    inputEl.value = config.valor;
+    inputEl.focus();
+    if (inputEl.select && inputEl.tagName !== 'SELECT') inputEl.select();
+  }
+
+  /**
+   * Guarda un campo individual al perder foco
+   */
+  function guardarCampo(campo) {
+    var textoIds = {
+      'nombre': 'header-programa-nombre',
+      'fecha_inicio': 'header-programa-fecha-inicio',
+      'fecha_termino': 'header-programa-fecha-termino',
+      'tipo': 'header-programa-tipo',
+      'objetivo': 'header-programa-objetivo'
+    };
+
+    var textoEl = document.getElementById(textoIds[campo]);
+    var inputEl = document.getElementById('hdr-input-' + campo);
+    var nuevoValor = inputEl.value.trim();
+
+    // Ocultar input, mostrar texto
+    inputEl.classList.add('hidden');
+    textoEl.classList.remove('hidden');
+
+    // Verificar si cambio
+    var dataKeys = {
+      'nombre': 'nombre',
+      'fecha_inicio': 'fechaInicio',
+      'fecha_termino': 'fechaTermino',
+      'tipo': 'tipo',
+      'objetivo': 'objetivo'
+    };
+    var dataKey = dataKeys[campo];
+    var valorAnterior = panelData[dataKey] || '';
+
+    if (nuevoValor === valorAnterior) return;
+    if (campo === 'nombre' && !nuevoValor) {
+      showToast('El nombre no puede estar vacio', 'warning');
+      return;
+    }
+
+    // Actualizar cache local inmediatamente
+    panelData[dataKey] = nuevoValor;
+    renderHeader(panelData);
+
+    // Guardar en backend
+    var datos = {};
+    datos[campo] = nuevoValor;
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && !r.success) {
+          showToast(r.error, 'error');
+          panelData[dataKey] = valorAnterior;
+          renderHeader(panelData);
+        }
+      })
+      .withFailureHandler(function(err) {
+        showToast('Error al guardar', 'error');
+        panelData[dataKey] = valorAnterior;
+        renderHeader(panelData);
+      })
+      .actualizarPrograma(App.token, panelProgramaId, datos);
+  }
+
+  /**
+   * Activa el programa (solo disponible en estado "diseno").
+   */
+  function activarProgramaPanel() {
+    if (!panelProgramaId) return;
+
+    var btnActivar = document.getElementById('btn-activar-programa');
+    var originalText = btnActivar.innerHTML;
+
+    if (!confirm('¿Estas seguro de que deseas activar este programa? Esta accion cambiara el estado a "Activo".')) {
+      return;
+    }
+
+    btnLoading(btnActivar, true);
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        btnLoading(btnActivar, false, originalText);
+        if (result && result.error) {
+          showToast(result.error, 'error');
+          return;
+        }
+        showToast('Programa activado exitosamente', 'success');
+
+        // Actualizar estado local
+        panelData.estado = 'activo';
+        renderHeader(panelData);
+      })
+      .withFailureHandler(function(err) {
+        btnLoading(btnActivar, false, originalText);
+        showToast('Error al activar programa: ' + err.message, 'error');
+      })
+      .activarPrograma(App.token, panelProgramaId);
+  }
+
+  /**
+   * Suspende el programa (disponible en estado "activo").
+   */
+  function desactivarProgramaPanel() {
+    if (!panelProgramaId) return;
+
+    if (!confirm('¿Estas seguro de que deseas suspender este programa? Los participantes no podran acceder mientras este suspendido.')) {
+      return;
+    }
+
+    var btn = document.getElementById('btn-desactivar-programa');
+    var originalText = btn.innerHTML;
+    btnLoading(btn, true);
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        btnLoading(btn, false, originalText);
+        if (result && result.error) {
+          showToast(result.error, 'error');
+          return;
+        }
+        showToast('Programa suspendido', 'success');
+        panelData.estado = 'suspendido';
+        renderHeader(panelData);
+      })
+      .withFailureHandler(function(err) {
+        btnLoading(btn, false, originalText);
+        showToast('Error al suspender: ' + err.message, 'error');
+      })
+      .desactivarPrograma(App.token, panelProgramaId);
+  }
+
+  /**
+   * Navega de vuelta a la lista de programas.
+   */
+  function volverAListaProgramas() {
+    panelProgramaId = null;
+    panelData = null;
+    loadView('programas');
+  }
+</script>

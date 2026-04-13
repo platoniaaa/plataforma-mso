@@ -1,0 +1,376 @@
+<!-- Vista: Mis Encuestas (Participante) -->
+<div>
+  <!-- Encuestas Pendientes -->
+  <div class="mb-4">
+    <h2 style="color:var(--color-primario);margin-bottom:16px;">Encuestas Pendientes</h2>
+    <div id="encuestas-pendientes">
+      <div class="text-center p-4"><div class="spinner spinner-lg"></div><p class="text-muted mt-2">Cargando...</p></div>
+    </div>
+  </div>
+
+  <!-- Formulario de Encuesta (oculto) -->
+  <div id="encuesta-form-container" class="hidden">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 id="enc-form-titulo">Encuesta</h2>
+          <span class="text-sm text-muted" id="enc-form-programa"></span>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="volverALista()">Volver</button>
+      </div>
+      <div class="card-body">
+        <div id="enc-instrucciones" class="alert alert-info mb-3 hidden"></div>
+
+        <!-- Leyenda de niveles (visible cuando hay preguntas de tipo niveles_competencia) -->
+        <div id="enc-leyenda-niveles" class="hidden" style="background:#F7FBFE;border:1px solid var(--color-borde);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-secundario, #F58220)" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span style="font-size:13px;font-weight:600;color:var(--color-primario);">Escala de Niveles</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px;font-size:12px;">
+            <div><strong style="color:var(--color-secundario, #F58220);">Nivel 1:</strong> <span style="color:var(--color-texto-sec);">Conoce el concepto pero no lo aplica</span></div>
+            <div><strong style="color:var(--color-secundario, #F58220);">Nivel 2:</strong> <span style="color:var(--color-texto-sec);">Aplica con orientacion o apoyo</span></div>
+            <div><strong style="color:var(--color-secundario, #F58220);">Nivel 3:</strong> <span style="color:var(--color-texto-sec);">Aplica de forma consistente y autonoma</span></div>
+            <div><strong style="color:var(--color-secundario, #F58220);">Nivel 4:</strong> <span style="color:var(--color-texto-sec);">Es referente y modelo para otros</span></div>
+          </div>
+        </div>
+
+        <div class="progress-bar-container mb-3">
+          <div class="progress-bar" id="enc-progress" style="width:0%;"></div>
+        </div>
+        <p class="text-sm text-muted mb-3" id="enc-progress-text">Pregunta 0 de 0</p>
+
+        <div id="enc-preguntas"></div>
+
+        <div class="mt-4">
+          <button class="btn btn-primary btn-block" id="btn-enviar-respuestas" onclick="enviarRespuestasEncuesta()">
+            Enviar Respuestas
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encuestas Completadas -->
+  <div class="mt-4">
+    <h2 style="color:var(--color-primario);margin-bottom:16px;">Encuestas Completadas</h2>
+    <div id="encuestas-completadas">
+      <p class="text-muted text-sm">Cargando...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  var encuestasPendientes = [];
+  var encuestaActualId = null;
+  var preguntasActuales = [];
+
+  (function() {
+    cargarMisEncuestas();
+  })();
+
+  function cargarMisEncuestas() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          var todas = r.data || [];
+          encuestasPendientes = todas.filter(function(e) { return e.estado !== 'completada'; });
+          var encuestasCompletadas = todas.filter(function(e) { return e.estado === 'completada'; });
+          renderPendientes(encuestasPendientes);
+          renderCompletadas(encuestasCompletadas);
+        } else {
+          document.getElementById('encuestas-pendientes').innerHTML =
+            '<div class="empty-state"><p>' + escapeHtml(r.error) + '</p></div>';
+        }
+      })
+      .withFailureHandler(function() {
+        document.getElementById('encuestas-pendientes').innerHTML =
+          '<div class="empty-state"><p>Error al cargar encuestas.</p></div>';
+      })
+      .obtenerEncuestaPendiente(App.token);
+  }
+
+  function cardEncuesta(e, completada) {
+    var tipoBadge = e.tipo === 'pre'
+      ? '<span class="badge badge-info">PRE</span>'
+      : '<span class="badge badge-success">POST</span>';
+    var fechaLimite = e.fecha_cierre ? '<span class="text-xs text-muted">Fecha limite: ' + formatDate(e.fecha_cierre) + '</span>' : '';
+    var liderInfo = e.lider_nombre
+      ? '<br><span class="text-sm" style="color:var(--color-primario);font-weight:500;">Evaluando a: ' + escapeHtml(e.lider_nombre) + '</span>'
+      : '';
+    var accion = completada
+      ? '<span class="badge badge-success" style="padding:8px 16px;">Completada</span>'
+      : '<button class="btn btn-primary" onclick="abrirEncuesta(\'' + e.id + '\')">Responder</button>';
+
+    return '<div class="card mb-3"><div class="card-body flex-between">' +
+      '<div>' +
+        '<strong>' + escapeHtml(e.nombre) + '</strong> ' + tipoBadge + '<br>' +
+        '<span class="text-sm text-muted">Programa: ' + escapeHtml(e.programa_nombre) + '</span>' +
+        liderInfo + '<br>' +
+        fechaLimite +
+      '</div>' +
+      accion +
+    '</div></div>';
+  }
+
+  function renderPendientes(encuestas) {
+    var div = document.getElementById('encuestas-pendientes');
+    if (!encuestas || encuestas.length === 0) {
+      div.innerHTML = '<div class="empty-state"><p>No tienes encuestas pendientes. Buen trabajo.</p></div>';
+      return;
+    }
+    div.innerHTML = encuestas.map(function(e) { return cardEncuesta(e, false); }).join('');
+  }
+
+  function renderCompletadas(encuestas) {
+    var div = document.getElementById('encuestas-completadas');
+    if (!encuestas || encuestas.length === 0) {
+      div.innerHTML = '<div class="empty-state"><p>Aun no has completado ninguna encuesta.</p></div>';
+      return;
+    }
+    div.innerHTML = encuestas.map(function(e) { return cardEncuesta(e, true); }).join('');
+  }
+
+  function abrirEncuesta(encuestaId) {
+    encuestaActualId = encuestaId;
+
+    // Ocultar lista, mostrar formulario
+    document.getElementById('encuestas-pendientes').parentElement.classList.add('hidden');
+    document.getElementById('encuestas-completadas').parentElement.classList.add('hidden');
+    document.getElementById('encuesta-form-container').classList.remove('hidden');
+
+    var enc = encuestasPendientes.find(function(e) { return e.id === encuestaId; });
+    if (enc) {
+      document.getElementById('enc-form-titulo').textContent = enc.nombre;
+      var subtexto = 'Programa: ' + enc.programa_nombre;
+      if (enc.lider_nombre) {
+        subtexto += '  |  Estas evaluando a: ' + enc.lider_nombre;
+      }
+      document.getElementById('enc-form-programa').textContent = subtexto;
+    }
+
+    // Cargar preguntas
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          var d = r.data;
+          var encData = d.encuesta || d;
+          preguntasActuales = d.preguntas || encData.preguntas || [];
+
+          // Instrucciones
+          if (encData.instrucciones) {
+            var instrDiv = document.getElementById('enc-instrucciones');
+            instrDiv.textContent = encData.instrucciones;
+            instrDiv.classList.remove('hidden');
+          } else {
+            document.getElementById('enc-instrucciones').classList.add('hidden');
+          }
+
+          renderPreguntas(preguntasActuales);
+        } else {
+          showToast(r.error, 'error');
+        }
+      })
+      .withFailureHandler(function() {
+        showToast('Error al cargar encuesta.', 'error');
+      })
+      .obtenerEncuestaCompleta(App.token, encuestaId);
+  }
+
+  function renderPreguntas(preguntas) {
+    var div = document.getElementById('enc-preguntas');
+    var total = preguntas.length;
+    document.getElementById('enc-progress-text').textContent = 'Pregunta 0 de ' + total;
+    document.getElementById('enc-progress').style.width = '0%';
+
+    // Show/hide level legend based on question types
+    var tieneNiveles = preguntas.some(function(p) { return p.tipo_respuesta === 'niveles_competencia'; });
+    var leyenda = document.getElementById('enc-leyenda-niveles');
+    if (leyenda) { leyenda.classList.toggle('hidden', !tieneNiveles); }
+
+    div.innerHTML = preguntas.map(function(p, idx) {
+      var obligTag = p.obligatoria !== false ? ' <span class="text-danger">*</span>' : '';
+      var html = '<div class="card mb-3"><div class="card-body">';
+      // Competencia y foco
+      if (p.competencia_nombre) {
+        html += '<div style="font-size:12px;font-weight:600;color:var(--color-secundario);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;">' + escapeHtml(p.competencia_nombre) + '</div>';
+      }
+      if (p.foco_desarrollo) {
+        html += '<div style="font-size:12px;color:var(--color-texto-sec);font-style:italic;margin-bottom:8px;">' + escapeHtml(p.foco_desarrollo) + '</div>';
+      }
+      html += '<p class="mb-2"><strong>' + (idx + 1) + '. ' + escapeHtml(p.texto_pregunta || 'Selecciona una opcion') + '</strong>' + obligTag + '</p>';
+
+      html += renderInputPorTipo(p.id, p.tipo_respuesta, p);
+      html += '</div></div>';
+      return html;
+    }).join('');
+
+    // Agregar listeners para actualizar progreso
+    setTimeout(function() {
+      var inputs = div.querySelectorAll('input, textarea');
+      inputs.forEach(function(input) {
+        input.addEventListener('change', actualizarProgreso);
+        input.addEventListener('input', actualizarProgreso);
+      });
+    }, 100);
+  }
+
+  function renderInputPorTipo(preguntaId, tipo, pregunta) {
+    var name = 'resp_' + preguntaId;
+
+    switch (tipo) {
+      case 'niveles_competencia':
+      case 'alternativas':
+        var optsHtml = '';
+        for (var n = 1; n <= 4; n++) {
+          var optTexto = pregunta ? (pregunta['opcion_nivel_' + n] || '') : '';
+          if (!optTexto && tipo !== 'niveles_competencia') continue;
+          if (!optTexto) optTexto = 'Nivel ' + n;
+          var nivelLabel = tipo === 'niveles_competencia' ? '<span style="font-weight:700;color:var(--color-secundario);min-width:55px;display:inline-block;">Nivel ' + n + '</span> ' : '';
+          optsHtml += '<label style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--color-borde);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all 0.15s;" ' +
+            'onmouseover="this.style.background=\'var(--color-fondo-alt)\'" onmouseout="this.style.background=\'white\'">' +
+            '<input type="radio" name="' + name + '" value="' + n + '" style="margin-top:3px;flex-shrink:0;"> ' +
+            '<span style="font-size:14px;line-height:1.5;">' + nivelLabel + escapeHtml(optTexto) + '</span>' +
+          '</label>';
+        }
+        return optsHtml || '<p class="text-muted">Sin opciones configuradas.</p>';
+
+      case 'escala_1_5':
+        var html = '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
+        for (var i = 1; i <= 5; i++) {
+          html += '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="' + i + '"> ' +
+            '<span>' + i + '</span>' +
+          '</label>';
+        }
+        html += '</div>';
+        html += '<div style="display:flex;justify-content:space-between;margin-top:4px;">' +
+          '<span class="text-xs text-muted">Muy bajo</span>' +
+          '<span class="text-xs text-muted">Muy alto</span></div>';
+        return html;
+
+      case 'si_no':
+        return '<div style="display:flex;gap:16px;">' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="si"> Si</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="no"> No</label>' +
+        '</div>';
+
+      case 'logrado_parcial_no':
+        return '<div style="display:flex;gap:16px;flex-wrap:wrap;">' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="logrado"> Logrado</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="parcial"> Parcial</label>' +
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">' +
+            '<input type="radio" name="' + name + '" value="no"> No logrado</label>' +
+        '</div>';
+
+      case 'texto_breve':
+        return '<input type="text" name="' + name + '" class="form-control" placeholder="Escribe tu respuesta...">';
+
+      case 'parrafo':
+        return '<textarea name="' + name + '" class="form-control" placeholder="Escribe tu respuesta..." rows="4"></textarea>';
+
+      case 'casillas':
+        var cbHtml = '';
+        for (var cb = 1; cb <= 4; cb++) {
+          var cbTxt = pregunta ? (pregunta['opcion_nivel_' + cb] || '') : '';
+          if (!cbTxt) continue;
+          cbHtml += '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--color-borde);border-radius:8px;margin-bottom:6px;cursor:pointer;">' +
+            '<input type="checkbox" name="' + name + '" value="' + cb + '"> ' +
+            '<span style="font-size:14px;">' + escapeHtml(cbTxt) + '</span></label>';
+        }
+        return cbHtml || '<p class="text-muted">Sin opciones.</p>';
+
+      case 'desplegable':
+        var selHtml = '<select name="' + name + '" class="form-control"><option value="">Selecciona...</option>';
+        for (var dp = 1; dp <= 4; dp++) {
+          var dpTxt = pregunta ? (pregunta['opcion_nivel_' + dp] || '') : '';
+          if (!dpTxt) continue;
+          selHtml += '<option value="' + dp + '">' + escapeHtml(dpTxt) + '</option>';
+        }
+        selHtml += '</select>';
+        return selHtml;
+
+      default:
+        return '<input type="text" name="' + name + '" class="form-control" placeholder="Respuesta...">';
+    }
+  }
+
+  function actualizarProgreso() {
+    var total = preguntasActuales.length;
+    if (total === 0) return;
+
+    var respondidas = 0;
+    preguntasActuales.forEach(function(p) {
+      var name = 'resp_' + p.id;
+      var inputs = document.querySelectorAll('[name="' + name + '"]');
+      var tieneValor = false;
+      inputs.forEach(function(input) {
+        if (input.type === 'radio' && input.checked) tieneValor = true;
+        if (input.type === 'textarea' && input.value.trim()) tieneValor = true;
+        if (input.type === 'text' && input.value.trim()) tieneValor = true;
+      });
+      if (tieneValor) respondidas++;
+    });
+
+    var pct = Math.round(respondidas / total * 100);
+    document.getElementById('enc-progress').style.width = pct + '%';
+    document.getElementById('enc-progress-text').textContent = 'Pregunta ' + respondidas + ' de ' + total + ' (' + pct + '%)';
+  }
+
+  function enviarRespuestasEncuesta() {
+    var respuestas = [];
+    preguntasActuales.forEach(function(p) {
+      var name = 'resp_' + p.id;
+      var inputs = document.querySelectorAll('[name="' + name + '"]');
+      var valor = null;
+      inputs.forEach(function(input) {
+        if (input.type === 'radio' && input.checked) valor = input.value;
+        if (input.type === 'textarea' || input.type === 'text') {
+          if (input.value.trim()) valor = input.value.trim();
+        }
+      });
+      if (valor !== null) {
+        respuestas.push({ preguntaId: p.id, valor: valor });
+      }
+    });
+
+    var btn = document.getElementById('btn-enviar-respuestas');
+    var formContainer = document.getElementById('encuesta-form-container');
+    btnLoading(btn, true);
+    formContainer.style.pointerEvents = 'none';
+    formContainer.style.opacity = '0.6';
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btnLoading(btn, false);
+        formContainer.style.pointerEvents = '';
+        formContainer.style.opacity = '';
+        if (r.success) {
+          showToast(r.data.message || 'Respuestas enviadas.', 'success');
+          volverALista();
+          cargarMisEncuestas();
+        } else {
+          showToast(r.error, 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        btnLoading(btn, false);
+        formContainer.style.pointerEvents = '';
+        formContainer.style.opacity = '';
+        showToast('Error al enviar respuestas.', 'error');
+      })
+      .enviarRespuestas(App.token, encuestaActualId, respuestas);
+  }
+
+  function volverALista() {
+    document.getElementById('encuesta-form-container').classList.add('hidden');
+    document.getElementById('encuestas-pendientes').parentElement.classList.remove('hidden');
+    document.getElementById('encuestas-completadas').parentElement.classList.remove('hidden');
+    encuestaActualId = null;
+    preguntasActuales = [];
+  }
+</script>
