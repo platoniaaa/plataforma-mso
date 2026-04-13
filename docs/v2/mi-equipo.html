@@ -22,10 +22,10 @@
 </div>
 
 <script>
-  (function() {
-    var esAdmin = App.getRol && App.getRol() === 'admin';
-    var userId = App.usuario ? App.usuario.id : null;
+  var esAdmin = App.getRol && App.getRol() === 'admin';
+  var userId = App.usuario ? App.usuario.id : null;
 
+  (function() {
     google.script.run.withSuccessHandler(function(r) {
       if (r.success) {
         var sel = document.getElementById('sel-programa-equipo');
