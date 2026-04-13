@@ -4,6 +4,10 @@
   
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
   /* ============================================
      Estilos globales - MSO Chile TPT
@@ -385,6 +389,25 @@
     font-size: 12px;
   }
 
+  .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--color-borde);
+    background: #fff;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-icon:hover {
+    background: #f5f5f5;
+    color: var(--color-primario);
+    border-color: var(--color-primario);
+  }
+
   .btn-lg {
     padding: 14px 28px;
     font-size: 16px;
@@ -489,7 +512,10 @@
   }
 
   .data-table tr:hover td {
-    background: rgba(46, 134, 193, 0.03);
+    background: rgba(61, 12, 75, 0.03);
+  }
+  .data-table tr[style*="cursor:pointer"]:hover td {
+    background: rgba(61, 12, 75, 0.06);
   }
 
   /* ============================================
@@ -541,7 +567,7 @@
     border-radius: 12px;
     width: 90%;
     max-width: 600px;
-    max-height: 85vh;
+    max-height: 95vh;
     overflow-y: auto;
     transform: scale(0.9);
     transition: transform 0.3s;
@@ -675,6 +701,14 @@
     color: var(--color-primario);
     cursor: pointer;
     padding: 8px;
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar { width: 200px; }
+    .main-content { margin-left: 200px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .data-table { font-size: 13px; }
+    .btn-sm { padding: 5px 10px; font-size: 11px; }
   }
 
   @media (max-width: 768px) {
@@ -866,48 +900,84 @@
     flex: 1;
     min-width: 200px;
   }
+
+  /* Tooltip help */
+  .tooltip-help { position: relative; display: inline-flex; align-items: center; cursor: help; }
+  .tooltip-help .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--color-borde); color: var(--color-texto-sec); font-size: 10px; font-weight: 700; margin-left: 5px; flex-shrink: 0; }
+  .tooltip-help .tooltip-text { visibility: hidden; opacity: 0; position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 12px; white-space: normal; max-width: 280px; z-index: 200; transition: opacity 0.15s, visibility 0.15s; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .tooltip-help .tooltip-text::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 5px; border-style: solid; border-color: #333 transparent transparent transparent; }
+  .tooltip-help:hover .tooltip-text { visibility: visible; opacity: 1; }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
 </head>
 <body>
-  <div class="auth-container">
-    <div class="auth-card">
-      <div class="auth-logo">
-        <img src="https://lh3.googleusercontent.com/d/1F6ndRSX6rNraFsdVHUV6IfDw0o8uK7mf" alt="MSO Chile" style="max-width:180px;margin:0 auto 12px;display:block;">
-        <p>Transferencia al Puesto de Trabajo</p>
-      </div>
-
-      <div id="alert-container"></div>
-
-      <form id="login-form" onsubmit="handleLogin(event)">
-        <div class="form-group">
-          <label for="email">Correo electr&oacute;nico</label>
-          <input type="email" id="email" name="email" class="form-control"
-                 placeholder="tu@correo.cl" required>
-        </div>
-
-        <div class="form-group">
-          <label for="password">Contrase&ntilde;a</label>
-          <input type="password" id="password" name="password" class="form-control"
-                 placeholder="Ingresa tu contrase&ntilde;a" required minlength="6">
-        </div>
-
-        <button type="submit" id="btn-login" class="btn btn-primary btn-block btn-lg">
-          Iniciar Sesi&oacute;n
-        </button>
-      </form>
-
-      <div class="text-center mt-4">
-        <a href="?page=registro" class="text-link">
-          &iquest;No tienes cuenta? Reg&iacute;strate aqu&iacute;
-        </a>
-      </div>
-    </div>
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="spinner spinner-lg"></div>
+    <span style="color: var(--color-texto-sec);">Cargando...</span>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-client.js"></script>
-<script>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img src="https://lh3.googleusercontent.com/d/1vKHXAnMVQFDsA7Xd96B-3TKrNytyXXru" onerror="this.style.display='none'" alt="MSO Chile" style="max-width:140px;margin:0 auto 8px;display:block;">
+        <div class="text-xs" style="opacity:0.6;">Transferencia al Puesto</div>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="sidebar-user-name" id="user-name">Cargando...</div>
+        <div class="sidebar-user-role" id="user-role"></div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- Se llena dinámicamente según rol -->
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn-logout" onclick="handleLogout()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:6px;">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Cerrar Sesi&oacute;n
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="main-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <h1 id="page-title">Dashboard</h1>
+        </div>
+        <div class="header-actions">
+          <div class="notif-badge" onclick="cargarVista('notificaciones')" title="Notificaciones">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+            <span class="notif-count hidden" id="notif-count">0</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area" id="content-area">
+        <!-- Contenido dinámico se carga aquí -->
+        <div class="text-center" style="padding:60px 20px;">
+          <div class="spinner spinner-lg"></div>
+          <p class="text-muted mt-3">Cargando plataforma...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
 /**
  * js-utils.html — Funciones JavaScript compartidas
  * Plataforma TPT - MSO Chile
@@ -1143,6 +1213,44 @@ function closeModal(modalId) {
   }
 }
 
+/**
+ * Cierra todos los modales activos
+ */
+function closeAllModals() {
+  var modals = document.querySelectorAll('.modal-overlay.active');
+  modals.forEach(function(m) {
+    m.classList.remove('active');
+  });
+  document.body.style.overflow = '';
+}
+
+// ITEM 8: ESC key closes any active modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    // Close confirm modal first if open
+    var confirmModal = document.getElementById('modal-confirmar');
+    if (confirmModal && confirmModal.classList.contains('active')) {
+      confirmModal.classList.remove('active');
+      document.body.style.overflow = '';
+      return;
+    }
+    // Otherwise close any active modal overlay
+    var activeModal = document.querySelector('.modal-overlay.active');
+    if (activeModal) {
+      activeModal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+});
+
+// ITEM 8: Click outside modal content closes it
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('modal-overlay') && e.target.classList.contains('active')) {
+    e.target.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+});
+
 // ============================================
 // UTILIDADES DE FORMULARIO
 // ============================================
@@ -1216,11 +1324,12 @@ function escapeHtml(text) {
  */
 function formatDate(dateStr) {
   if (!dateStr) return '-';
-  var d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  var dia = ('0' + d.getDate()).slice(-2);
-  var mes = ('0' + (d.getMonth() + 1)).slice(-2);
-  return dia + '/' + mes + '/' + d.getFullYear();
+  // Parsear directamente para evitar problemas de zona horaria
+  var parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
+  }
+  return dateStr;
 }
 
 /**
@@ -1262,64 +1371,368 @@ function debounce(func, wait) {
 }
 
 /**
- * Confirmar acción
+ * Confirmar accion (backward-compatible: synchronous fallback)
+ * If called with only a string argument, uses native confirm() for backward compat.
+ * Use confirmarAccion() for the async modal version.
  */
 function confirmar(mensaje) {
   return confirm(mensaje);
+}
+
+/**
+ * Muestra un modal de confirmacion personalizado (async, callback-based)
+ * @param {string} mensaje - Titulo del modal
+ * @param {string} descripcion - Descripcion de la accion / consecuencias
+ * @param {function} onConfirm - Callback ejecutado al confirmar
+ */
+function confirmarAccion(mensaje, descripcion, onConfirm) {
+  var overlay = document.getElementById('modal-confirmar');
+  if (!overlay) return;
+
+  document.getElementById('confirmar-titulo').textContent = mensaje || 'Confirmar accion';
+  document.getElementById('confirmar-descripcion').textContent = descripcion || '';
+  document.getElementById('confirmar-descripcion').style.display = descripcion ? 'block' : 'none';
+
+  // Store callback for the confirm button
+  overlay._onConfirm = onConfirm;
+
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  // Focus the cancel button for accessibility
+  var btnCancelar = document.getElementById('confirmar-btn-cancelar');
+  if (btnCancelar) btnCancelar.focus();
+}
+
+function _cerrarModalConfirmar() {
+  var overlay = document.getElementById('modal-confirmar');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay._onConfirm = null;
+    document.body.style.overflow = '';
+  }
+}
+
+function _ejecutarConfirmacion() {
+  var overlay = document.getElementById('modal-confirmar');
+  if (overlay && typeof overlay._onConfirm === 'function') {
+    var cb = overlay._onConfirm;
+    _cerrarModalConfirmar();
+    cb();
+  } else {
+    _cerrarModalConfirmar();
+  }
 }
 </script>
 
 
   <script>
-    function handleLogin(e) {
-      e.preventDefault();
+    // ============================================
+    // CONFIGURACIÓN DE MENÚ POR ROL
+    // ============================================
+    var MENUS = {
+      admin: [
+        { id: 'dashboard', label: 'Dashboard', icon: 'chart' },
+        { id: 'clientes', label: 'Clientes', icon: 'building' },
+        { id: 'programas', label: 'Programas', icon: 'clipboard' },
+        { id: 'usuarios', label: 'Usuarios', icon: 'users' },
+        { id: 'hallazgos', label: 'Hallazgos', icon: 'lightbulb' },
+        { id: 'gestion-observaciones', label: 'Incidencias', icon: 'alert' },
+        { id: 'correos', label: 'Correos', icon: 'email' }
+      ],
+      jefatura: [
+        { id: 'home-lider', label: 'Inicio', icon: 'home' },
+        { id: 'mis-encuestas', label: 'Mis Evaluaciones', icon: 'survey' },
+        { id: 'mi-equipo', label: 'Mi Equipo', icon: 'users' },
+        { id: 'mis-recursos', label: 'Archivos y Recursos', icon: 'file' },
+        { id: 'reportar', label: 'Incidencias', icon: 'alert' }
+      ],
+      participante: [
+        { id: 'mis-actividades', label: 'Mis Actividades', icon: 'calendar' },
+        { id: 'mis-encuestas', label: 'Mis Encuestas', icon: 'survey' },
+        { id: 'mis-recursos', label: 'Archivos y Recursos', icon: 'file' },
+        { id: 'mi-progreso', label: 'Mi Progreso', icon: 'chart' },
+        { id: 'feedback-recibido', label: 'Feedback Recibido', icon: 'message' },
+        { id: 'reportar', label: 'Incidencias', icon: 'alert' }
+      ],
+      colaborador: [
+        { id: 'mis-encuestas', label: 'Mis Encuestas', icon: 'survey' },
+        { id: 'mis-recursos', label: 'Archivos y Recursos', icon: 'file' }
+      ]
+    };
 
-      var email = document.getElementById('email').value.trim();
-      var password = document.getElementById('password').value;
-      var btn = document.getElementById('btn-login');
+    var ICONOS = {
+      home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+      chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 16V12M12 16V8M16 16V11"/></svg>',
+      building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22V12h6v10M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01"/></svg>',
+      clipboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="12" height="18" rx="1"/><path d="M9 2h6v3H9z"/><path d="M10 12h4M10 16h4M10 8h4"/></svg>',
+      target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+      survey: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>',
+      checklist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10l2 2 4-4"/><path d="M8 16h8"/></svg>',
+      users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+      lightbulb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>',
+      file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
+      message: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+      camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>',
+      send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+      alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+      email: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+      brain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 014 4v2a4 4 0 01-8 0V6a4 4 0 014-4z"/><path d="M6 10v1a6 6 0 0012 0v-1"/><path d="M12 18v4M8 22h8"/></svg>',
+      calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
+      report: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h3M8 17h3M13 13h3M13 17h3"/></svg>'
+    };
 
-      if (!email || !password) {
-        showAlert('Completa todos los campos.', 'error');
+    // ============================================
+    // INICIALIZACIÓN
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+      App.init();
+
+      if (!App.isLoggedIn()) {
+        window.location.href='index.html';
         return;
       }
 
-      btnLoading(btn, true);
-      clearAlert();
+      // Mostrar datos del usuario
+      document.getElementById('user-name').textContent = App.usuario.nombre;
+      var rolLabel = { admin: 'ADMIN', jefatura: 'LIDER', participante: 'PARTICIPANTE', colaborador: 'COLABORADOR' };
+      document.getElementById('user-role').textContent = rolLabel[App.usuario.rol] || App.usuario.rol.toUpperCase();
 
+      // Construir menú
+      buildMenu();
+
+      // Cargar vista inicial
+      var rol = App.getRol();
+      var defaultView = rol === 'jefatura' ? 'home-lider' :
+                         (rol === 'participante' || rol === 'colaborador') ? 'mis-encuestas' : 'dashboard';
+      cargarVista(defaultView);
+
+      // Cargar notificaciones
+      cargarContadorNotificaciones();
+    });
+
+    // ============================================
+    // MENÚ DE NAVEGACIÓN
+    // ============================================
+    function buildMenu() {
+      var nav = document.getElementById('sidebar-nav');
+      var items = MENUS[App.getRol()] || [];
+      nav.innerHTML = '';
+
+      items.forEach(function(item) {
+        var div = document.createElement('div');
+        div.className = 'nav-item';
+        div.dataset.vista = item.id;
+        div.innerHTML = (ICONOS[item.icon] || '') + '<span>' + item.label + '</span>';
+        div.onclick = function() { cargarVista(item.id); };
+        nav.appendChild(div);
+      });
+    }
+
+    function setActiveNav(vistaId) {
+      document.querySelectorAll('.nav-item').forEach(function(el) {
+        el.classList.toggle('active', el.dataset.vista === vistaId);
+      });
+    }
+
+    // ============================================
+    // CARGA DINÁMICA DE VISTAS
+    // ============================================
+    function cargarVista(vistaId) {
+      App.vistaActual = vistaId;
+      setActiveNav(vistaId);
+
+      // Mapeo de vista a archivo HTML y título
+      var vistas = {
+        'home-lider': { html: 'home-lider', titulo: 'Inicio' },
+        'dashboard': { html: 'dashboard', titulo: 'Dashboard' },
+        'clientes': { html: 'clientes', titulo: 'Gesti\u00f3n de Clientes' },
+        'programas': { html: 'programas', titulo: 'Gesti\u00f3n de Programas' },
+        'conductas': { html: 'conductas', titulo: 'Conductas Cr\u00edticas' },
+        'actividades': { html: 'actividades', titulo: 'Actividades' },
+        'checklists': { html: 'checklists', titulo: 'Checklists de Observaci\u00f3n' },
+        'usuarios': { html: 'usuarios', titulo: 'Gesti\u00f3n de Usuarios' },
+        'hallazgos': { html: 'hallazgos', titulo: 'Hallazgos y Recomendaciones' },
+        'reportes': { html: 'reportes', titulo: 'Reportes' },
+        'observaciones': { html: 'checklists', titulo: 'Mis Observaciones' },
+        'feedback': { html: 'feedback-jefatura', titulo: 'Feedback' },
+        'mi-equipo': { html: 'mi-equipo', titulo: 'Mi Equipo' },
+        'mi-progreso': { html: 'mi-progreso', titulo: 'Mi Progreso' },
+        'feedback-recibido': { html: 'feedback-recibido', titulo: 'Feedback Recibido' },
+        'notificaciones': { html: 'notificaciones', titulo: 'Notificaciones' },
+        'reportar': { html: 'reportar', titulo: 'Incidencias' },
+        'gestion-observaciones': { html: 'gestion-observaciones', titulo: 'Gesti\u00f3n de Incidencias' },
+        'mis-actividades': { html: 'mis-actividades', titulo: 'Mis Actividades' },
+        'mis-encuestas': { html: 'mis-encuestas', titulo: 'Mis Encuestas' },
+        'mis-recursos': { html: 'mis-recursos', titulo: 'Archivos y Recursos' },
+        'correos': { html: 'correos', titulo: 'Correos' },
+        'asistente-ia': { html: 'asistente-ia', titulo: 'Asistente IA' },
+        'panel-programa': { html: 'panel-programa', titulo: 'Programa' }
+      };
+
+      var vista = vistas[vistaId];
+      if (!vista) {
+        document.getElementById('content-area').innerHTML = '<div class="empty-state"><p>Vista no encontrada.</p></div>';
+        return;
+      }
+
+      document.getElementById('page-title').textContent = vista.titulo;
+
+      // Mostrar loading en el área de contenido
+      document.getElementById('content-area').innerHTML =
+        '<div class="text-center" style="padding:60px 20px;"><div class="spinner spinner-lg"></div><p class="text-muted mt-3">Cargando...</p></div>';
+
+      // Cargar HTML desde el backend
+      google.script.run
+        .withSuccessHandler(function(html) {
+          document.getElementById('content-area').innerHTML = html;
+          // Ejecutar scripts del contenido cargado
+          ejecutarScripts(document.getElementById('content-area'));
+          // Cerrar sidebar en móvil
+          closeSidebar();
+        })
+        .withFailureHandler(function(error) {
+          document.getElementById('content-area').innerHTML =
+            '<div class="empty-state"><p>Error al cargar la vista. Intenta de nuevo.</p></div>';
+        })
+        .getVistaHTML(vista.html);
+    }
+
+    /**
+     * Ejecuta los scripts dentro de un contenedor cargado dinámicamente
+     */
+    function ejecutarScripts(container) {
+      var scripts = container.querySelectorAll('script');
+      scripts.forEach(function(oldScript) {
+        var newScript = document.createElement('script');
+        if (oldScript.src) {
+          newScript.src = oldScript.src;
+        } else {
+          newScript.textContent = oldScript.textContent;
+        }
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+    }
+
+    // ============================================
+    // NOTIFICACIONES
+    // ============================================
+    function cargarContadorNotificaciones() {
       google.script.run
         .withSuccessHandler(function(result) {
-          btnLoading(btn, false);
-          if (result.success) {
-            // Guardar sesión
-            sessionStorage.setItem('tpt_token', result.data.token);
-            sessionStorage.setItem('tpt_usuario', JSON.stringify(result.data.usuario));
-            // Redirigir a la app
-            window.location.href='app.html';
-          } else {
-            showAlert(result.error, 'error');
+          if (result && result.success && result.data) {
+            var count = result.data.count || 0;
+            var badge = document.getElementById('notif-count');
+            if (count > 0) {
+              badge.textContent = count > 99 ? '99+' : count;
+              badge.classList.remove('hidden');
+            } else {
+              badge.classList.add('hidden');
+            }
+          }
+        })
+        .withFailureHandler(function() {})
+        .contarNotificacionesPendientes(App.token);
+    }
+
+    // Recargar notificaciones cada 60 segundos
+    setInterval(cargarContadorNotificaciones, 60000);
+
+    // ============================================
+    // SIDEBAR MOBILE
+    // ============================================
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+    }
+
+    // Cerrar sidebar al hacer clic fuera
+    document.addEventListener('click', function(e) {
+      var sidebar = document.getElementById('sidebar');
+      var menuBtn = document.querySelector('.mobile-menu-btn');
+      if (window.innerWidth <= 768 &&
+          !sidebar.contains(e.target) &&
+          !menuBtn.contains(e.target)) {
+        closeSidebar();
+      }
+    });
+
+    // ============================================
+    // NAVEGACIÓN AL PANEL DE PROGRAMA
+    // ============================================
+    function loadView(vistaId) {
+      cargarVista(vistaId);
+    }
+
+    function abrirPanelPrograma(programaId) {
+      App.vistaActual = 'panel-programa';
+      setActiveNav('programas');
+      document.getElementById('page-title').textContent = 'Programa';
+
+      document.getElementById('content-area').innerHTML =
+        '<div class="text-center" style="padding:60px 20px;"><div class="spinner spinner-lg"></div><p class="text-muted mt-3">Cargando programa...</p></div>';
+
+      google.script.run
+        .withSuccessHandler(function(html) {
+          document.getElementById('content-area').innerHTML = html;
+          ejecutarScripts(document.getElementById('content-area'));
+          closeSidebar();
+          // Inicializar el panel con el ID del programa
+          if (typeof initPanel === 'function') {
+            initPanel(programaId);
           }
         })
         .withFailureHandler(function(error) {
-          btnLoading(btn, false);
-          showAlert('Error de conexi\u00f3n. Verifica tu internet e intenta de nuevo.', 'error');
+          document.getElementById('content-area').innerHTML =
+            '<div class="empty-state"><p>Error al cargar el panel del programa.</p></div>';
         })
-        .loginUsuario(email, password);
+        .getVistaHTML('panel-programa');
     }
 
-    function showAlert(message, type) {
-      var container = document.getElementById('alert-container');
-      container.innerHTML = '<div class="alert alert-' + type + '">' + escapeHtml(message) + '</div>';
+    // ============================================
+    // RESET DATOS DEMO
+    // ============================================
+    function handleResetDatos() {
+      if (confirm('¿Resetear todos los datos a los valores originales del demo? Se perderán todos los cambios que hayas hecho.')) {
+        resetearDatosDemo();
+      }
     }
 
-    function clearAlert() {
-      document.getElementById('alert-container').innerHTML = '';
-    }
-
-    function escapeHtml(text) {
-      var div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
+    // ============================================
+    // LOGOUT
+    // ============================================
+    function handleLogout() {
+      google.script.run
+        .withSuccessHandler(function() {
+          App.clearSession();
+          window.location.href='index.html';
+        })
+        .withFailureHandler(function() {
+          App.clearSession();
+          window.location.href='index.html';
+        })
+        .cerrarSesion(App.token);
     }
   </script>
+
+  <!-- Modal de Confirmacion Global (ITEM 6) -->
+  <div class="modal-overlay" id="modal-confirmar">
+    <div class="modal" style="max-width:440px;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="confirmar-titulo" style="color:var(--color-error);">Confirmar accion</h3>
+        <button class="modal-close" onclick="_cerrarModalConfirmar()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmar-descripcion" style="font-size:14px;color:var(--color-texto-sec);line-height:1.6;"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="confirmar-btn-cancelar" onclick="_cerrarModalConfirmar()">Cancelar</button>
+        <button class="btn btn-danger" onclick="_ejecutarConfirmacion()">Confirmar</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

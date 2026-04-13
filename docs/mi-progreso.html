@@ -1,0 +1,167 @@
+<!-- Vista: Mi Progreso (Participante) -->
+<div>
+  <!-- Indicador de Progreso del Flujo -->
+  <div class="stepper-container mb-4">
+    <div class="stepper">
+      <div class="stepper-step en-progreso">
+        <div class="stepper-indicator">
+          <span class="stepper-dot"></span>
+        </div>
+        <span class="stepper-label">Autoevaluacion</span>
+      </div>
+      <div class="stepper-connector"></div>
+      <div class="stepper-step pendiente">
+        <div class="stepper-indicator">
+          <span class="stepper-dot"></span>
+        </div>
+        <span class="stepper-label">Coevaluacion</span>
+      </div>
+      <div class="stepper-connector"></div>
+      <div class="stepper-step pendiente">
+        <div class="stepper-indicator">
+          <span class="stepper-dot"></span>
+        </div>
+        <span class="stepper-label">Informe Individual</span>
+      </div>
+      <div class="stepper-connector"></div>
+      <div class="stepper-step pendiente">
+        <div class="stepper-indicator">
+          <span class="stepper-dot"></span>
+        </div>
+        <span class="stepper-label">Informe Ejecutivo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grafico PRE vs POST -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h2>Mi Comparaci&oacute;n PRE vs POST</h2>
+    </div>
+    <div class="card-body">
+      <div id="progreso-chart-container">
+        <div class="text-center p-4"><div class="spinner spinner-lg"></div><p class="text-muted mt-2">Cargando datos...</p></div>
+      </div>
+      <div style="position:relative;height:320px;" id="progreso-chart-wrapper" class="hidden">
+        <canvas id="chart-mi-progreso"></canvas>
+      </div>
+      <div id="progreso-sin-datos" class="hidden">
+        <div class="empty-state">
+          <p>Aun no hay datos de comparacion. Completa tus encuestas PRE y POST para ver tu progreso.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Recibido -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Feedback Recibido</h2>
+    </div>
+    <div class="card-body">
+      <div id="progreso-feedback">
+        <div class="text-center p-4"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var chartMiProgreso = null;
+
+  (function() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          renderProgresoChart(r.data.comparacion || []);
+          renderProgresoFeedback(r.data.feedback || []);
+        } else {
+          document.getElementById('progreso-chart-container').innerHTML =
+            '<div class="empty-state"><p>' + escapeHtml(r.error) + '</p></div>';
+        }
+      })
+      .withFailureHandler(function() {
+        document.getElementById('progreso-chart-container').innerHTML =
+          '<div class="empty-state"><p>Error al cargar datos de progreso.</p></div>';
+      })
+      .obtenerMiProgreso(App.token);
+  })();
+
+  function renderProgresoChart(comparacion) {
+    document.getElementById('progreso-chart-container').classList.add('hidden');
+
+    if (!comparacion || comparacion.length === 0) {
+      document.getElementById('progreso-sin-datos').classList.remove('hidden');
+      return;
+    }
+
+    document.getElementById('progreso-chart-wrapper').classList.remove('hidden');
+
+    var labels = comparacion.map(function(c) { return c.conducta_nombre; });
+    var dataPre = comparacion.map(function(c) { return c.promedioPre; });
+    var dataPost = comparacion.map(function(c) { return c.promedioPost; });
+
+    var ctx = document.getElementById('chart-mi-progreso').getContext('2d');
+
+    if (chartMiProgreso) chartMiProgreso.destroy();
+
+    chartMiProgreso = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'PRE',
+            data: dataPre,
+            backgroundColor: 'rgba(46, 134, 193, 0.7)',
+            borderColor: '#2E86C1',
+            borderWidth: 1
+          },
+          {
+            label: 'POST',
+            data: dataPost,
+            backgroundColor: 'rgba(39, 174, 96, 0.7)',
+            borderColor: '#27AE60',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 5,
+            title: { display: true, text: 'Puntaje' }
+          }
+        },
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: false }
+        }
+      }
+    });
+  }
+
+  function renderProgresoFeedback(feedbacks) {
+    var div = document.getElementById('progreso-feedback');
+
+    if (!feedbacks || feedbacks.length === 0) {
+      div.innerHTML = '<div class="empty-state"><p>Aun no has recibido feedback.</p></div>';
+      return;
+    }
+
+    div.innerHTML = feedbacks.map(function(f) {
+      return '<div class="card mb-3"><div class="card-body">' +
+        '<div class="flex-between mb-2">' +
+          '<span class="text-sm text-muted">' + formatDate(f.fecha) + '</span>' +
+          (f.conducta_nombre ? '<span class="badge badge-info">' + escapeHtml(f.conducta_nombre) + '</span>' : '') +
+        '</div>' +
+        '<p><strong>Fortaleza:</strong> ' + escapeHtml(f.fortaleza) + '</p>' +
+        '<p><strong>Aspecto a reforzar:</strong> ' + escapeHtml(f.aspecto_reforzar) + '</p>' +
+        '<p><strong>Recomendaci&oacute;n:</strong> ' + escapeHtml(f.recomendacion) + '</p>' +
+      '</div></div>';
+    }).join('');
+  }
+</script>

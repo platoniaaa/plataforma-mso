@@ -1,0 +1,697 @@
+<!-- Vista: Reportes IA (Admin + Jefatura - Generador de reportes PDF) -->
+<div>
+  <div class="flex-between mb-4">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <select class="form-control" id="sel-programa-reporte" onchange="onProgramaReporteChange()" style="min-width:260px;">
+        <option value="">Selecciona un programa...</option>
+      </select>
+      <select class="form-control" id="sel-tipo-reporte" onchange="onTipoReporteChange()" style="min-width:200px;" disabled>
+        <option value="">Tipo de reporte...</option>
+        <option value="consolidado">Informe Ejecutivo Consolidado</option>
+        <option value="individual">Informe Individual de Participante</option>
+      </select>
+      <select class="form-control hidden" id="sel-participante-reporte" style="min-width:240px;">
+        <option value="">Selecciona participante...</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" id="btn-generar-reporte" onclick="generarReporte()" disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;">
+          <path d="M12 2a4 4 0 014 4v2a4 4 0 01-8 0V6a4 4 0 014-4z"/><path d="M6 10v1a6 6 0 0012 0v-1"/><path d="M12 18v4M8 22h8"/>
+        </svg>
+        Generar Reporte
+      </button>
+      <button class="btn btn-outline hidden" id="btn-descargar-pdf" onclick="descargarPDF()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Descargar PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Estado vac&iacute;o -->
+  <div id="reporte-empty" class="card">
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;margin-bottom:16px;opacity:0.4;">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/>
+      </svg>
+      <p>Selecciona un programa y el tipo de reporte para generar un informe con IA.</p>
+      <p class="text-sm text-muted mt-2"><strong>Consolidado:</strong> Resultados del grupo, brechas, hallazgos y recomendaciones.<br><strong>Individual:</strong> Evaluaci&oacute;n por participante con an&aacute;lisis personalizado.</p>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="reporte-loading" class="hidden">
+    <div class="card"><div class="card-body text-center" style="padding:60px 20px;">
+      <div class="spinner spinner-lg"></div>
+      <p class="text-muted mt-3" id="reporte-loading-text">Analizando datos del programa...</p>
+      <div class="progress-bar-container mt-3" style="max-width:400px;margin:0 auto;">
+        <div class="progress-bar" id="reporte-progress" style="width:0%;transition:width 0.5s;"></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Preview del reporte -->
+  <div id="reporte-preview" class="hidden">
+    <div class="card mb-3"><div class="card-body" style="padding:8px 16px;display:flex;align-items:center;justify-content:space-between;">
+      <span class="text-sm text-muted">Vista previa. Haz clic en "Descargar PDF" para obtener el archivo.</span>
+      <button class="btn btn-sm btn-primary" onclick="descargarPDF()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        PDF
+      </button>
+    </div></div>
+    <div id="reporte-contenido" class="rpt-container"></div>
+  </div>
+</div>
+
+<style>
+  .rpt-container { background: white; border-radius: 8px; box-shadow: 0 2px 16px rgba(0,0,0,0.1); overflow: hidden; }
+
+  /* ===== ESTILOS PDF REPLICANDO EJEMPLO ===== */
+  .rpt {
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    color: #2D3436;
+    line-height: 1.6;
+    font-size: 13px;
+  }
+
+  /* Header con fondo */
+  .rpt-hero {
+    background: linear-gradient(135deg, rgba(26,60,110,0.92) 0%, rgba(26,60,110,0.85) 100%),
+                url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=400&fit=crop') center/cover;
+    color: white;
+    padding: 48px 50px 40px;
+  }
+
+  .rpt-hero h1 { font-size: 28px; font-weight: 800; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .rpt-hero h2 { font-size: 18px; font-weight: 400; margin: 0 0 6px; font-style: italic; opacity: 0.9; }
+  .rpt-hero .rpt-meta { font-size: 12px; opacity: 0.7; margin-top: 12px; }
+
+  .rpt-body { padding: 40px 50px; }
+
+  /* Intro text */
+  .rpt-intro { font-size: 13px; color: #555; margin-bottom: 30px; line-height: 1.7; }
+  .rpt-intro strong { color: #1A3C6E; }
+
+  /* Sección */
+  .rpt-section { margin-bottom: 36px; page-break-inside: avoid; }
+  .rpt-section-title { font-size: 22px; font-weight: 700; color: #2D3436; margin: 0 0 20px; }
+  .rpt-subsection-title { font-size: 15px; font-weight: 600; color: #1A3C6E; margin: 0 0 10px; }
+
+  /* KPIs grandes (estilo ejemplo) */
+  .rpt-kpi-row { display: flex; gap: 0; margin: 20px 0; }
+  .rpt-kpi-big { flex: 1; text-align: center; padding: 20px 16px; }
+  .rpt-kpi-big-value { font-size: 48px; font-weight: 800; color: #1A3C6E; line-height: 1; }
+  .rpt-kpi-big-label { font-size: 13px; color: #718096; margin-top: 6px; }
+
+  /* Tablas lado a lado */
+  .rpt-tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
+  @media (max-width: 700px) { .rpt-tables-grid { grid-template-columns: 1fr; } }
+
+  .rpt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .rpt-table caption { text-align: left; font-weight: 600; color: #1A3C6E; margin-bottom: 8px; font-size: 14px; caption-side: top; }
+  .rpt-table th { background: #E8F4FD; color: #1A3C6E; padding: 10px 14px; text-align: left; font-weight: 600; border-bottom: 2px solid #B3D9F2; }
+  .rpt-table td { padding: 9px 14px; border-bottom: 1px solid #EDF2F7; }
+  .rpt-table tr:last-child td { border-bottom: none; font-weight: 600; }
+  .rpt-table-highlight { background: #E8F4FD; }
+
+  /* Gráfico de barras horizontal (estilo ejemplo) */
+  .rpt-hbar-container { margin: 20px 0; }
+  .rpt-hbar-row { display: grid; grid-template-columns: 140px 1fr 40px; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .rpt-hbar-label { font-size: 12px; font-weight: 500; text-align: right; color: #555; }
+  .rpt-hbar-track { height: 28px; background: #EDF2F7; border-radius: 4px; overflow: hidden; position: relative; }
+  .rpt-hbar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; font-weight: 700; color: white; transition: width 0.5s; }
+  .rpt-hbar-fill-auto { background: #1A3C6E; }
+  .rpt-hbar-fill-co { background: #5DADE2; }
+  .rpt-hbar-value { font-size: 12px; font-weight: 600; color: #555; }
+
+  /* Cards de hallazgos (grid 3 cols) */
+  .rpt-findings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 16px 0; }
+  .rpt-finding-card { background: #F7FBFE; border: 1px solid #D4E6F1; border-top: 4px solid #5DADE2; border-radius: 8px; padding: 16px; }
+  .rpt-finding-card h4 { font-size: 14px; font-weight: 700; color: #1A3C6E; margin: 0 0 8px; }
+  .rpt-finding-card p { font-size: 12px; color: #555; margin: 0; line-height: 1.5; }
+
+  /* Perfiles grid (2x2) */
+  .rpt-profiles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .rpt-profile-card { background: #F7FBFE; border: 1px solid #D4E6F1; border-radius: 8px; padding: 14px 16px; }
+  .rpt-profile-card h4 { font-size: 13px; font-weight: 700; color: #1A3C6E; margin: 0 0 4px; }
+  .rpt-profile-card p { font-size: 12px; color: #718096; margin: 0; }
+
+  /* Conclusiones con flechas */
+  .rpt-conclusion-item { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+  .rpt-conclusion-arrow { color: #5DADE2; font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+  .rpt-conclusion-text { font-size: 13px; color: #555; line-height: 1.6; }
+  .rpt-conclusion-text strong { color: #1A3C6E; }
+
+  /* Recomendaciones numeradas (grid 2x2) */
+  .rpt-recs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .rpt-rec-card { border: 1px solid #D4E6F1; border-radius: 8px; overflow: hidden; }
+  .rpt-rec-num { background: #5DADE2; color: white; text-align: center; padding: 8px; font-size: 18px; font-weight: 700; }
+  .rpt-rec-body { padding: 14px 16px; }
+  .rpt-rec-body h4 { font-size: 14px; font-weight: 700; color: #1A3C6E; margin: 0 0 6px; }
+  .rpt-rec-body p { font-size: 12px; color: #555; margin: 0; line-height: 1.5; }
+
+  /* Cierre ejecutivo */
+  .rpt-cierre { background: #F7FBFE; border-left: 4px solid #1A3C6E; padding: 20px 24px; border-radius: 0 8px 8px 0; margin: 20px 0; }
+  .rpt-cierre p { font-size: 13px; color: #555; margin: 0 0 8px; line-height: 1.7; }
+  .rpt-cierre strong { color: #1A3C6E; }
+  .rpt-cierre .rpt-cierre-highlight { font-size: 14px; font-weight: 700; color: #1A3C6E; }
+
+  /* Individual: contexto box */
+  .rpt-context-box { background: #1A3C6E; color: white; border-radius: 12px; padding: 24px; }
+  .rpt-context-box h3 { font-size: 15px; margin: 0 0 10px; }
+  .rpt-context-box ul { margin: 8px 0 0; padding-left: 20px; }
+  .rpt-context-box li { margin-bottom: 4px; font-size: 13px; opacity: 0.9; }
+
+  /* Individual: competencias */
+  .rpt-competencias { }
+  .rpt-competencia-item { padding: 10px 0; border-bottom: 2px solid #5DADE2; }
+  .rpt-competencia-num { font-size: 12px; color: #718096; }
+  .rpt-competencia-name { font-size: 15px; font-weight: 700; color: #2D3436; }
+
+  /* Individual: brecha cards */
+  .rpt-brecha-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+  .rpt-brecha-card { border: 1px solid #D4E6F1; border-radius: 8px; padding: 14px; }
+  .rpt-brecha-card h4 { font-size: 13px; font-weight: 700; margin: 0 0 4px; }
+  .rpt-brecha-card p { font-size: 12px; color: #555; margin: 0; }
+  .rpt-brecha-card .brecha-val { font-size: 11px; display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: 600; margin-bottom: 6px; }
+  .brecha-neg { background: #D4EFDF; color: #1E8449; }
+  .brecha-pos { background: #FDEBD0; color: #D68910; }
+  .brecha-zero { background: #D4E6F1; color: #2471A3; }
+
+  /* Individual: insight clave */
+  .rpt-insight-box { background: #F7FBFE; border: 1px solid #D4E6F1; border-radius: 12px; padding: 24px; text-align: center; margin: 20px 0; }
+  .rpt-insight-box p { font-size: 12px; color: #718096; margin: 0 0 8px; }
+  .rpt-insight-box .insight-main { font-size: 20px; font-weight: 700; color: #5DADE2; font-style: italic; margin: 0 0 16px; }
+  .rpt-insight-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+  .rpt-insight-step { background: #5DADE2; color: white; padding: 10px; text-align: center; font-size: 12px; }
+  .rpt-insight-step:first-child { border-radius: 8px 0 0 8px; }
+  .rpt-insight-step:last-child { border-radius: 0 8px 8px 0; }
+  .rpt-insight-step .step-num { font-size: 16px; font-weight: 700; }
+  .rpt-insight-step .step-from { font-weight: 700; }
+  .rpt-insight-step .step-to { opacity: 0.8; }
+
+  /* Individual: compromiso */
+  .rpt-compromiso { background: #F7FBFE; border: 1px solid #D4E6F1; border-radius: 8px; padding: 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+  .rpt-compromiso-icon { flex-shrink: 0; color: #5DADE2; }
+  .rpt-compromiso p { font-size: 13px; color: #555; margin: 0 0 4px; }
+  .rpt-compromiso strong { color: #1A3C6E; }
+
+  /* Footer */
+  .rpt-footer { padding: 20px 50px; border-top: 2px solid #E2E8F0; text-align: center; font-size: 10px; color: #A0AEC0; }
+
+  /* Chart container */
+  .rpt-chart { position: relative; height: 260px; margin: 16px 0; }
+</style>
+
+<script>
+  var programasReporte = [];
+  var participantesReporte = [];
+  var reporteCharts = [];
+
+  (function() {
+    google.script.run.withSuccessHandler(function(r) {
+      if (r.success) {
+        programasReporte = r.data;
+        var sel = document.getElementById('sel-programa-reporte');
+        r.data.forEach(function(p) {
+          var opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.nombre + ' (' + p.cliente_nombre + ')';
+          sel.appendChild(opt);
+        });
+      }
+    }).listarProgramas(App.token, null);
+  })();
+
+  function onProgramaReporteChange() {
+    var progId = document.getElementById('sel-programa-reporte').value;
+    var selTipo = document.getElementById('sel-tipo-reporte');
+    selTipo.disabled = !progId;
+    selTipo.value = '';
+    document.getElementById('sel-participante-reporte').classList.add('hidden');
+    document.getElementById('btn-generar-reporte').disabled = true;
+    document.getElementById('btn-descargar-pdf').classList.add('hidden');
+    document.getElementById('reporte-preview').classList.add('hidden');
+    document.getElementById('reporte-empty').classList.toggle('hidden', false);
+    if (!progId) return;
+
+    // Precargar participantes
+    google.script.run.withSuccessHandler(function(r) {
+      if (r.success) {
+        participantesReporte = (r.data || []).filter(function(p) { return p.rol_programa === 'participante'; });
+      }
+    }).listarParticipantesPrograma(App.token, progId);
+  }
+
+  function onTipoReporteChange() {
+    var tipo = document.getElementById('sel-tipo-reporte').value;
+    var selPart = document.getElementById('sel-participante-reporte');
+
+    if (tipo === 'individual') {
+      selPart.classList.remove('hidden');
+      selPart.innerHTML = '<option value="">Selecciona participante...</option>';
+      participantesReporte.forEach(function(p) {
+        var opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nombre + (p.cargo ? ' - ' + p.cargo : '');
+        selPart.appendChild(opt);
+      });
+      document.getElementById('btn-generar-reporte').disabled = false;
+    } else if (tipo === 'consolidado') {
+      selPart.classList.add('hidden');
+      document.getElementById('btn-generar-reporte').disabled = false;
+    } else {
+      selPart.classList.add('hidden');
+      document.getElementById('btn-generar-reporte').disabled = true;
+    }
+  }
+
+  // ============================================
+  // GENERAR REPORTE
+  // ============================================
+
+  function generarReporte() {
+    var progId = document.getElementById('sel-programa-reporte').value;
+    var tipo = document.getElementById('sel-tipo-reporte').value;
+    if (!progId || !tipo) return;
+
+    var prog = programasReporte.find(function(p) { return p.id === progId; });
+    if (!prog) return;
+
+    var partId = document.getElementById('sel-participante-reporte').value;
+    var part = null;
+    if (tipo === 'individual') {
+      if (!partId) { showToast('Selecciona un participante.', 'error'); return; }
+      part = participantesReporte.find(function(p) { return p.id === partId; });
+    }
+
+    // Loading
+    document.getElementById('reporte-empty').classList.add('hidden');
+    document.getElementById('reporte-preview').classList.add('hidden');
+    document.getElementById('reporte-loading').classList.remove('hidden');
+    document.getElementById('btn-generar-reporte').disabled = true;
+
+    var progress = document.getElementById('reporte-progress');
+    var loadText = document.getElementById('reporte-loading-text');
+    progress.style.width = '15%'; loadText.textContent = 'Recopilando datos...';
+    setTimeout(function() { progress.style.width = '40%'; loadText.textContent = 'Consultando IA...'; }, 800);
+
+    var prompt = tipo === 'consolidado'
+      ? buildConsolidadoPrompt(prog)
+      : buildIndividualPrompt(prog, part);
+
+    callGroqFromBrowser([{ role: 'user', content: prompt }])
+    .then(function(data) {
+      progress.style.width = '80%'; loadText.textContent = 'Generando informe...';
+
+      var iaData = {};
+      if (data.response) {
+        try {
+          var json = data.response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+          iaData = JSON.parse(json);
+        } catch (e) {
+          iaData = { resumen: data.response };
+        }
+      }
+
+      setTimeout(function() {
+        progress.style.width = '100%';
+        setTimeout(function() {
+          if (tipo === 'consolidado') renderConsolidado(prog, iaData);
+          else renderIndividual(prog, part, iaData);
+          document.getElementById('reporte-loading').classList.add('hidden');
+          document.getElementById('reporte-preview').classList.remove('hidden');
+          document.getElementById('btn-descargar-pdf').classList.remove('hidden');
+          document.getElementById('btn-generar-reporte').disabled = false;
+        }, 500);
+      }, 600);
+    })
+    .catch(function(err) {
+      document.getElementById('reporte-loading').classList.add('hidden');
+      document.getElementById('reporte-empty').classList.remove('hidden');
+      document.getElementById('btn-generar-reporte').disabled = false;
+      showToast('Error: ' + err.message, 'error');
+    });
+  }
+
+  // ============================================
+  // PROMPTS
+  // ============================================
+
+  function buildConsolidadoPrompt(prog) {
+    return 'Genera el contenido para un INFORME EJECUTIVO CONSOLIDADO del programa "' + prog.nombre + '". ' +
+      'Responde SOLO en JSON con esta estructura exacta: ' +
+      '{"intro":"<html breve describiendo el informe>","hallazgos":[{"titulo":"...","texto":"..."},{"titulo":"...","texto":"..."},{"titulo":"...","texto":"..."}],' +
+      '"lectura_global":"<html p\u00e1rrafo an\u00e1lisis global del grupo>",' +
+      '"conclusiones":["<conclusion 1>","<conclusion 2>","<conclusion 3>","<conclusion 4>"],' +
+      '"recomendaciones":[{"titulo":"...","texto":"..."},{"titulo":"...","texto":"..."},{"titulo":"...","texto":"..."},{"titulo":"...","texto":"..."}],' +
+      '"cierre":"<html cierre ejecutivo>"}. ' +
+      'Usa <strong> para negritas. No uses markdown. SOLO el JSON.';
+  }
+
+  function buildIndividualPrompt(prog, part) {
+    return 'Genera el contenido para un INFORME INDIVIDUAL del participante "' + (part ? part.nombre : 'Participante') + '" en el programa "' + prog.nombre + '". ' +
+      'Responde SOLO en JSON con esta estructura exacta: ' +
+      '{"lectura_global":"<html lectura global del perfil del l\u00edder>",' +
+      '"analisis_competencias":[{"nombre":"...","brecha":"...","interpretacion":"...","evolucion":["...","..."]},{"nombre":"...","brecha":"...","interpretacion":"...","evolucion":["...","..."]},{"nombre":"...","brecha":"...","interpretacion":"...","evolucion":["...","..."]}],' +
+      '"insight":"<frase clave del siguiente nivel de desarrollo>",' +
+      '"recomendaciones":[{"titulo":"...","items":["...","..."]},{"titulo":"...","items":["...","..."]},{"titulo":"...","items":["...","..."]}],' +
+      '"compromiso":"<html compromiso de desarrollo>"}. ' +
+      'Usa <strong> para negritas. No uses markdown. SOLO el JSON.';
+  }
+
+  // ============================================
+  // RENDER: CONSOLIDADO
+  // ============================================
+
+  function renderConsolidado(prog, ia) {
+    reporteCharts.forEach(function(c) { c.destroy(); }); reporteCharts = [];
+    var hoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    // Mock data
+    var dims = [
+      { nombre: 'Delegaci\u00f3n', auto: 3.50, co: 3.17, brecha: 0.33 },
+      { nombre: 'Conversaciones', auto: 3.38, co: 3.17, brecha: 0.21 },
+      { nombre: 'Colaboraci\u00f3n', auto: 2.88, co: 3.00, brecha: -0.12 }
+    ];
+    var autoPromedio = 3.25, coPromedio = 3.11, brechaGeneral = 0.14;
+
+    var html = '<div class="rpt" id="pdf-page">';
+
+    // Hero
+    html += '<div class="rpt-hero">';
+    html += '<h1>INFORME EJECUTIVO CONSOLIDADO</h1>';
+    html += '<h2>Evaluaci\u00f3n de Liderazgo \u2013 ' + escapeHtml(prog.nombre) + '</h2>';
+    html += '<div class="rpt-meta">' + escapeHtml(prog.cliente_nombre) + ' | Generado el ' + hoy + '</div>';
+    html += '</div>';
+
+    html += '<div class="rpt-body">';
+
+    // Intro
+    html += '<div class="rpt-intro">' + (ia.intro || 'El presente informe consolida los resultados de evaluaci\u00f3n de liderazgo, considerando las competencias del modelo aplicado. El an\u00e1lisis considera autoevaluaciones, coevaluaciones cuando est\u00e1n disponibles y la identificaci\u00f3n de brechas de percepci\u00f3n.') + '</div>';
+
+    // Cobertura KPIs
+    html += '<div class="rpt-section"><div class="rpt-section-title">Cobertura de evaluaci\u00f3n</div>';
+    html += '<div class="rpt-kpi-row">';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">8</div><div class="rpt-kpi-big-label">L\u00edderes evaluados</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">6</div><div class="rpt-kpi-big-label">L\u00edderes con coevaluaci\u00f3n</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">2</div><div class="rpt-kpi-big-label">L\u00edderes sin coevaluaci\u00f3n</div></div>';
+    html += '</div></div>';
+
+    // Resultados: tablas lado a lado
+    html += '<div class="rpt-section"><div class="rpt-section-title">Resultados consolidados</div>';
+    html += '<div class="rpt-tables-grid">';
+
+    // Tabla autoevaluaci\u00f3n
+    html += '<table class="rpt-table"><caption>Autoevaluaci\u00f3n promedio</caption><thead><tr><th>Dimensi\u00f3n</th><th>Promedio</th></tr></thead><tbody>';
+    dims.forEach(function(d) { html += '<tr><td>' + d.nombre + '</td><td>' + d.auto.toFixed(2) + '</td></tr>'; });
+    html += '<tr class="rpt-table-highlight"><td><strong>Promedio general</strong></td><td><strong>' + autoPromedio.toFixed(2) + '</strong></td></tr>';
+    html += '</tbody></table>';
+
+    // Tabla coevaluaci\u00f3n + brecha
+    html += '<div>';
+    html += '<table class="rpt-table"><caption>Coevaluaci\u00f3n promedio</caption><thead><tr><th>Dimensi\u00f3n</th><th>Promedio</th></tr></thead><tbody>';
+    dims.forEach(function(d) { html += '<tr><td>' + d.nombre + '</td><td>' + d.co.toFixed(2) + '</td></tr>'; });
+    html += '<tr class="rpt-table-highlight"><td><strong>Promedio general</strong></td><td><strong>' + coPromedio.toFixed(2) + '</strong></td></tr>';
+    html += '</tbody></table>';
+
+    html += '<table class="rpt-table" style="margin-top:16px;"><caption>Brecha promedio</caption><thead><tr><th>Dimensi\u00f3n</th><th>Brecha</th></tr></thead><tbody>';
+    dims.forEach(function(d) { html += '<tr><td>' + d.nombre + '</td><td>' + d.brecha.toFixed(2) + '</td></tr>'; });
+    html += '<tr class="rpt-table-highlight"><td><strong>Brecha general</strong></td><td><strong>' + brechaGeneral.toFixed(2) + '</strong></td></tr>';
+    html += '</tbody></table>';
+    html += '</div></div>';
+
+    // Barras horizontales
+    html += '<div class="rpt-hbar-container">';
+    html += '<div style="margin-bottom:8px;font-size:11px;"><span style="display:inline-block;width:12px;height:12px;background:#1A3C6E;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Autoevaluaci\u00f3n &nbsp;&nbsp;<span style="display:inline-block;width:12px;height:12px;background:#5DADE2;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Coevaluaci\u00f3n</div>';
+    var allDims = dims.concat([{ nombre: 'Promedio general', auto: autoPromedio, co: coPromedio }]);
+    allDims.forEach(function(d) {
+      var maxVal = 5;
+      html += '<div class="rpt-hbar-row"><div class="rpt-hbar-label">' + d.nombre + '</div><div>' +
+        '<div class="rpt-hbar-track"><div class="rpt-hbar-fill rpt-hbar-fill-auto" style="width:' + (d.auto / maxVal * 100) + '%;">' + d.auto.toFixed(2) + '</div></div>' +
+        '<div class="rpt-hbar-track" style="margin-top:3px;"><div class="rpt-hbar-fill rpt-hbar-fill-co" style="width:' + (d.co / maxVal * 100) + '%;">' + d.co.toFixed(2) + '</div></div>' +
+      '</div><div></div></div>';
+    });
+    html += '</div></div>';
+
+    // Hallazgos
+    html += '<div class="rpt-section"><div class="rpt-section-title">Hallazgos, Conclusiones y Recomendaciones</div>';
+    html += '<div class="rpt-subsection-title">Principales hallazgos</div>';
+    html += '<div class="rpt-findings-grid">';
+    var hallazgos = ia.hallazgos || [
+      { titulo: 'Sobreestimaci\u00f3n del desempe\u00f1o', texto: 'Tendencia general a evaluarse por sobre lo percibido por el entorno.' },
+      { titulo: 'Conversaciones: punto cr\u00edtico', texto: 'Brecha consistente en m\u00faltiples casos individuales.' },
+      { titulo: 'Colaboraci\u00f3n: alta variabilidad', texto: 'No es problema transversal sino focalizado en ciertos casos.' }
+    ];
+    hallazgos.forEach(function(h) {
+      html += '<div class="rpt-finding-card"><h4>' + h.titulo + '</h4><p>' + h.texto + '</p></div>';
+    });
+    html += '</div>';
+
+    // Lectura global
+    html += '<div class="rpt-subsection-title" style="margin-top:24px;">Lectura global del grupo</div>';
+    html += '<p style="font-size:13px;color:#555;margin-bottom:16px;">' + (ia.lectura_global || 'El grupo presenta un nivel de liderazgo adecuado y funcional. El principal desaf\u00edo est\u00e1 en la <strong>alineaci\u00f3n entre la percepci\u00f3n del l\u00edder y la experiencia real del equipo</strong>.') + '</p>';
+
+    html += '<div class="rpt-profiles-grid">';
+    html += '<div class="rpt-profile-card"><h4>L\u00edderes consistentes</h4><p>Con baja brecha entre autoevaluaci\u00f3n y coevaluaci\u00f3n</p></div>';
+    html += '<div class="rpt-profile-card"><h4>L\u00edderes con sobreestimaci\u00f3n</h4><p>Diferencia relevante entre percepci\u00f3n e impacto</p></div>';
+    html += '<div class="rpt-profile-card"><h4>L\u00edderes subestimados</h4><p>Mayor valoraci\u00f3n externa que interna</p></div>';
+    html += '<div class="rpt-profile-card"><h4>L\u00edderes sin contraste</h4><p>An\u00e1lisis limitado al autodiagn\u00f3stico</p></div>';
+    html += '</div>';
+
+    // Conclusiones
+    html += '<div class="rpt-subsection-title" style="margin-top:24px;">Conclusiones generales</div>';
+    var conclusiones = ia.conclusiones || [
+      'El liderazgo del grupo es s\u00f3lido en su base, pero a\u00fan no alcanza impacto consistente.',
+      'Existe brecha entre intenci\u00f3n del liderazgo y su percepci\u00f3n por el entorno.',
+      'Las conversaciones se posicionan como la <strong>principal palanca de desarrollo</strong>.',
+      'La falta de coevaluaci\u00f3n en algunos casos debiera corregirse.'
+    ];
+    conclusiones.forEach(function(c) {
+      html += '<div class="rpt-conclusion-item"><span class="rpt-conclusion-arrow">\u2192</span><div class="rpt-conclusion-text">' + c + '</div></div>';
+    });
+
+    // Recomendaciones
+    html += '<div class="rpt-subsection-title" style="margin-top:24px;">Recomendaciones</div>';
+    html += '<div class="rpt-recs-grid">';
+    var recs = ia.recomendaciones || [
+      { titulo: 'Programa de conversaciones', texto: 'Implementar desarrollo de conversaciones enfocado en feedback y escucha activa.' },
+      { titulo: 'Intervenci\u00f3n focalizada', texto: 'Intervenir en l\u00edderes con mayores brechas.' },
+      { titulo: 'Evaluaci\u00f3n continua', texto: 'Establecer sistema de medici\u00f3n peri\u00f3dica.' },
+      { titulo: 'Coevaluaci\u00f3n est\u00e1ndar', texto: 'Asegurar coevaluaci\u00f3n en futuras mediciones.' }
+    ];
+    recs.forEach(function(r, i) {
+      html += '<div class="rpt-rec-card"><div class="rpt-rec-num">' + (i + 1) + '</div><div class="rpt-rec-body"><h4>' + r.titulo + '</h4><p>' + r.texto + '</p></div></div>';
+    });
+    html += '</div>';
+
+    // Cierre
+    html += '<div class="rpt-section-title" style="margin-top:28px;">Cierre ejecutivo</div>';
+    html += '<div class="rpt-cierre">' + (ia.cierre
+      ? '<p>' + ia.cierre + '</p>'
+      : '<p>El grupo evaluado cuenta con una base de liderazgo adecuada, pero requiere evolucionar hacia un modelo donde el foco no est\u00e9 solo en la ejecuci\u00f3n, sino en el <strong>impacto en las personas</strong>.</p><p class="rpt-cierre-highlight">Ese ajuste representa la principal oportunidad de desarrollo organizacional.</p>'
+    ) + '</div>';
+
+    html += '</div>'; // rpt-body
+    html += '</div>'; // rpt-section (hallazgos)
+
+    // Footer
+    html += '<div class="rpt-footer">Informe generado por MSO Chile \u2013 Plataforma TPT | Asistido por Inteligencia Artificial | ' + hoy + '</div>';
+    html += '</div>'; // rpt
+
+    document.getElementById('reporte-contenido').innerHTML = html;
+  }
+
+  // ============================================
+  // RENDER: INDIVIDUAL
+  // ============================================
+
+  function renderIndividual(prog, part, ia) {
+    reporteCharts.forEach(function(c) { c.destroy(); }); reporteCharts = [];
+    var hoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+    var nombre = part ? part.nombre : 'Participante';
+
+    // Mock data individual
+    var dims = [
+      { nombre: 'Delegar', auto: 3, co: 4, brecha: -1 },
+      { nombre: 'Conversaciones', auto: 4, co: 3, brecha: 1 },
+      { nombre: 'Colaboraci\u00f3n', auto: 3, co: 3, brecha: 0 }
+    ];
+    var autoP = 3.33, coP = 3.33, brechaG = 0;
+
+    var html = '<div class="rpt" id="pdf-page">';
+
+    // Hero
+    html += '<div class="rpt-hero">';
+    html += '<h1>Informe Ejecutivo de Liderazgo</h1>';
+    html += '<h2>Evaluaci\u00f3n Individual \u2013 ' + escapeHtml(nombre) + '</h2>';
+    html += '<div class="rpt-meta">' + escapeHtml(prog.nombre) + ' | ' + escapeHtml(prog.cliente_nombre) + ' | ' + hoy + '</div>';
+    html += '</div>';
+
+    html += '<div class="rpt-body">';
+
+    // 1. Contexto + Competencias
+    html += '<div class="rpt-section"><div class="rpt-section-title">1. Contexto de Evaluaci\u00f3n</div>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">';
+
+    html += '<div class="rpt-context-box"><h3>Contexto</h3><p style="font-size:13px;opacity:0.9;">El presente informe expone los resultados de la evaluaci\u00f3n final del l\u00edder, en el marco del programa de desarrollo basado en la aplicaci\u00f3n pr\u00e1ctica de competencias.</p>';
+    html += '<p style="font-size:12px;opacity:0.8;margin-top:10px;">El an\u00e1lisis considera:</p>';
+    html += '<ul><li>Autoevaluaci\u00f3n del l\u00edder</li><li>Coevaluaci\u00f3n de su jefatura directa</li><li>Identificaci\u00f3n de brechas de percepci\u00f3n</li></ul></div>';
+
+    html += '<div><div class="rpt-subsection-title">Competencias Evaluadas</div><div class="rpt-competencias">';
+    var competencias = ['Delegar con prop\u00f3sito estrat\u00e9gico', 'Conversaciones que desarrollan al l\u00edder', 'Articulaci\u00f3n colaborativa'];
+    competencias.forEach(function(c, i) {
+      html += '<div class="rpt-competencia-item"><div class="rpt-competencia-num">0' + (i + 1) + '</div><div class="rpt-competencia-name">' + c + '</div></div>';
+    });
+    html += '</div></div></div></div>';
+
+    // 2. Resultado General
+    html += '<div class="rpt-section"><div class="rpt-section-title">2. Resultado General</div>';
+    html += '<p style="font-size:13px;color:#555;">El l\u00edder presenta un desempe\u00f1o promedio de:</p>';
+    html += '<div class="rpt-kpi-row">';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + autoP.toFixed(2) + '</div><div class="rpt-kpi-big-label">Autoevaluaci\u00f3n</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + coP.toFixed(2) + '</div><div class="rpt-kpi-big-label">Coevaluaci\u00f3n</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + brechaG + '</div><div class="rpt-kpi-big-label">Brecha Global</div></div>';
+    html += '</div>';
+    html += '<p style="font-size:13px;color:#555;">No existe brecha global, lo que refleja: <strong>alta coherencia entre percepci\u00f3n propia y externa</strong>, un perfil equilibrado y buen nivel de autoconocimiento.</p>';
+    html += '</div>';
+
+    // 3. Resultados Detallados
+    html += '<div class="rpt-section"><div class="rpt-section-title">3. Resultados Detallados</div>';
+    html += '<table class="rpt-table"><thead><tr><th>Dimensi\u00f3n</th>';
+    dims.forEach(function(d) { html += '<th>' + d.nombre + '</th>'; });
+    html += '<th>Promedio</th></tr></thead><tbody>';
+    html += '<tr><td>Autoevaluaci\u00f3n</td>';
+    dims.forEach(function(d) { html += '<td>' + d.auto + '</td>'; });
+    html += '<td>' + autoP.toFixed(2) + '</td></tr>';
+    html += '<tr><td>Coevaluaci\u00f3n</td>';
+    dims.forEach(function(d) { html += '<td>' + d.co + '</td>'; });
+    html += '<td>' + coP.toFixed(2) + '</td></tr>';
+    html += '<tr><td><strong>Brecha</strong></td>';
+    dims.forEach(function(d) { html += '<td><strong>' + (d.brecha > 0 ? '+' : '') + d.brecha + '</strong></td>'; });
+    html += '<td><strong>' + brechaG + '</strong></td></tr>';
+    html += '</tbody></table></div>';
+
+    // 4. Visualizaci\u00f3n barras
+    html += '<div class="rpt-section"><div class="rpt-section-title">4. Visualizaci\u00f3n de Resultados</div>';
+    html += '<div class="rpt-hbar-container">';
+    html += '<div style="margin-bottom:8px;font-size:11px;"><span style="display:inline-block;width:12px;height:12px;background:#1A3C6E;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Autoevaluaci\u00f3n &nbsp;&nbsp;<span style="display:inline-block;width:12px;height:12px;background:#5DADE2;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Coevaluaci\u00f3n</div>';
+    dims.forEach(function(d) {
+      html += '<div class="rpt-hbar-row"><div class="rpt-hbar-label">' + d.nombre + '</div><div>' +
+        '<div class="rpt-hbar-track"><div class="rpt-hbar-fill rpt-hbar-fill-auto" style="width:' + (d.auto / 5 * 100) + '%;">' + d.auto + '</div></div>' +
+        '<div class="rpt-hbar-track" style="margin-top:3px;"><div class="rpt-hbar-fill rpt-hbar-fill-co" style="width:' + (d.co / 5 * 100) + '%;">' + d.co + '</div></div>' +
+      '</div><div></div></div>';
+    });
+    html += '</div></div>';
+
+    // 5. Lectura de Resultados
+    html += '<div class="rpt-section"><div class="rpt-section-title">5. Lectura de Resultados</div>';
+    html += '<div class="rpt-brecha-cards">';
+    dims.forEach(function(d) {
+      var cls = d.brecha < 0 ? 'brecha-neg' : d.brecha > 0 ? 'brecha-pos' : 'brecha-zero';
+      var interp = d.brecha < 0 ? 'El entorno eval\u00faa mejor \u2192 <strong>fortaleza</strong>'
+        : d.brecha > 0 ? 'Se eval\u00faa por sobre el entorno \u2192 <strong>oportunidad</strong>'
+        : 'Competencia <strong>alineada</strong>';
+      html += '<div class="rpt-brecha-card"><h4>' + d.nombre + ' (' + (d.brecha > 0 ? '+' : '') + d.brecha + ')</h4><span class="brecha-val ' + cls + '">BRECHA (' + (d.brecha > 0 ? '+' : '') + d.brecha + ')</span><p>' + interp + '</p></div>';
+    });
+    html += '</div></div>';
+
+    // 6. Lectura Global
+    html += '<div class="rpt-section"><div class="rpt-section-title">6. Lectura Global del Perfil</div>';
+    html += '<p style="font-size:13px;color:#555;">' + (ia.lectura_global || 'Nos encontramos frente a un l\u00edder que presenta <strong>coherencia global</strong> en su desempe\u00f1o, posee fortalezas reconocidas por su entorno y tiene oportunidades de mejora en el impacto de sus conversaciones.') + '</p>';
+    html += '</div>';
+
+    // 7. An\u00e1lisis por Competencia
+    html += '<div class="rpt-section"><div class="rpt-section-title">7. An\u00e1lisis por Competencia</div>';
+    html += '<div class="rpt-findings-grid">';
+    var analisis = ia.analisis_competencias || [
+      { nombre: 'Delegar con prop\u00f3sito estrat\u00e9gico', brecha: '(-1)', interpretacion: 'Fortaleza reconocida por el entorno', evolucion: ['Mantener est\u00e1ndar', 'Escalar delegaci\u00f3n hacia mayor impacto'] },
+      { nombre: 'Conversaciones que desarrollan', brecha: '(+1)', interpretacion: 'Diferencia en percepci\u00f3n del impacto', evolucion: ['Feedback m\u00e1s espec\u00edfico', 'Mayor escucha activa', 'Conversaciones orientadas al desarrollo'] },
+      { nombre: 'Articulaci\u00f3n colaborativa', brecha: '(0)', interpretacion: 'Competencia estable', evolucion: ['Mantener nivel', 'Potenciar coordinaci\u00f3n transversal'] }
+    ];
+    analisis.forEach(function(a) {
+      html += '<div class="rpt-finding-card"><h4>' + a.nombre + '</h4><span class="brecha-val ' +
+        (a.brecha.indexOf('-') !== -1 ? 'brecha-neg' : a.brecha.indexOf('+') !== -1 || a.brecha.indexOf('1') !== -1 ? 'brecha-pos' : 'brecha-zero') +
+        '">BRECHA ' + a.brecha + '</span>' +
+        '<p><strong>Interpretaci\u00f3n:</strong> ' + a.interpretacion + '</p>' +
+        '<p><strong>Evoluci\u00f3n esperada:</strong></p><ul style="margin:4px 0;padding-left:16px;">' +
+        a.evolucion.map(function(e) { return '<li style="font-size:12px;">' + e + '</li>'; }).join('') +
+        '</ul></div>';
+    });
+    html += '</div></div>';
+
+    // 8. Insight Clave
+    html += '<div class="rpt-section"><div class="rpt-section-title">8. Insight Clave</div>';
+    html += '<div class="rpt-insight-box"><p>El siguiente nivel de desarrollo del l\u00edder est\u00e1 en:</p>';
+    html += '<div class="insight-main">' + (ia.insight || 'Ajustar el impacto de sus conversaciones con su equipo') + '</div>';
+    html += '<div class="rpt-insight-steps">';
+    html += '<div class="rpt-insight-step"><div class="step-num">1</div><div class="step-from">De comunicar</div><div class="step-to">\u2192 a desarrollar</div></div>';
+    html += '<div class="rpt-insight-step"><div class="step-num">2</div><div class="step-from">De interacci\u00f3n</div><div class="step-to">\u2192 a generaci\u00f3n de valor</div></div>';
+    html += '<div class="rpt-insight-step"><div class="step-num">3</div><div class="step-from">De percepci\u00f3n interna</div><div class="step-to">\u2192 a validaci\u00f3n externa</div></div>';
+    html += '</div></div></div>';
+
+    // 9. Recomendaciones
+    html += '<div class="rpt-section"><div class="rpt-section-title">9. Recomendaciones de Desarrollo</div>';
+    html += '<div class="rpt-findings-grid">';
+    var recs = ia.recomendaciones || [
+      { titulo: 'Conversaciones (prioridad)', items: ['Incorporar estructura (GROW)', 'Mejorar calidad del feedback', 'Validar comprensi\u00f3n'] },
+      { titulo: 'Delegaci\u00f3n', items: ['Mantener buenas pr\u00e1cticas', 'Transferir aprendizajes al equipo'] },
+      { titulo: 'Colaboraci\u00f3n', items: ['Mantener est\u00e1ndar', 'Escalar impacto'] }
+    ];
+    recs.forEach(function(r, i) {
+      html += '<div class="rpt-rec-card"><div class="rpt-rec-num">' + (i + 1) + '</div><div class="rpt-rec-body"><h4>' + r.titulo + '</h4><ul style="margin:6px 0;padding-left:16px;">';
+      r.items.forEach(function(item) { html += '<li style="font-size:12px;color:#555;">' + item + '</li>'; });
+      html += '</ul></div></div>';
+    });
+    html += '</div></div>';
+
+    // 10. Compromiso
+    html += '<div class="rpt-section"><div class="rpt-section-title">10. Compromiso de Desarrollo</div>';
+    html += '<div class="rpt-compromiso"><div class="rpt-compromiso-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10l2 2 4-4"/></svg></div>';
+    html += '<div><p>Desde hoy, el l\u00edder orienta su desarrollo hacia:</p><p><strong>' + (ia.compromiso || 'Fortalecer la calidad de sus conversaciones de liderazgo, para asegurar mayor impacto en el desarrollo de su equipo y consolidar un liderazgo equilibrado.') + '</strong></p></div>';
+    html += '</div></div>';
+
+    html += '</div>'; // rpt-body
+
+    // Footer
+    html += '<div class="rpt-footer">Informe generado por MSO Chile \u2013 Plataforma TPT | Asistido por Inteligencia Artificial | ' + hoy + '</div>';
+    html += '</div>';
+
+    document.getElementById('reporte-contenido').innerHTML = html;
+  }
+
+  // ============================================
+  // DESCARGAR PDF
+  // ============================================
+
+  function descargarPDF() {
+    var element = document.getElementById('pdf-page');
+    if (!element) { showToast('Genera un reporte primero.', 'error'); return; }
+
+    var tipo = document.getElementById('sel-tipo-reporte').value;
+    var prog = programasReporte.find(function(p) { return p.id === document.getElementById('sel-programa-reporte').value; });
+    var partSel = document.getElementById('sel-participante-reporte');
+    var partName = partSel.options[partSel.selectedIndex] ? partSel.options[partSel.selectedIndex].text : '';
+
+    var filename = tipo === 'individual'
+      ? 'Informe_Individual_' + partName.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
+      : 'Informe_Consolidado_' + (prog ? prog.nombre.replace(/[^a-zA-Z0-9]/g, '_') : 'Programa') + '.pdf';
+
+    showToast('Generando PDF...', 'success');
+
+    html2pdf().set({
+      margin: [0, 0, 0, 0],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    }).from(element).save().then(function() {
+      showToast('PDF descargado.', 'success');
+    }).catch(function() {
+      showToast('Error al generar PDF.', 'error');
+    });
+  }
+</script>

@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist Deploy Productivo - Plataforma TPT MSO</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f8f9fa;
+    color: #1a1a2e;
+    line-height: 1.6;
+    padding: 40px 20px;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 16px;
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .header .subtitle {
+    font-size: 16px;
+    opacity: 0.8;
+    margin-bottom: 16px;
+  }
+
+  .header .meta {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    font-size: 13px;
+    opacity: 0.7;
+    margin-top: 16px;
+  }
+
+  .section {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-left: 4px solid #0f3460;
+  }
+
+  .section.critical { border-left-color: #e74c3c; }
+  .section.important { border-left-color: #f39c12; }
+  .section.nice { border-left-color: #27ae60; }
+  .section.info { border-left-color: #3498db; }
+
+  .section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section .section-desc {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 20px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .badge.critical { background: #fde8e8; color: #e74c3c; }
+  .badge.important { background: #fef3e2; color: #e67e22; }
+  .badge.nice { background: #e8f8f0; color: #27ae60; }
+  .badge.info { background: #e8f0fe; color: #2980b9; }
+
+  .checklist {
+    list-style: none;
+    padding: 0;
+  }
+
+  .checklist li {
+    padding: 12px 16px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    transition: background 0.2s;
+  }
+
+  .checklist li:hover {
+    background: #f8f9fa;
+  }
+
+  .checklist input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    cursor: pointer;
+    accent-color: #0f3460;
+  }
+
+  .checklist .item-content {
+    flex: 1;
+  }
+
+  .checklist .item-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+
+  .checklist .item-detail {
+    font-size: 13px;
+    color: #555;
+  }
+
+  .checklist .item-owner {
+    font-size: 11px;
+    color: #888;
+    margin-top: 4px;
+  }
+
+  .owner-tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .owner-tag.equipo { background: #e8f0fe; color: #2980b9; }
+  .owner-tag.claude { background: #f0e8fe; color: #8e44ad; }
+  .owner-tag.ambos { background: #fef3e2; color: #e67e22; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 12px;
+  }
+
+  table th {
+    background: #f1f3f5;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #555;
+  }
+
+  table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .status-current {
+    background: #fef3e2;
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+
+  .status-current strong {
+    color: #e67e22;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 16px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.5s;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .summary-card {
+    text-align: center;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+
+  .summary-card .number {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f3460;
+  }
+
+  .summary-card .label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+  }
+
+  .note-box {
+    background: #f0f7ff;
+    border: 1px solid #bee3f8;
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13px;
+    margin-top: 16px;
+  }
+
+  .warning-box {
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13px;
+    margin-top: 16px;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 12px;
+    color: #888;
+  }
+
+  @media print {
+    body { padding: 20px; background: white; }
+    .section { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+    .checklist input[type="checkbox"] { -webkit-appearance: none; border: 2px solid #333; border-radius: 3px; }
+  }
+
+  @media (max-width: 600px) {
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .header .meta { flex-direction: column; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>Checklist Deploy Productivo</h1>
+    <div class="subtitle">Plataforma TPT - Transferencia al Puesto de Trabajo</div>
+    <div class="subtitle" style="font-size: 14px;">MSO Chile - Modelos y Soluciones Organizacionales</div>
+    <div class="meta">
+      <span>Fecha: Abril 2026</span>
+      <span>Versi&oacute;n: 1.0</span>
+      <span>Estado: Planificaci&oacute;n</span>
+    </div>
+  </div>
+
+  <!-- ESTADO ACTUAL -->
+  <div class="section info">
+    <h2>Estado Actual de la Plataforma</h2>
+    <div class="status-current">
+      <strong>Maqueta Demo</strong> desplegada en GitHub Pages con Supabase (plan free) como backend.<br>
+      URL actual: <code>https://fguajardos.github.io/plataforma-mso-demo/</code>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="number">42</div>
+        <div class="label">Archivos HTML</div>
+      </div>
+      <div class="summary-card">
+        <div class="number">10</div>
+        <div class="label">Tablas BD</div>
+      </div>
+      <div class="summary-card">
+        <div class="number">~104</div>
+        <div class="label">Funciones Backend</div>
+      </div>
+      <div class="summary-card">
+        <div class="number">3</div>
+        <div class="label">Roles de Usuario</div>
+      </div>
+    </div>
+
+    <table style="margin-top: 20px;">
+      <tr><th>Componente</th><th>Estado Demo</th><th>Requiere para Prod</th></tr>
+      <tr><td>Login / Autenticaci&oacute;n</td><td>Contrase&ntilde;as en texto plano (password_visible)</td><td>Supabase Auth con hash</td></tr>
+      <tr><td>Seguridad BD</td><td>RLS deshabilitado, anon key sin restricci&oacute;n</td><td>RLS por rol configurado</td></tr>
+      <tr><td>API Keys</td><td>Groq API key expuesta en JavaScript del browser</td><td>Edge Function server-side</td></tr>
+      <tr><td>Hosting</td><td>GitHub Pages (est&aacute;tico)</td><td>Dominio propio + SSL</td></tr>
+      <tr><td>Tailwind CSS</td><td>CDN Play (no recomendado para prod)</td><td>Build compilado o CDN estable</td></tr>
+      <tr><td>Dependencias</td><td>CDN sin SRI hashes</td><td>Versiones pinneadas + SRI</td></tr>
+    </table>
+  </div>
+
+  <!-- SECCION 1: DECISIONES DEL EQUIPO -->
+  <div class="section critical">
+    <h2><span class="badge critical">Cr&iacute;tico</span> 1. Decisiones del Equipo (Prerequisitos)</h2>
+    <div class="section-desc">Estas decisiones deben tomarse antes de iniciar el trabajo t&eacute;cnico. Sin ellas no se puede avanzar.</div>
+
+    <ul class="checklist">
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Definir dominio de producci&oacute;n</div>
+          <div class="item-detail">&iquest;Tienen dominio propio? (ej: <code>plataforma.mso.cl</code>, <code>tpt.msochile.cl</code>). Si no, definir si se compra uno o se usa subdominio. El dominio es necesario para configurar SSL, correos y la URL p&uacute;blica de la plataforma.</div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Elegir plataforma de hosting</div>
+          <div class="item-detail">
+            Opciones disponibles:
+            <table>
+              <tr><th>Opci&oacute;n</th><th>Costo aprox.</th><th>Ventajas</th><th>Desventajas</th></tr>
+              <tr><td><strong>Vercel</strong> (recomendado)</td><td>Gratis / $20 USD/mes Pro</td><td>Deploy autom&aacute;tico desde GitHub, SSL gratis, Edge Functions, excelente performance</td><td>Requiere cuenta</td></tr>
+              <tr><td><strong>Netlify</strong></td><td>Gratis / $19 USD/mes Pro</td><td>Similar a Vercel, buen panel de control</td><td>Edge Functions m&aacute;s limitadas</td></tr>
+              <tr><td><strong>GitHub Pages</strong></td><td>Gratis</td><td>Ya lo usan, cero configuraci&oacute;n</td><td>Solo est&aacute;tico, sin server-side, sin Edge Functions</td></tr>
+              <tr><td><strong>Servidor propio</strong> (VPS)</td><td>$5-20 USD/mes</td><td>Control total</td><td>Requiere mantenci&oacute;n, SSL manual, m&aacute;s trabajo</td></tr>
+            </table>
+          </div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Crear proyecto Supabase de producci&oacute;n (separado del demo)</div>
+          <div class="item-detail">Ir a <code>supabase.com</code> &rarr; New Project. Regi&oacute;n recomendada: <strong>South America (S&atilde;o Paulo)</strong> para menor latencia desde Chile. Guardar URL del proyecto y ambas API keys (anon + service_role). El proyecto demo actual NO debe usarse en producci&oacute;n.</div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Definir plan de Supabase</div>
+          <div class="item-detail">
+            <table>
+              <tr><th>Plan</th><th>Costo</th><th>L&iacute;mites clave</th></tr>
+              <tr><td>Free</td><td>$0</td><td>500MB BD, 1GB storage, 50K auth users, pausado tras 1 semana inactividad</td></tr>
+              <tr><td><strong>Pro</strong> (recomendado)</td><td>$25 USD/mes</td><td>8GB BD, 100GB storage, sin pausa, backups diarios, soporte email</td></tr>
+              <tr><td>Team</td><td>$599 USD/mes</td><td>Para equipos grandes, SOC2, soporte prioritario</td></tr>
+            </table>
+            <strong>Para producci&oacute;n real el Plan Pro es el m&iacute;nimo recomendado</strong> (el plan Free pausa el proyecto tras inactividad).
+          </div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Configurar servicio SMTP para correos transaccionales</div>
+          <div class="item-detail">Necesario para: confirmaci&oacute;n de cuenta, recuperaci&oacute;n de contrase&ntilde;a, notificaciones por email. Opciones: <strong>Resend</strong> (gratis hasta 3K/mes), <strong>SendGrid</strong> (gratis hasta 100/d&iacute;a), <strong>Mailgun</strong>, o SMTP propio de la organizaci&oacute;n. Configurar en Supabase &rarr; Settings &rarr; Auth &rarr; SMTP.</div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Obtener API key de Groq para producci&oacute;n</div>
+          <div class="item-detail">La key actual est&aacute; expuesta en c&oacute;digo p&uacute;blico y puede ser revocada por Groq. Crear una nueva key exclusiva para producci&oacute;n en <code>console.groq.com</code>. Esta key NO ir&aacute; en el frontend, sino en una Edge Function server-side. Costo: Groq es gratuito actualmente con l&iacute;mites de rate.</div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Preparar listado de usuarios iniciales</div>
+          <div class="item-detail">Excel o CSV con columnas: <code>nombre, email, rol (admin/jefatura/participante), cargo, cliente</code>. Estos ser&aacute;n los primeros usuarios con cuentas reales en la plataforma. Definir tambi&eacute;n qui&eacute;n ser&aacute; administrador.</div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Definir pol&iacute;tica de contrase&ntilde;as</div>
+          <div class="item-detail">Largo m&iacute;nimo (recomendado: 8 caracteres), requisitos de complejidad, &iquest;permitir recuperaci&oacute;n por email?, &iquest;forzar cambio en primer login?</div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- SECCION 2: SEGURIDAD -->
+  <div class="section critical">
+    <h2><span class="badge critical">Cr&iacute;tico</span> 2. Seguridad (Implementaci&oacute;n T&eacute;cnica)</h2>
+    <div class="section-desc">Cambios obligatorios antes de exponer la plataforma a usuarios reales. Estas tareas las implementa Claude/desarrollador.</div>
+
+    <ul class="checklist">
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Migrar autenticaci&oacute;n a Supabase Auth</div>
+          <div class="item-detail">Reemplazar login contra columna <code>password_visible</code> (texto plano) por <code>supabase.auth.signInWithPassword()</code>. Las contrase&ntilde;as se almacenar&aacute;n con hash bcrypt en <code>auth.users</code>. Eliminar columna <code>password_visible</code> de la tabla <code>usuarios</code>.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Configurar Row Level Security (RLS) por rol</div>
+          <div class="item-detail">
+            Definir pol&iacute;ticas de acceso:
+            <br>&bull; <strong>Admin:</strong> lectura/escritura en todas las tablas
+            <br>&bull; <strong>Jefatura:</strong> lectura de sus programas, sus participantes, escritura de feedback y coevaluaciones
+            <br>&bull; <strong>Participante:</strong> lectura de su perfil/encuestas/actividades, escritura de sus respuestas
+            <br>&bull; <strong>Anon:</strong> solo acceso a login/registro
+            <br>Vincular pol&iacute;ticas con <code>auth.uid()</code> y el campo <code>auth_id</code> de la tabla <code>usuarios</code>.
+          </div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Mover Groq API key a Edge Function</div>
+          <div class="item-detail">Crear Supabase Edge Function (Deno) que reciba el prompt del frontend y haga la llamada a Groq server-side. La API key se almacena como secret en Supabase, nunca en el c&oacute;digo del browser. El frontend llama a <code>/functions/v1/generar-informe</code> en vez de directamente a <code>api.groq.com</code>.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Revocar API keys expuestas</div>
+          <div class="item-detail">La Groq API key debe vivir exclusivamente como secret de Supabase (GROQ_API_KEY) y consumirse via Edge Function proxy. Nunca en el frontend.</div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Configurar CORS y dominios permitidos</div>
+          <div class="item-detail">En Supabase &rarr; Settings &rarr; API, agregar solo el dominio de producci&oacute;n como origen permitido. Esto previene que otros sitios usen la API.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+    </ul>
+
+    <div class="warning-box">
+      <strong>IMPORTANTE:</strong> Mientras la plataforma use contrase&ntilde;as en texto plano y RLS deshabilitado, cualquier persona con conocimientos b&aacute;sicos de browser DevTools puede ver TODAS las contrase&ntilde;as y datos de TODOS los usuarios. No exponer a usuarios reales hasta completar esta secci&oacute;n.
+    </div>
+  </div>
+
+  <!-- SECCION 3: BASE DE DATOS -->
+  <div class="section important">
+    <h2><span class="badge important">Importante</span> 3. Base de Datos Productiva</h2>
+    <div class="section-desc">Configuraci&oacute;n de la base de datos para producci&oacute;n.</div>
+
+    <ul class="checklist">
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Ejecutar schema en proyecto Supabase de producci&oacute;n</div>
+          <div class="item-detail">Ejecutar <code>supabase-schema-v2.sql</code> (sin datos demo) en el SQL Editor del proyecto productivo. Verificar que las 10 tablas se creen correctamente.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Ejecutar script de RLS productivo</div>
+          <div class="item-detail">Aplicar las pol&iacute;ticas de seguridad por rol despu&eacute;s de crear las tablas. Script generado por Claude.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Cargar datos iniciales</div>
+          <div class="item-detail">Insertar clientes, usuarios iniciales (con Supabase Auth), y programas base. Usar el listado de usuarios preparado por el equipo.</div>
+          <div class="item-owner"><span class="owner-tag ambos">Ambos</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Configurar backups autom&aacute;ticos</div>
+          <div class="item-detail">En Plan Pro, los backups diarios est&aacute;n incluidos. Verificar que est&eacute;n activos en Supabase &rarr; Settings &rarr; Database &rarr; Backups. Considerar tambi&eacute;n export manual peri&oacute;dico (pg_dump) para respaldo adicional.</div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Agregar tablas de auditor&iacute;a (opcional)</div>
+          <div class="item-detail">Tabla <code>audit_log</code> para registrar qui&eacute;n hizo qu&eacute; y cu&aacute;ndo: creaci&oacute;n/edici&oacute;n/eliminaci&oacute;n de registros, cambios de estado de encuestas, etc.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- SECCION 4: FRONTEND -->
+  <div class="section important">
+    <h2><span class="badge important">Importante</span> 4. Frontend y Dependencias</h2>
+    <div class="section-desc">Optimizaciones para que el frontend sea estable y profesional en producci&oacute;n.</div>
+
+    <ul class="checklist">
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Reemplazar Tailwind CDN Play por versi&oacute;n estable</div>
+          <div class="item-detail">El CDN Play de Tailwind no est&aacute; recomendado para producci&oacute;n (puede fallar, es lento). Opciones: compilar Tailwind con PostCSS (build step) o usar el CDN est&aacute;ndar con clases pre-compiladas. Recomendado: usar <code>cdn.tailwindcss.com</code> versi&oacute;n pinneada.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Pinnear versiones de dependencias CDN</div>
+          <div class="item-detail">
+            Fijar versiones espec&iacute;ficas con SRI hashes para todas las librer&iacute;as:
+            <br>&bull; Chart.js (actualmente: latest)
+            <br>&bull; Supabase JS SDK v2 (actualmente: latest)
+            <br>&bull; SheetJS (ya pinneado: 0.18.5)
+            <br>&bull; html2pdf.js (ya pinneado: 0.10.1)
+            <br>Esto previene que una actualizaci&oacute;n de la librer&iacute;a rompa la plataforma.
+          </div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Eliminar archivo mock.js del deploy productivo</div>
+          <div class="item-detail">El archivo <code>mock.js</code> contiene datos demo hardcodeados y la API key de Groq. No debe estar en producci&oacute;n. Solo mantener <code>supabase-client.js</code>.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Actualizar supabase-client.js con credenciales de producci&oacute;n</div>
+          <div class="item-detail">Reemplazar URL y anon key del proyecto demo por las del proyecto productivo. Idealmente usar variables de entorno si el hosting lo permite.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Eliminar archivos .sql del deploy</div>
+          <div class="item-detail">Los archivos <code>supabase-schema.sql</code> y <code>supabase-schema-v2.sql</code> no deben estar accesibles p&uacute;blicamente ya que revelan la estructura de la BD.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Agregar p&aacute;gina de error y manejo offline</div>
+          <div class="item-detail">P&aacute;gina 404 personalizada y mensaje amigable cuando no hay conexi&oacute;n a Supabase.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- SECCION 5: FUNCIONALIDADES -->
+  <div class="section important">
+    <h2><span class="badge important">Importante</span> 5. Funcionalidades Pendientes</h2>
+    <div class="section-desc">M&oacute;dulos que actualmente son stubs (retornan datos vac&iacute;os) y necesitan implementaci&oacute;n real.</div>
+
+    <table>
+      <tr><th>M&oacute;dulo</th><th>Funciones Stub</th><th>Prioridad</th><th>Notas</th></tr>
+      <tr>
+        <td><strong>Hallazgos</strong></td>
+        <td>listarHallazgos, crearHallazgo, actualizarHallazgo</td>
+        <td><span class="badge important">Media</span></td>
+        <td>CRUD completo necesario</td>
+      </tr>
+      <tr>
+        <td><strong>Feedback</strong></td>
+        <td>listarFeedbackJefatura, crearFeedback, enviarFeedback, listarFeedbackRecibido</td>
+        <td><span class="badge critical">Alta</span></td>
+        <td>Core del flujo jefatura &rarr; participante</td>
+      </tr>
+      <tr>
+        <td><strong>Mi Equipo</strong></td>
+        <td>listarMiEquipo, listarObservacionesJefatura</td>
+        <td><span class="badge critical">Alta</span></td>
+        <td>Vista principal de jefatura</td>
+      </tr>
+      <tr>
+        <td><strong>Actividades</strong></td>
+        <td>listarMisActividades, listarActividades, crearActividad</td>
+        <td><span class="badge important">Media</span></td>
+        <td>Depende del dise&ntilde;o final</td>
+      </tr>
+      <tr>
+        <td><strong>Observaciones/Incidencias</strong></td>
+        <td>listarReportesObservacion, crearReporteObservacion, cambiarEstadoObservacion</td>
+        <td><span class="badge important">Media</span></td>
+        <td>Sistema de reportes de campo</td>
+      </tr>
+      <tr>
+        <td><strong>Dashboard KPIs</strong></td>
+        <td>obtenerComparacionPrePost, obtenerMapaCalor, obtenerResumenPorEquipo</td>
+        <td><span class="badge critical">Alta</span></td>
+        <td>Visualizaciones clave para admin</td>
+      </tr>
+      <tr>
+        <td><strong>Mi Progreso</strong></td>
+        <td>obtenerMiProgreso</td>
+        <td><span class="badge important">Media</span></td>
+        <td>Vista del participante</td>
+      </tr>
+      <tr>
+        <td><strong>Exportar Excel</strong></td>
+        <td>exportarDatosExcel</td>
+        <td><span class="badge important">Media</span></td>
+        <td>Reportes descargables</td>
+      </tr>
+      <tr>
+        <td><strong>Conductas / Checklists</strong></td>
+        <td>listarConductas, listarChecklists, crearChecklist</td>
+        <td><span class="badge nice">Baja</span></td>
+        <td>Podr&iacute;an eliminarse si no se usan</td>
+      </tr>
+    </table>
+
+    <div class="note-box">
+      <strong>Nota:</strong> No todas las funciones stub necesitan implementarse para el lanzamiento. Se recomienda definir un <strong>MVP (M&iacute;nimo Producto Viable)</strong> con las funcionalidades core: Login, Programas, Participantes, Encuestas PRE/POST, Informes IA, Dashboard.
+    </div>
+  </div>
+
+  <!-- SECCION 6: HOSTING Y DOMINIO -->
+  <div class="section nice">
+    <h2><span class="badge nice">Recomendado</span> 6. Hosting, Dominio y DNS</h2>
+    <div class="section-desc">Configuraci&oacute;n del entorno productivo.</div>
+
+    <ul class="checklist">
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Registrar/configurar dominio</div>
+          <div class="item-detail">Si ya tienen dominio (ej: msochile.cl), crear subdominio <code>plataforma.msochile.cl</code>. Si no, registrar uno nuevo (~$10-15 USD/a&ntilde;o en NIC Chile para .cl).</div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Configurar hosting y deploy autom&aacute;tico</div>
+          <div class="item-detail">Conectar repositorio GitHub al hosting elegido. Cada push a <code>main</code> despliega autom&aacute;ticamente. Configurar variables de entorno (SUPABASE_URL, SUPABASE_KEY).</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Configurar SSL / HTTPS</div>
+          <div class="item-detail">Obligatorio para producci&oacute;n. Vercel y Netlify lo incluyen gratis autom&aacute;ticamente. GitHub Pages tambi&eacute;n con dominio personalizado.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- SECCION 7: TESTING -->
+  <div class="section nice">
+    <h2><span class="badge nice">Recomendado</span> 7. Testing y QA</h2>
+    <div class="section-desc">Verificaci&oacute;n antes del lanzamiento.</div>
+
+    <ul class="checklist">
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Test de flujo completo: Admin</div>
+          <div class="item-detail">Login &rarr; Crear cliente &rarr; Crear programa &rarr; Agregar participantes &rarr; Crear competencias &rarr; Crear encuesta &rarr; Activar encuesta &rarr; Ver dashboard &rarr; Generar informe IA</div>
+          <div class="item-owner"><span class="owner-tag ambos">Ambos</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Test de flujo completo: Jefatura</div>
+          <div class="item-detail">Login &rarr; Ver inicio &rarr; Responder coevaluaci&oacute;n &rarr; Ver equipo &rarr; Dar feedback &rarr; Descargar informe</div>
+          <div class="item-owner"><span class="owner-tag ambos">Ambos</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Test de flujo completo: Participante</div>
+          <div class="item-detail">Login &rarr; Ver encuestas pendientes &rarr; Responder encuesta PRE &rarr; Ver progreso &rarr; Ver feedback recibido &rarr; Responder encuesta POST</div>
+          <div class="item-owner"><span class="owner-tag ambos">Ambos</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Test de seguridad b&aacute;sico</div>
+          <div class="item-detail">Verificar que un participante NO puede ver datos de otros participantes. Verificar que jefatura NO puede acceder a funciones de admin. Verificar que no hay API keys en el c&oacute;digo fuente del browser.</div>
+          <div class="item-owner"><span class="owner-tag claude">Claude</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Test en m&oacute;viles y tablets</div>
+          <div class="item-detail">Verificar que la plataforma es usable en dispositivos m&oacute;viles (encuestas se responden desde celular frecuentemente). Probar en Chrome, Safari, Firefox.</div>
+          <div class="item-owner"><span class="owner-tag ambos">Ambos</span></div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- SECCION 8: LANZAMIENTO -->
+  <div class="section info">
+    <h2><span class="badge info">Lanzamiento</span> 8. Go-Live y Post-Lanzamiento</h2>
+    <div class="section-desc">Pasos finales para salir a producci&oacute;n.</div>
+
+    <ul class="checklist">
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Carga masiva de usuarios reales</div>
+          <div class="item-detail">Importar usuarios desde Excel con creaci&oacute;n autom&aacute;tica de cuentas en Supabase Auth. Enviar email de bienvenida con credenciales temporales.</div>
+          <div class="item-owner"><span class="owner-tag ambos">Ambos</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Crear programas y encuestas reales</div>
+          <div class="item-detail">Configurar el primer programa productivo con competencias, encuestas PRE/POST y participantes asignados.</div>
+          <div class="item-owner"><span class="owner-tag equipo">Equipo MSO</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Monitoreo post-lanzamiento</div>
+          <div class="item-detail">Revisar logs de Supabase las primeras 48 horas. Verificar que las encuestas se guardan correctamente. Estar atento a errores reportados por usuarios.</div>
+          <div class="item-owner"><span class="owner-tag ambos">Ambos</span></div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox">
+        <div class="item-content">
+          <div class="item-title">Documentaci&oacute;n de uso</div>
+          <div class="item-detail">Gu&iacute;a r&aacute;pida para administradores: c&oacute;mo crear programas, c&oacute;mo agregar participantes, c&oacute;mo activar encuestas, c&oacute;mo generar informes.</div>
+          <div class="item-owner"><span class="owner-tag ambos">Ambos</span></div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- TIMELINE SUGERIDO -->
+  <div class="section info">
+    <h2><span class="badge info">Referencia</span> 9. Cronograma Sugerido</h2>
+    <div class="section-desc">Distribuci&oacute;n sugerida del trabajo por d&iacute;a.</div>
+
+    <table>
+      <tr><th>D&iacute;a</th><th>Foco</th><th>Tareas clave</th><th>Responsable</th></tr>
+      <tr>
+        <td><strong>D&iacute;a 1</strong></td>
+        <td>Decisiones + Setup</td>
+        <td>Tomar decisiones (dominio, hosting, plan Supabase). Crear proyecto Supabase prod. Obtener nueva API key Groq.</td>
+        <td><span class="owner-tag equipo">Equipo</span></td>
+      </tr>
+      <tr>
+        <td><strong>D&iacute;a 2</strong></td>
+        <td>Seguridad</td>
+        <td>Migrar a Supabase Auth. Configurar RLS. Crear Edge Function para Groq.</td>
+        <td><span class="owner-tag claude">Claude</span></td>
+      </tr>
+      <tr>
+        <td><strong>D&iacute;a 3</strong></td>
+        <td>BD + Frontend</td>
+        <td>Ejecutar schema en prod. Limpiar deploy (quitar mock.js, .sql). Pinnear dependencias. Configurar hosting.</td>
+        <td><span class="owner-tag claude">Claude</span></td>
+      </tr>
+      <tr>
+        <td><strong>D&iacute;a 4</strong></td>
+        <td>Funcionalidades</td>
+        <td>Implementar stubs prioritarios (Feedback, Mi Equipo, Dashboard KPIs).</td>
+        <td><span class="owner-tag claude">Claude</span></td>
+      </tr>
+      <tr>
+        <td><strong>D&iacute;a 5</strong></td>
+        <td>Testing + QA</td>
+        <td>Tests de flujo por rol. Tests de seguridad. Tests m&oacute;viles. Correcciones.</td>
+        <td><span class="owner-tag ambos">Ambos</span></td>
+      </tr>
+      <tr>
+        <td><strong>D&iacute;a 6</strong></td>
+        <td>Datos + Go-Live</td>
+        <td>Carga de usuarios reales. Creaci&oacute;n de programas. Verificaci&oacute;n final. Lanzamiento.</td>
+        <td><span class="owner-tag ambos">Ambos</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- RESUMEN DE COSTOS -->
+  <div class="section info">
+    <h2><span class="badge info">Referencia</span> 10. Estimaci&oacute;n de Costos Mensuales</h2>
+    <div class="section-desc">Costos recurrentes estimados para mantener la plataforma en producci&oacute;n.</div>
+
+    <table>
+      <tr><th>Servicio</th><th>Plan</th><th>Costo/mes (USD)</th><th>Notas</th></tr>
+      <tr><td>Supabase</td><td>Pro</td><td>$25</td><td>BD + Auth + Storage + Edge Functions</td></tr>
+      <tr><td>Hosting (Vercel)</td><td>Hobby/Pro</td><td>$0 - $20</td><td>Gratis para uso personal, $20 para equipo</td></tr>
+      <tr><td>Dominio .cl</td><td>-</td><td>~$1</td><td>~$12 USD/a&ntilde;o</td></tr>
+      <tr><td>Groq API</td><td>Free/Developer</td><td>$0</td><td>Gratuito con l&iacute;mites de rate</td></tr>
+      <tr><td>SMTP (Resend)</td><td>Free</td><td>$0</td><td>Hasta 3,000 emails/mes gratis</td></tr>
+      <tr><td colspan="2"><strong>Total estimado</strong></td><td><strong>$25 - $46</strong></td><td></td></tr>
+    </table>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <p>Documento generado para MSO Chile - Plataforma TPT</p>
+    <p>Abril 2026 | Versi&oacute;n 1.0</p>
+  </div>
+
+</div>
+
+<script>
+// Auto-calcular progreso
+document.addEventListener('DOMContentLoaded', function() {
+  var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+  checkboxes.forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var total = checkboxes.length;
+      var checked = document.querySelectorAll('input[type="checkbox"]:checked').length;
+      document.title = 'Checklist (' + checked + '/' + total + ') - Plataforma TPT MSO';
+    });
+  });
+});
+</script>
+
+</body>
+</html>
