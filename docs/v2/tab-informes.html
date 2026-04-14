@@ -980,7 +980,9 @@
     html += '<div class="rpt-body">';
 
     /* Intro */
-    html += '<div class="rpt-intro">' + (ia.intro || 'El presente informe consolida los resultados de evaluaci\u00f3n de liderazgo, considerando las competencias del modelo aplicado. El an\u00e1lisis considera autoevaluaciones, coevaluaciones cuando est\u00e1n disponibles y la identificaci\u00f3n de brechas de percepci\u00f3n.') + '</div>';
+    if (ia.intro) {
+      html += '<div class="rpt-intro">' + ia.intro + '</div>';
+    }
 
     /* Cobertura KPIs (desde datos reales) */
     var totalLideres = datosReales ? (datosReales.totalLideres || 0) : 0;
@@ -1036,7 +1038,7 @@
     html += '<div style="margin-bottom:8px;font-size:11px;"><span style="display:inline-block;width:12px;height:12px;background:#1A3C6E;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Autoevaluaci\u00f3n &nbsp;&nbsp;<span style="display:inline-block;width:12px;height:12px;background:#5DADE2;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Coevaluaci\u00f3n</div>';
     var allDims = dims.concat([{ nombre: 'Promedio general', auto: autoPromedio, co: coPromedio }]);
     allDims.forEach(function(d) {
-      var maxVal = 5;
+      var maxVal = 4; // escala real de los niveles de competencia
       html += '<div class="rpt-hbar-row"><div class="rpt-hbar-label">' + d.nombre + '</div><div>' +
         '<div class="rpt-hbar-track"><div class="rpt-hbar-fill rpt-hbar-fill-auto" style="width:' + (d.auto / maxVal * 100) + '%;">' + d.auto.toFixed(2) + '</div></div>' +
         '<div class="rpt-hbar-track" style="margin-top:3px;"><div class="rpt-hbar-fill rpt-hbar-fill-co" style="width:' + (d.co / maxVal * 100) + '%;">' + d.co.toFixed(2) + '</div></div>' +
@@ -1044,63 +1046,53 @@
     });
     html += '</div></div>';
 
-    /* Hallazgos */
+    /* Hallazgos, Conclusiones y Recomendaciones (todo generado por IA, sin mocks) */
     html += '<div class="rpt-section"><div class="rpt-section-title">Hallazgos, Conclusiones y Recomendaciones</div>';
-    html += '<div class="rpt-subsection-title">Principales hallazgos</div>';
-    html += '<div class="rpt-findings-grid">';
-    var hallazgos = ia.hallazgos || [
-      { titulo: 'Sobreestimaci\u00f3n del desempe\u00f1o', texto: 'Tendencia general a evaluarse por sobre lo percibido por el entorno.' },
-      { titulo: 'Conversaciones: punto cr\u00edtico', texto: 'Brecha consistente en m\u00faltiples casos individuales.' },
-      { titulo: 'Colaboraci\u00f3n: alta variabilidad', texto: 'No es problema transversal sino focalizado en ciertos casos.' }
-    ];
-    hallazgos.forEach(function(h) {
-      html += '<div class="rpt-finding-card"><h4>' + h.titulo + '</h4><p>' + h.texto + '</p></div>';
-    });
-    html += '</div>';
+
+    /* Hallazgos */
+    if (Array.isArray(ia.hallazgos) && ia.hallazgos.length > 0) {
+      html += '<div class="rpt-subsection-title">Principales hallazgos</div>';
+      html += '<div class="rpt-findings-grid">';
+      ia.hallazgos.forEach(function(h) {
+        html += '<div class="rpt-finding-card"><h4>' + (h.titulo || '') + '</h4><p>' + (h.texto || '') + '</p></div>';
+      });
+      html += '</div>';
+    }
 
     /* Lectura global */
-    html += '<div class="rpt-subsection-title" style="margin-top:24px;">Lectura global del grupo</div>';
-    html += '<p style="font-size:13px;color:#555;margin-bottom:16px;">' + (ia.lectura_global || 'El grupo presenta un nivel de liderazgo adecuado y funcional. El principal desaf\u00edo est\u00e1 en la <strong>alineaci\u00f3n entre la percepci\u00f3n del l\u00edder y la experiencia real del equipo</strong>.') + '</p>';
-
-    html += '<div class="rpt-profiles-grid">';
-    html += '<div class="rpt-profile-card"><h4>L\u00edderes consistentes</h4><p>Con baja brecha entre autoevaluaci\u00f3n y coevaluaci\u00f3n</p></div>';
-    html += '<div class="rpt-profile-card"><h4>L\u00edderes con sobreestimaci\u00f3n</h4><p>Diferencia relevante entre percepci\u00f3n e impacto</p></div>';
-    html += '<div class="rpt-profile-card"><h4>L\u00edderes subestimados</h4><p>Mayor valoraci\u00f3n externa que interna</p></div>';
-    html += '<div class="rpt-profile-card"><h4>L\u00edderes sin contraste</h4><p>An\u00e1lisis limitado al autodiagn\u00f3stico</p></div>';
-    html += '</div>';
+    if (ia.lectura_global) {
+      html += '<div class="rpt-subsection-title" style="margin-top:24px;">Lectura global del grupo</div>';
+      html += '<p style="font-size:13px;color:#555;margin-bottom:16px;">' + ia.lectura_global + '</p>';
+    }
 
     /* Conclusiones */
-    html += '<div class="rpt-subsection-title" style="margin-top:24px;">Conclusiones generales</div>';
-    var conclusiones = ia.conclusiones || [
-      'El liderazgo del grupo es s\u00f3lido en su base, pero a\u00fan no alcanza impacto consistente.',
-      'Existe brecha entre intenci\u00f3n del liderazgo y su percepci\u00f3n por el entorno.',
-      'Las conversaciones se posicionan como la <strong>principal palanca de desarrollo</strong>.',
-      'La falta de coevaluaci\u00f3n en algunos casos debiera corregirse.'
-    ];
-    conclusiones.forEach(function(c) {
-      html += '<div class="rpt-conclusion-item"><span class="rpt-conclusion-arrow">\u2192</span><div class="rpt-conclusion-text">' + c + '</div></div>';
-    });
+    if (Array.isArray(ia.conclusiones) && ia.conclusiones.length > 0) {
+      html += '<div class="rpt-subsection-title" style="margin-top:24px;">Conclusiones generales</div>';
+      ia.conclusiones.forEach(function(c) {
+        html += '<div class="rpt-conclusion-item"><span class="rpt-conclusion-arrow">\u2192</span><div class="rpt-conclusion-text">' + c + '</div></div>';
+      });
+    }
 
     /* Recomendaciones */
-    html += '<div class="rpt-subsection-title" style="margin-top:24px;">Recomendaciones</div>';
-    html += '<div class="rpt-recs-grid">';
-    var recs = ia.recomendaciones || [
-      { titulo: 'Programa de conversaciones', texto: 'Implementar desarrollo de conversaciones enfocado en feedback y escucha activa.' },
-      { titulo: 'Intervenci\u00f3n focalizada', texto: 'Intervenir en l\u00edderes con mayores brechas.' },
-      { titulo: 'Evaluaci\u00f3n continua', texto: 'Establecer sistema de medici\u00f3n peri\u00f3dica.' },
-      { titulo: 'Coevaluaci\u00f3n est\u00e1ndar', texto: 'Asegurar coevaluaci\u00f3n en futuras mediciones.' }
-    ];
-    recs.forEach(function(r, i) {
-      html += '<div class="rpt-rec-card"><div class="rpt-rec-num">' + (i + 1) + '</div><div class="rpt-rec-body"><h4>' + r.titulo + '</h4><p>' + r.texto + '</p></div></div>';
-    });
-    html += '</div>';
+    if (Array.isArray(ia.recomendaciones) && ia.recomendaciones.length > 0) {
+      html += '<div class="rpt-subsection-title" style="margin-top:24px;">Recomendaciones</div>';
+      html += '<div class="rpt-recs-grid">';
+      ia.recomendaciones.forEach(function(r, i) {
+        html += '<div class="rpt-rec-card"><div class="rpt-rec-num">' + (i + 1) + '</div><div class="rpt-rec-body"><h4>' + (r.titulo || '') + '</h4><p>' + (r.texto || '') + '</p></div></div>';
+      });
+      html += '</div>';
+    }
 
     /* Cierre */
-    html += '<div class="rpt-section-title" style="margin-top:28px;">Cierre ejecutivo</div>';
-    html += '<div class="rpt-cierre">' + (ia.cierre
-      ? '<p>' + ia.cierre + '</p>'
-      : '<p>El grupo evaluado cuenta con una base de liderazgo adecuada, pero requiere evolucionar hacia un modelo donde el foco no est\u00e9 solo en la ejecuci\u00f3n, sino en el <strong>impacto en las personas</strong>.</p><p class="rpt-cierre-highlight">Ese ajuste representa la principal oportunidad de desarrollo organizacional.</p>'
-    ) + '</div>';
+    if (ia.cierre) {
+      html += '<div class="rpt-section-title" style="margin-top:28px;">Cierre ejecutivo</div>';
+      html += '<div class="rpt-cierre"><p>' + ia.cierre + '</p></div>';
+    }
+
+    /* Si no hubo ninguna seccion narrativa, mostrar aviso no-bloqueante */
+    if (!ia.hallazgos && !ia.lectura_global && !ia.conclusiones && !ia.recomendaciones && !ia.cierre) {
+      html += '<p style="color:#888;font-style:italic;">El analisis narrativo no se pudo generar para este informe.</p>';
+    }
 
     html += '</div>'; /* rpt-body */
     html += '</div>'; /* rpt-section (hallazgos) */
@@ -1343,15 +1335,24 @@
     html += '<div class="rpt-section"><div class="rpt-section-title">1. Contexto de Evaluaci\u00f3n</div>';
     html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">';
 
-    html += '<div class="rpt-context-box"><h3>Contexto</h3><p style="font-size:13px;opacity:0.9;">El presente informe expone los resultados de la evaluaci\u00f3n final del l\u00edder, en el marco del programa de desarrollo basado en la aplicaci\u00f3n pr\u00e1ctica de competencias.</p>';
-    html += '<p style="font-size:12px;opacity:0.8;margin-top:10px;">El an\u00e1lisis considera:</p>';
-    html += '<ul><li>Autoevaluaci\u00f3n del l\u00edder</li><li>Coevaluaci\u00f3n de su jefatura directa</li><li>Identificaci\u00f3n de brechas de percepci\u00f3n</li></ul></div>';
+    var ctxIntro = esPost
+      ? 'El presente informe expone los resultados de la evaluacion POST del lider, en el marco del programa de desarrollo basado en la aplicacion practica de competencias. Permite visualizar la evolucion respecto a la linea base PRE.'
+      : 'El presente informe expone los resultados de la evaluacion PRE (linea base) del lider, al inicio del programa. Sirve como diagnostico inicial para identificar focos de desarrollo.';
+    html += '<div class="rpt-context-box"><h3>Contexto</h3><p style="font-size:13px;opacity:0.9;">' + ctxIntro + '</p>';
+    html += '<p style="font-size:12px;opacity:0.8;margin-top:10px;">El analisis considera:</p>';
+    html += '<ul><li>Autoevaluacion del lider</li><li>Coevaluacion de sus colaboradores</li><li>Identificacion de brechas de percepcion</li></ul></div>';
 
     html += '<div><div class="rpt-subsection-title">Competencias Evaluadas</div><div class="rpt-competencias">';
-    var competencias = ['Delegar con prop\u00f3sito estrat\u00e9gico', 'Conversaciones que desarrollan al l\u00edder', 'Articulaci\u00f3n colaborativa'];
-    competencias.forEach(function(c, i) {
-      html += '<div class="rpt-competencia-item"><div class="rpt-competencia-num">0' + (i + 1) + '</div><div class="rpt-competencia-name">' + c + '</div></div>';
-    });
+    // Competencias reales del programa (no hardcodeadas)
+    var competenciasList = dims.map(function(d) { return d.nombre; });
+    if (competenciasList.length === 0) {
+      html += '<p style="color:#888;font-size:12px;">(Sin competencias definidas en el programa)</p>';
+    } else {
+      competenciasList.forEach(function(c, i) {
+        var num = (i + 1) < 10 ? '0' + (i + 1) : String(i + 1);
+        html += '<div class="rpt-competencia-item"><div class="rpt-competencia-num">' + num + '</div><div class="rpt-competencia-name">' + escapeHtml(c) + '</div></div>';
+      });
+    }
     html += '</div></div></div></div>';
 
     /* 2. Resultado General */
@@ -1362,7 +1363,16 @@
     html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + coP.toFixed(2) + '</div><div class="rpt-kpi-big-label">Coevaluaci\u00f3n</div></div>';
     html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + brechaG + '</div><div class="rpt-kpi-big-label">Brecha Global</div></div>';
     html += '</div>';
-    html += '<p style="font-size:13px;color:#555;">No existe brecha global, lo que refleja: <strong>alta coherencia entre percepci\u00f3n propia y externa</strong>, un perfil equilibrado y buen nivel de autoconocimiento.</p>';
+    // Interpretacion dinamica de la brecha global
+    var interpBrecha;
+    if (Math.abs(brechaG) < 0.1) {
+      interpBrecha = '<strong>alta coherencia</strong> entre percepcion propia y externa, un perfil equilibrado y buen nivel de autoconocimiento.';
+    } else if (brechaG > 0) {
+      interpBrecha = 'el lider <strong>se sobreestima</strong> respecto a la percepcion de su entorno (+' + brechaG + '), sugiriendo una oportunidad de calibrar la autopercepcion.';
+    } else {
+      interpBrecha = 'el lider es <strong>valorado por encima</strong> de su autopercepcion (' + brechaG + '), lo que refleja una fortaleza reconocida por el entorno que podria potenciarse.';
+    }
+    html += '<p style="font-size:13px;color:#555;">La brecha global refleja: ' + interpBrecha + '</p>';
     html += '</div>';
 
     /* 3. Resultados Detallados */
@@ -1386,9 +1396,10 @@
     html += '<div class="rpt-hbar-container">';
     html += '<div style="margin-bottom:8px;font-size:11px;"><span style="display:inline-block;width:12px;height:12px;background:#1A3C6E;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Autoevaluaci\u00f3n &nbsp;&nbsp;<span style="display:inline-block;width:12px;height:12px;background:#5DADE2;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Coevaluaci\u00f3n</div>';
     dims.forEach(function(d) {
+      var maxI = 4; // escala real de los niveles de competencia
       html += '<div class="rpt-hbar-row"><div class="rpt-hbar-label">' + d.nombre + '</div><div>' +
-        '<div class="rpt-hbar-track"><div class="rpt-hbar-fill rpt-hbar-fill-auto" style="width:' + (d.auto / 5 * 100) + '%;">' + d.auto + '</div></div>' +
-        '<div class="rpt-hbar-track" style="margin-top:3px;"><div class="rpt-hbar-fill rpt-hbar-fill-co" style="width:' + (d.co / 5 * 100) + '%;">' + d.co + '</div></div>' +
+        '<div class="rpt-hbar-track"><div class="rpt-hbar-fill rpt-hbar-fill-auto" style="width:' + (d.auto / maxI * 100) + '%;">' + d.auto + '</div></div>' +
+        '<div class="rpt-hbar-track" style="margin-top:3px;"><div class="rpt-hbar-fill rpt-hbar-fill-co" style="width:' + (d.co / maxI * 100) + '%;">' + d.co + '</div></div>' +
       '</div><div></div></div>';
     });
     html += '</div></div>';
@@ -1406,59 +1417,72 @@
     html += '</div></div>';
 
     /* 6. Lectura Global */
-    html += '<div class="rpt-section"><div class="rpt-section-title">6. Lectura Global del Perfil</div>';
-    html += '<p style="font-size:13px;color:#555;">' + (ia.lectura_global || 'Nos encontramos frente a un l\u00edder que presenta <strong>coherencia global</strong> en su desempe\u00f1o, posee fortalezas reconocidas por su entorno y tiene oportunidades de mejora en el impacto de sus conversaciones.') + '</p>';
-    html += '</div>';
+    if (ia.lectura_global) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">6. Lectura Global del Perfil</div>';
+      html += '<p style="font-size:13px;color:#555;">' + ia.lectura_global + '</p>';
+      html += '</div>';
+    }
 
-    /* 7. Analisis por Competencia */
-    html += '<div class="rpt-section"><div class="rpt-section-title">7. An\u00e1lisis por Competencia</div>';
-    html += '<div class="rpt-findings-grid">';
-    var analisis = ia.analisis_competencias || [
-      { nombre: 'Delegar con prop\u00f3sito estrat\u00e9gico', brecha: '(-1)', interpretacion: 'Fortaleza reconocida por el entorno', evolucion: ['Mantener est\u00e1ndar', 'Escalar delegaci\u00f3n hacia mayor impacto'] },
-      { nombre: 'Conversaciones que desarrollan', brecha: '(+1)', interpretacion: 'Diferencia en percepci\u00f3n del impacto', evolucion: ['Feedback m\u00e1s espec\u00edfico', 'Mayor escucha activa', 'Conversaciones orientadas al desarrollo'] },
-      { nombre: 'Articulaci\u00f3n colaborativa', brecha: '(0)', interpretacion: 'Competencia estable', evolucion: ['Mantener nivel', 'Potenciar coordinaci\u00f3n transversal'] }
-    ];
-    analisis.forEach(function(a) {
-      html += '<div class="rpt-finding-card"><h4>' + a.nombre + '</h4><span class="brecha-val ' +
-        (a.brecha.indexOf('-') !== -1 ? 'brecha-neg' : a.brecha.indexOf('+') !== -1 || a.brecha.indexOf('1') !== -1 ? 'brecha-pos' : 'brecha-zero') +
-        '">BRECHA ' + a.brecha + '</span>' +
-        '<p><strong>Interpretaci\u00f3n:</strong> ' + a.interpretacion + '</p>' +
-        '<p><strong>Evoluci\u00f3n esperada:</strong></p><ul style="margin:4px 0;padding-left:16px;">' +
-        a.evolucion.map(function(e) { return '<li style="font-size:12px;">' + e + '</li>'; }).join('') +
-        '</ul></div>';
-    });
-    html += '</div></div>';
+    /* 7. Analisis por Competencia (solo si la IA devolvio) */
+    if (Array.isArray(ia.analisis_competencias) && ia.analisis_competencias.length > 0) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">7. An\u00e1lisis por Competencia</div>';
+      html += '<div class="rpt-findings-grid">';
+      ia.analisis_competencias.forEach(function(a) {
+        var brechaStr = (a.brecha != null) ? String(a.brecha) : '';
+        var brechaCls = brechaStr.indexOf('-') !== -1 ? 'brecha-neg'
+          : brechaStr.indexOf('+') !== -1 ? 'brecha-pos'
+          : 'brecha-zero';
+        html += '<div class="rpt-finding-card"><h4>' + (a.nombre || '') + '</h4>' +
+          (brechaStr ? '<span class="brecha-val ' + brechaCls + '">BRECHA ' + brechaStr + '</span>' : '') +
+          (a.interpretacion ? '<p><strong>Interpretaci\u00f3n:</strong> ' + a.interpretacion + '</p>' : '') +
+          (Array.isArray(a.evolucion) && a.evolucion.length
+            ? '<p><strong>Observaciones:</strong></p><ul style="margin:4px 0;padding-left:16px;">' +
+              a.evolucion.map(function(e) { return '<li style="font-size:12px;">' + e + '</li>'; }).join('') +
+              '</ul>'
+            : '') +
+          '</div>';
+      });
+      html += '</div></div>';
+    }
 
-    /* 8. Insight Clave */
-    html += '<div class="rpt-section"><div class="rpt-section-title">8. Insight Clave</div>';
-    html += '<div class="rpt-insight-box"><p>El siguiente nivel de desarrollo del l\u00edder est\u00e1 en:</p>';
-    html += '<div class="insight-main">' + (ia.insight || 'Ajustar el impacto de sus conversaciones con su equipo') + '</div>';
-    html += '<div class="rpt-insight-steps">';
-    html += '<div class="rpt-insight-step"><div class="step-num">1</div><div class="step-from">De comunicar</div><div class="step-to">\u2192 a desarrollar</div></div>';
-    html += '<div class="rpt-insight-step"><div class="step-num">2</div><div class="step-from">De interacci\u00f3n</div><div class="step-to">\u2192 a generaci\u00f3n de valor</div></div>';
-    html += '<div class="rpt-insight-step"><div class="step-num">3</div><div class="step-from">De percepci\u00f3n interna</div><div class="step-to">\u2192 a validaci\u00f3n externa</div></div>';
-    html += '</div></div></div>';
+    /* 8. Insight Clave (solo si la IA devolvio texto) */
+    if (ia.insight) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">8. Insight Clave</div>';
+      html += '<div class="rpt-insight-box"><p>El siguiente nivel de desarrollo del l\u00edder esta en:</p>';
+      html += '<div class="insight-main">' + ia.insight + '</div>';
+      html += '</div></div>';
+    }
 
-    /* 9. Recomendaciones */
-    html += '<div class="rpt-section"><div class="rpt-section-title">9. Recomendaciones de Desarrollo</div>';
-    html += '<div class="rpt-findings-grid">';
-    var recs = ia.recomendaciones || [
-      { titulo: 'Conversaciones (prioridad)', items: ['Incorporar estructura (GROW)', 'Mejorar calidad del feedback', 'Validar comprensi\u00f3n'] },
-      { titulo: 'Delegaci\u00f3n', items: ['Mantener buenas pr\u00e1cticas', 'Transferir aprendizajes al equipo'] },
-      { titulo: 'Colaboraci\u00f3n', items: ['Mantener est\u00e1ndar', 'Escalar impacto'] }
-    ];
-    recs.forEach(function(r, i) {
-      html += '<div class="rpt-rec-card"><div class="rpt-rec-num">' + (i + 1) + '</div><div class="rpt-rec-body"><h4>' + r.titulo + '</h4><ul style="margin:6px 0;padding-left:16px;">';
-      r.items.forEach(function(item) { html += '<li style="font-size:12px;color:#555;">' + item + '</li>'; });
-      html += '</ul></div></div>';
-    });
-    html += '</div></div>';
+    /* 9. Recomendaciones (solo si la IA devolvio) */
+    if (Array.isArray(ia.recomendaciones) && ia.recomendaciones.length > 0) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">9. Recomendaciones de Desarrollo</div>';
+      html += '<div class="rpt-findings-grid">';
+      ia.recomendaciones.forEach(function(r, i) {
+        html += '<div class="rpt-rec-card"><div class="rpt-rec-num">' + (i + 1) + '</div><div class="rpt-rec-body"><h4>' + (r.titulo || '') + '</h4>';
+        if (Array.isArray(r.items)) {
+          html += '<ul style="margin:6px 0;padding-left:16px;">';
+          r.items.forEach(function(item) { html += '<li style="font-size:12px;color:#555;">' + item + '</li>'; });
+          html += '</ul>';
+        } else if (r.texto) {
+          html += '<p style="font-size:12px;color:#555;">' + r.texto + '</p>';
+        }
+        html += '</div></div>';
+      });
+      html += '</div></div>';
+    }
 
-    /* 10. Compromiso */
-    html += '<div class="rpt-section"><div class="rpt-section-title">10. Compromiso de Desarrollo</div>';
-    html += '<div class="rpt-compromiso"><div class="rpt-compromiso-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10l2 2 4-4"/></svg></div>';
-    html += '<div><p>Desde hoy, el l\u00edder orienta su desarrollo hacia:</p><p><strong>' + (ia.compromiso || 'Fortalecer la calidad de sus conversaciones de liderazgo, para asegurar mayor impacto en el desarrollo de su equipo y consolidar un liderazgo equilibrado.') + '</strong></p></div>';
-    html += '</div></div>';
+    /* 10. Compromiso (solo si la IA devolvio) */
+    if (ia.compromiso) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">10. Compromiso de Desarrollo</div>';
+      html += '<div class="rpt-compromiso"><div class="rpt-compromiso-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10l2 2 4-4"/></svg></div>';
+      html += '<div><p>Desde hoy, el l\u00edder orienta su desarrollo hacia:</p><p><strong>' + ia.compromiso + '</strong></p></div>';
+      html += '</div></div>';
+    }
+
+    /* Aviso si el LLM no devolvio ninguna seccion narrativa */
+    if (!ia.lectura_global && !ia.analisis_competencias && !ia.insight && !ia.recomendaciones && !ia.compromiso) {
+      html += '<p style="color:#888;font-style:italic;">El analisis narrativo no se pudo generar para este informe. Las metricas cuantitativas estan correctas.</p>';
+    }
 
     html += '</div>'; /* rpt-body */
 
