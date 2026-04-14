@@ -69,6 +69,13 @@
 
       <!-- Botones de accion -->
       <div style="display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap;">
+        <button id="btn-notificar-participantes" class="btn btn-outline btn-sm hidden" onclick="abrirModalNotificar()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          Notificar a participantes
+        </button>
         <button id="btn-activar-programa" class="btn btn-success btn-sm hidden" onclick="activarProgramaPanel()">
           Activar programa
         </button>
@@ -332,6 +339,7 @@
     var btnActivar = document.getElementById('btn-activar-programa');
     var btnDesactivar = document.getElementById('btn-desactivar-programa');
     var btnReactivar = document.getElementById('btn-reactivar-programa');
+    var btnNotificar = document.getElementById('btn-notificar-participantes');
     btnActivar.classList.add('hidden');
     btnDesactivar.classList.add('hidden');
     btnReactivar.classList.add('hidden');
@@ -341,6 +349,11 @@
       btnDesactivar.classList.remove('hidden');
     } else if (estado === 'suspendido') {
       btnReactivar.classList.remove('hidden');
+    }
+    // Boton Notificar solo para admin
+    if (btnNotificar) {
+      if (App.isAdmin && App.isAdmin()) btnNotificar.classList.remove('hidden');
+      else btnNotificar.classList.add('hidden');
     }
   }
 
@@ -587,4 +600,219 @@
     panelData = null;
     loadView('programas');
   }
+
+  // ============================================
+  // MODAL: NOTIFICAR A PARTICIPANTES (Admin)
+  // ============================================
+
+  var NOTIF_TEMPLATES = {
+    bienvenida: {
+      label: 'Bienvenida al programa',
+      asunto: 'Bienvenido/a al programa {{programa}}',
+      cuerpo: '<p>Hola,</p><p>Te damos la bienvenida al programa <strong>{{programa}}</strong>. Durante el programa responderas encuestas de evaluacion y podras revisar tu progreso en la plataforma.</p><p>Si tienes dudas, contacta al equipo MSO.</p>'
+    },
+    encuesta_recordatorio: {
+      label: 'Recordatorio de encuesta pendiente',
+      asunto: 'Recordatorio: encuesta pendiente en {{programa}}',
+      cuerpo: '<p>Hola,</p><p>Te recordamos que tienes una encuesta pendiente en el programa <strong>{{programa}}</strong>. Ingresa a la plataforma y completala antes del cierre.</p>'
+    },
+    mitad_programa: {
+      label: 'Checkpoint a mitad del programa',
+      asunto: 'Checkpoint del programa {{programa}}',
+      cuerpo: '<p>Hola,</p><p>Queremos saber como va tu experiencia en el programa <strong>{{programa}}</strong>. Recuerda que puedes consultar tu progreso en cualquier momento desde la plataforma.</p>'
+    },
+    cierre: {
+      label: 'Cierre del programa',
+      asunto: 'Cierre del programa {{programa}}',
+      cuerpo: '<p>Hola,</p><p>El programa <strong>{{programa}}</strong> esta por finalizar. Gracias por tu participacion y esfuerzo. Pronto podras revisar tu informe final en la plataforma.</p>'
+    },
+    manual: {
+      label: 'Mensaje personalizado',
+      asunto: '',
+      cuerpo: '<p></p>'
+    }
+  };
+
+  var notifEncuestas = [];
+
+  function abrirModalNotificar() {
+    if (!panelData) { showToast('Datos del programa no cargados', 'warning'); return; }
+
+    // Crear modal si no existe
+    if (!document.getElementById('modal-notificar')) {
+      var overlay = document.createElement('div');
+      overlay.id = 'modal-notificar';
+      overlay.className = 'modal-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px;';
+      overlay.innerHTML =
+        '<div style="background:#fff;border-radius:12px;max-width:720px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.2);">' +
+          '<div style="padding:20px 24px;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">' +
+            '<h3 style="margin:0;color:var(--color-primario);font-size:18px;">Notificar a participantes</h3>' +
+            '<button class="btn btn-outline btn-sm" onclick="cerrarModalNotificar()" style="padding:4px 10px;">&times;</button>' +
+          '</div>' +
+          '<div style="padding:20px 24px;">' +
+            '<div style="margin-bottom:16px;">' +
+              '<label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Plantilla</label>' +
+              '<select id="notif-template" class="form-control" onchange="onNotifTemplateChange()"></select>' +
+            '</div>' +
+            '<div style="margin-bottom:16px;">' +
+              '<label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Destinatarios</label>' +
+              '<div id="notif-subset-options" style="display:flex;flex-direction:column;gap:6px;">' +
+                '<label style="font-size:13px;"><input type="radio" name="notif-subset" value="todos" checked onchange="onNotifSubsetChange()"> Todos los participantes</label>' +
+                '<label style="font-size:13px;"><input type="radio" name="notif-subset" value="lideres" onchange="onNotifSubsetChange()"> Solo lideres</label>' +
+                '<label style="font-size:13px;"><input type="radio" name="notif-subset" value="colaboradores" onchange="onNotifSubsetChange()"> Solo colaboradores</label>' +
+                '<label style="font-size:13px;"><input type="radio" name="notif-subset" value="sin_responder" onchange="onNotifSubsetChange()"> Solo los que no han respondido una encuesta</label>' +
+              '</div>' +
+              '<div id="notif-encuesta-wrapper" class="hidden" style="margin-top:10px;">' +
+                '<label style="display:block;font-size:12px;color:var(--color-texto-sec);margin-bottom:4px;">Encuesta</label>' +
+                '<select id="notif-encuesta" class="form-control"></select>' +
+              '</div>' +
+            '</div>' +
+            '<div style="margin-bottom:16px;">' +
+              '<label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Asunto</label>' +
+              '<input type="text" id="notif-asunto" class="form-control" placeholder="Asunto del correo">' +
+            '</div>' +
+            '<div style="margin-bottom:16px;">' +
+              '<label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Cuerpo del correo (HTML)</label>' +
+              '<textarea id="notif-cuerpo" class="form-control" rows="8" style="font-family:monospace;font-size:12px;"></textarea>' +
+              '<p style="font-size:11px;color:var(--color-texto-sec);margin-top:4px;">Placeholders disponibles: <code>{{programa}}</code>. Se reemplazan automaticamente.</p>' +
+            '</div>' +
+            '<div id="notif-preview-count" style="background:#F0F4FF;border-left:4px solid #3b82f6;padding:10px 14px;border-radius:6px;font-size:13px;color:#1e3a8a;margin-bottom:16px;">' +
+              'Cargando conteo de destinatarios...' +
+            '</div>' +
+          '</div>' +
+          '<div style="padding:16px 24px;border-top:1px solid #E2E8F0;display:flex;justify-content:flex-end;gap:8px;">' +
+            '<button class="btn btn-outline" onclick="cerrarModalNotificar()">Cancelar</button>' +
+            '<button class="btn btn-primary" id="btn-notif-enviar" onclick="enviarNotificacionManual()">Enviar correo</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+    }
+
+    // Poblar select de templates
+    var selTmpl = document.getElementById('notif-template');
+    selTmpl.innerHTML = '';
+    Object.keys(NOTIF_TEMPLATES).forEach(function(k) {
+      var opt = document.createElement('option');
+      opt.value = k;
+      opt.textContent = NOTIF_TEMPLATES[k].label;
+      selTmpl.appendChild(opt);
+    });
+    onNotifTemplateChange();
+
+    // Cargar encuestas del programa para el subset 'sin_responder'
+    google.script.run
+      .withSuccessHandler(function(r) {
+        notifEncuestas = (r && r.data) ? r.data : [];
+        var selEnc = document.getElementById('notif-encuesta');
+        selEnc.innerHTML = '';
+        if (notifEncuestas.length === 0) {
+          selEnc.innerHTML = '<option value="">Sin encuestas en el programa</option>';
+        } else {
+          notifEncuestas.forEach(function(e) {
+            var opt = document.createElement('option');
+            opt.value = e.id;
+            opt.textContent = e.nombre + ' (' + (e.tipo || '').toUpperCase() + ' - ' + (e.tipo_cuestionario || '') + ')';
+            selEnc.appendChild(opt);
+          });
+        }
+      })
+      .listarEncuestas(App.token, panelProgramaId);
+
+    document.getElementById('modal-notificar').style.display = 'flex';
+    actualizarConteoDestinatarios();
+  }
+
+  function cerrarModalNotificar() {
+    var m = document.getElementById('modal-notificar');
+    if (m) m.style.display = 'none';
+  }
+
+  function onNotifTemplateChange() {
+    var tpl = document.getElementById('notif-template').value;
+    var t = NOTIF_TEMPLATES[tpl];
+    if (!t) return;
+    var prog = panelData ? (panelData.nombre || '') : '';
+    document.getElementById('notif-asunto').value = t.asunto.replace('{{programa}}', prog);
+    document.getElementById('notif-cuerpo').value = t.cuerpo;
+  }
+
+  function onNotifSubsetChange() {
+    var subset = document.querySelector('input[name="notif-subset"]:checked').value;
+    var wrapper = document.getElementById('notif-encuesta-wrapper');
+    if (subset === 'sin_responder') wrapper.classList.remove('hidden');
+    else wrapper.classList.add('hidden');
+    actualizarConteoDestinatarios();
+  }
+
+  function actualizarConteoDestinatarios() {
+    var div = document.getElementById('notif-preview-count');
+    var subset = document.querySelector('input[name="notif-subset"]:checked').value;
+    var parts = (panelData && Array.isArray(panelData.participantes)) ? panelData.participantes : [];
+
+    if (subset === 'todos') {
+      div.textContent = 'Se enviara a ' + parts.length + ' participante(s) del programa.';
+    } else if (subset === 'lideres') {
+      var n = parts.filter(function(p) { return p.rol_programa === 'lider'; }).length;
+      div.textContent = 'Se enviara a ' + n + ' lider(es) del programa.';
+    } else if (subset === 'colaboradores') {
+      var n2 = parts.filter(function(p) { return p.rol_programa === 'colaborador'; }).length;
+      div.textContent = 'Se enviara a ' + n2 + ' colaborador(es) del programa.';
+    } else if (subset === 'sin_responder') {
+      div.textContent = 'El backend calculara los pendientes de la encuesta seleccionada al momento de enviar.';
+    }
+  }
+
+  function enviarNotificacionManual() {
+    var asunto = document.getElementById('notif-asunto').value.trim();
+    var cuerpoRaw = document.getElementById('notif-cuerpo').value.trim();
+    var subset = document.querySelector('input[name="notif-subset"]:checked').value;
+    var encuestaId = null;
+
+    if (!asunto) { showToast('Escribe un asunto', 'error'); return; }
+    if (!cuerpoRaw) { showToast('Escribe el cuerpo del correo', 'error'); return; }
+
+    if (subset === 'sin_responder') {
+      encuestaId = document.getElementById('notif-encuesta').value;
+      if (!encuestaId) { showToast('Selecciona una encuesta', 'error'); return; }
+    }
+
+    // Reemplazar placeholder {{programa}} en el cuerpo
+    var prog = panelData ? (panelData.nombre || '') : '';
+    var cuerpoHtml = cuerpoRaw.replace(/\{\{programa\}\}/g, prog);
+
+    var btn = document.getElementById('btn-notif-enviar');
+    btnLoading(btn, true);
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btnLoading(btn, false);
+        if (r && r.success) {
+          var msg = 'Correo enviado a ' + (r.enviados || 0) + ' destinatario(s)';
+          if (r.fallidos && r.fallidos > 0) msg += ' (' + r.fallidos + ' fallidos)';
+          showToast(msg, r.fallidos ? 'warning' : 'success');
+          if (r.enviados > 0) cerrarModalNotificar();
+        } else {
+          showToast((r && r.error) || 'Error al enviar', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        btnLoading(btn, false);
+        showToast('Error de conexion: ' + (err.message || err), 'error');
+      })
+      .enviarCorreoManual(App.token, {
+        programa_id: panelProgramaId,
+        subset: subset,
+        encuesta_id: encuestaId,
+        asunto: asunto,
+        cuerpo_html: cuerpoHtml,
+        adjuntos: []
+      });
+  }
+
+  window.abrirModalNotificar = abrirModalNotificar;
+  window.cerrarModalNotificar = cerrarModalNotificar;
+  window.onNotifTemplateChange = onNotifTemplateChange;
+  window.onNotifSubsetChange = onNotifSubsetChange;
+  window.enviarNotificacionManual = enviarNotificacionManual;
 </script>
