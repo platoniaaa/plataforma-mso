@@ -96,6 +96,14 @@ serve(async (req) => {
       const u = await db.from("usuarios").select("id, nombre, email").eq("id", body.usuario_id).single();
       if (u.error || !u.data) return json({ success: false, error: "Usuario no encontrado" }, 404);
       destinatarios = [{ usuario_id: u.data.id, email: u.data.email, nombre: u.data.nombre }];
+      // Resolver programa desde encuesta_id si no vino en el payload
+      if (!programa && body.encuesta_id) {
+        const enc = await db.from("encuestas").select("programa_id, programas(id, nombre)").eq("id", body.encuesta_id).single();
+        if (enc.data && enc.data.programas) {
+          const p = Array.isArray(enc.data.programas) ? enc.data.programas[0] : enc.data.programas;
+          programa = { id: p.id, nombre: p.nombre };
+        }
+      }
     } else if (body.evento === "recordatorio_batch") {
       // Ejecutado por cron: busca encuestas activas con cierre en 1 o 3 dias
       return await handleRecordatorioBatch(db);
