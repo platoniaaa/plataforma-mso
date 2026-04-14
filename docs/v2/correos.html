@@ -781,41 +781,61 @@
 
     if (!asunto) { showToast('Escribe un asunto.', 'error'); return; }
     if (correoDestinatarios.length === 0) { showToast('Agrega al menos un destinatario.', 'error'); return; }
-    if (!cuerpo.trim()) { showToast('El correo est\u00e1 vac\u00edo.', 'error'); return; }
+    if (!cuerpo.trim()) { showToast('El correo esta vacio.', 'error'); return; }
+    if (!correoProgramaSeleccionado) { showToast('Selecciona un programa.', 'error'); return; }
 
     var btn = document.getElementById('btn-enviar-correo');
     btnLoading(btn, true);
 
-    // Simular env\u00edo (mock)
-    setTimeout(function() {
+    // Adjuntos -> base64 para enviar a la Edge Function
+    var adjuntosPromises = (correoAdjuntos || []).map(function(a) {
+      if (a.contenido) return Promise.resolve(a); // ya codificado
+      if (!a.file) return Promise.resolve({ nombre: a.nombre, tipo: a.tipo });
+      return new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var base64 = (e.target.result || '').split(',')[1] || '';
+          resolve({ nombre: a.nombre || a.file.name, tipo: a.tipo || a.file.type, contenido: base64 });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(a.file);
+      });
+    });
+
+    Promise.all(adjuntosPromises).then(function(adjuntosList) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          btnLoading(btn, false);
+          if (r && r.success) {
+            var msg = 'Correo enviado a ' + (r.enviados || 0) + ' destinatario(s)';
+            if (r.fallidos && r.fallidos > 0) msg += ' (' + r.fallidos + ' fallidos)';
+            showToast(msg, r.fallidos ? 'warning' : 'success');
+            cargarHistorialCorreos(correoProgramaSeleccionado.id);
+            // Limpiar compositor
+            document.getElementById('correo-compositor').classList.add('hidden');
+            document.getElementById('correo-templates').classList.add('hidden');
+            correoDestinatarios = [];
+            correoAdjuntos = [];
+            correoTemplateActual = null;
+          } else {
+            showToast((r && r.error) || 'Error al enviar correo', 'error');
+          }
+        })
+        .withFailureHandler(function(err) {
+          btnLoading(btn, false);
+          showToast('Error de conexion: ' + (err.message || err), 'error');
+        })
+        .enviarCorreoManual(App.token, {
+          programa_id: correoProgramaSeleccionado.id,
+          asunto: asunto,
+          cuerpo_html: cuerpo,
+          subset: 'todos',   // el UI no permite seleccionar subset; se envia a todos los del programa
+          adjuntos: adjuntosList
+        });
+    }).catch(function(e) {
       btnLoading(btn, false);
-
-      // Guardar en historial local
-      var nuevoCorreo = {
-        id: 'mail-' + Date.now(),
-        fecha: new Date().toISOString().split('T')[0],
-        template: correoTemplateActual,
-        template_nombre: TEMPLATES[correoTemplateActual].nombre,
-        asunto: asunto,
-        programa_id: correoProgramaSeleccionado.id,
-        programa_nombre: correoProgramaSeleccionado.nombre,
-        destinatarios: correoDestinatarios.slice(),
-        adjuntos: correoAdjuntos.slice(),
-        cuerpo: cuerpo
-      };
-
-      correosEnviados.unshift(nuevoCorreo);
-      renderHistorialCorreos();
-
-      showToast('Correo enviado exitosamente a ' + correoDestinatarios.length + ' destinatario(s).', 'success');
-
-      // Volver al estado inicial
-      document.getElementById('correo-compositor').classList.add('hidden');
-      document.getElementById('correo-templates').classList.add('hidden');
-      correoDestinatarios = [];
-      correoAdjuntos = [];
-      correoTemplateActual = null;
-    }, 1500);
+      showToast('Error al procesar adjuntos: ' + e.message, 'error');
+    });
   }
 
   // ============================================
@@ -823,42 +843,16 @@
   // ============================================
 
   function cargarHistorialCorreos(progId) {
-    // Mock: agregar algunos correos de ejemplo
-    if (correosEnviados.length === 0) {
-      correosEnviados = [
-        {
-          id: 'mail-001',
-          fecha: '2026-03-15',
-          template: 'presentacion',
-          template_nombre: 'Presentaci\u00f3n de Programa',
-          asunto: 'Presentaci\u00f3n del Programa: Liderazgo Seguro 2026',
-          programa_id: 'prog-001',
-          programa_nombre: 'Liderazgo Seguro 2026',
-          destinatarios: ['mgonzalez@losandes.cl'],
-          adjuntos: [
-            { nombre: 'Presentaci\u00f3n Programa.pptx', tamano: 432039, tipo: 'application/pptx' },
-            { nombre: 'Matriz de competencias.xlsx', tamano: 12406, tipo: 'application/xlsx' }
-          ],
-          cuerpo: '<p>Correo de presentaci\u00f3n enviado al cliente.</p>'
-        },
-        {
-          id: 'mail-002',
-          fecha: '2026-01-20',
-          template: 'bienvenida',
-          template_nombre: 'Inicio / Bienvenida',
-          asunto: 'Bienvenido/a al Programa Liderazgo Seguro 2026',
-          programa_id: 'prog-001',
-          programa_nombre: 'Liderazgo Seguro 2026',
-          destinatarios: ['mgonzalez@losandes.cl', 'rrhh@losandes.cl'],
-          adjuntos: [
-            { nombre: 'Instructivo pr\u00e1ctica.pdf', tamano: 250948, tipo: 'application/pdf' },
-            { nombre: 'Gantt del programa.xlsx', tamano: 16685, tipo: 'application/xlsx' }
-          ],
-          cuerpo: '<p>Correo de bienvenida enviado.</p>'
-        }
-      ];
-    }
-    renderHistorialCorreos();
+    google.script.run
+      .withSuccessHandler(function(r) {
+        correosEnviados = (r && r.success && r.data) ? r.data : [];
+        renderHistorialCorreos();
+      })
+      .withFailureHandler(function() {
+        correosEnviados = [];
+        renderHistorialCorreos();
+      })
+      .listarCorreosEnviados(App.token, progId || null);
   }
 
   function getTemplateBadge(tipo) {

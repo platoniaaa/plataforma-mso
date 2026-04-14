@@ -54,6 +54,30 @@ async function _enrichObsList(rows) {
   });
 }
 
+// Helper: dispara un correo via Edge Function send-email (fire-and-forget)
+// Nunca rompe el flujo principal si falla
+function _fireEmail(payload) {
+  try {
+    fetch(SUPABASE_URL + '/functions/v1/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'apikey': SUPABASE_KEY
+      },
+      body: JSON.stringify(payload)
+    }).then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || !data.success) {
+          console.warn('[send-email] ' + payload.evento + ' no exitoso:', data);
+        }
+      })
+      .catch(function(e) { console.warn('[send-email] exception', e); });
+  } catch (e) {
+    console.warn('[send-email] sync exception', e);
+  }
+}
+
 // Helper: normaliza una fila de observaciones a la forma que espera el frontend
 function _mapObsRow(row) {
   return {
@@ -466,6 +490,12 @@ var backendFunctions = {
       };
     });
     var r = await _supabase.from('participantes_programa').upsert(inserts, { onConflict: 'programa_id,usuario_id' });
+    // Disparar correo de bienvenida (fire-and-forget)
+    _fireEmail({
+      evento: 'bienvenida',
+      programa_id: progId,
+      usuario_ids: inserts.map(function(i) { return i.usuario_id; })
+    });
     return { success: true, data: { count: inserts.length } };
   },
 
@@ -610,12 +640,27 @@ var backendFunctions = {
   },
 
   actualizarEncuesta: async function(token, id, datos) {
+    // Detectar transicion a 'activa' para disparar correo
+    var estadoPrevio = null;
+    if (datos && datos.estado === 'activa') {
+      var prev = await _supabase.from('encuestas').select('estado').eq('id', id).single();
+      estadoPrevio = prev.data ? prev.data.estado : null;
+    }
     await _supabase.from('encuestas').update(datos).eq('id', id);
+    if (datos && datos.estado === 'activa' && estadoPrevio !== 'activa') {
+      _fireEmail({ evento: 'encuesta_disponible', encuesta_id: id });
+    }
     return { success: true };
   },
 
   activarEncuesta: async function(token, id) {
+    // Solo dispara correo si antes no estaba activa
+    var prev = await _supabase.from('encuestas').select('estado').eq('id', id).single();
+    var estadoPrevio = prev.data ? prev.data.estado : null;
     await _supabase.from('encuestas').update({ estado: 'activa' }).eq('id', id);
+    if (estadoPrevio !== 'activa') {
+      _fireEmail({ evento: 'encuesta_disponible', encuesta_id: id });
+    }
     return { success: true };
   },
 
@@ -826,6 +871,8 @@ var backendFunctions = {
       console.error('[enviarRespuestas] error', up.error);
       return { success: false, error: up.error.message };
     }
+    // Disparar correo de confirmacion (fire-and-forget)
+    _fireEmail({ evento: 'confirmacion', usuario_id: userId, encuesta_id: encuestaId });
     return { success: true, data: { message: 'Respuestas registradas.' } };
   },
 
@@ -1832,6 +1879,69 @@ var backendFunctions = {
     } catch (e) {
       return { success: false, error: 'Analisis cualitativo no disponible: ' + (e.message || e) };
     }
+  },
+
+  // ============================================
+  // CORREOS (Resend via Edge Function send-email)
+  // ============================================
+  enviarCorreoManual: async function(token, datos) {
+    var u = null; try { u = JSON.parse(sessionStorage.getItem('tpt_usuario') || 'null'); } catch(e) {}
+    if (!u || !u.id) return { success: false, error: 'No autenticado' };
+    datos = datos || {};
+    try {
+      var r = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'apikey': SUPABASE_KEY
+        },
+        body: JSON.stringify({
+          evento: 'manual',
+          userId: u.id,
+          programa_id: datos.programa_id,
+          encuesta_id: datos.encuesta_id || null,
+          subset: datos.subset || 'todos',
+          asunto: datos.asunto,
+          cuerpo_html: datos.cuerpo_html,
+          adjuntos: datos.adjuntos || []
+        })
+      });
+      return await r.json();
+    } catch (e) {
+      return { success: false, error: 'Error de conexion: ' + (e.message || e) };
+    }
+  },
+
+  listarCorreosEnviados: async function(token, progId) {
+    var query = _supabase.from('correos_enviados')
+      .select('*, programas(nombre), enviado_por_usuario:usuarios!correos_enviados_enviado_por_fkey(nombre)')
+      .order('fecha_enviado', { ascending: false })
+      .limit(100);
+    if (progId) query = query.eq('programa_id', progId);
+    var r = await query;
+    if (r.error) {
+      console.error('[listarCorreosEnviados]', r.error);
+      return { success: true, data: [] };
+    }
+    var data = (r.data || []).map(function(c) {
+      return {
+        id: c.id,
+        fecha: c.fecha_enviado,
+        evento: c.evento,
+        template: c.tipo_template,
+        asunto: c.asunto,
+        programa_id: c.programa_id,
+        programa_nombre: c.programas ? c.programas.nombre : '',
+        enviado_por_nombre: c.enviado_por_usuario ? c.enviado_por_usuario.nombre : '(automatico)',
+        destinatarios: c.destinatarios || [],
+        adjuntos: c.adjuntos || [],
+        cuerpo: c.cuerpo_html || '',
+        estado: c.estado,
+        error: c.error
+      };
+    });
+    return { success: true, data: data };
   },
 
   listarReportesObservacion: async function(token) {
