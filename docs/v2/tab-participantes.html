@@ -17,7 +17,7 @@
             <th>Cargo</th>
             <th>Email</th>
             <th>Contrase&ntilde;a</th>
-            <th>Colaborador</th>
+            <th>Coevaluador</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>
@@ -85,12 +85,12 @@
   </div>
 </div>
 
-<!-- Modal: Asignar Colaborador -->
-<div class="modal-overlay" id="modal-asignar-colaborador">
+<!-- Modal: Asignar Coevaluador -->
+<div class="modal-overlay" id="modal-asignar-coevaluador">
   <div class="modal" style="max-width:550px;">
     <div class="modal-header">
-      <h3>Asignar Colaborador</h3>
-      <button class="modal-close" onclick="closeModal('modal-asignar-colaborador')">&times;</button>
+      <h3>Asignar Coevaluador</h3>
+      <button class="modal-close" onclick="closeModal('modal-asignar-coevaluador')">&times;</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="asignar-colab-lider-id">
@@ -98,31 +98,31 @@
       <!-- Opcion A: Seleccionar usuario existente -->
       <div class="form-group">
         <label>
-          <input type="radio" name="tipo-colaborador" value="existente" checked
-                 onchange="toggleColaboradorForm()">
+          <input type="radio" name="tipo-coevaluador" value="existente" checked
+                 onchange="toggleCoevaluadorForm()">
           Seleccionar usuario existente del cliente
         </label>
       </div>
-      <div id="seccion-colaborador-existente">
+      <div id="seccion-coevaluador-existente">
         <div class="form-group">
-          <select class="form-control" id="select-colaborador-existente">
+          <select class="form-control" id="select-coevaluador-existente">
             <option value="">Selecciona un usuario...</option>
           </select>
         </div>
       </div>
 
-      <!-- Opcion B: Crear nuevo colaborador -->
+      <!-- Opcion B: Crear nuevo coevaluador -->
       <div class="form-group" style="margin-top:12px;">
         <label>
-          <input type="radio" name="tipo-colaborador" value="nuevo"
-                 onchange="toggleColaboradorForm()">
-          Crear nuevo colaborador
+          <input type="radio" name="tipo-coevaluador" value="nuevo"
+                 onchange="toggleCoevaluadorForm()">
+          Crear nuevo coevaluador
         </label>
       </div>
-      <div id="seccion-colaborador-nuevo" class="hidden">
+      <div id="seccion-coevaluador-nuevo" class="hidden">
         <div class="form-group">
           <label>Nombre completo *</label>
-          <input type="text" class="form-control" id="nuevo-colab-nombre" placeholder="Nombre del colaborador">
+          <input type="text" class="form-control" id="nuevo-colab-nombre" placeholder="Nombre del coevaluador">
         </div>
         <div class="form-group">
           <label>Email *</label>
@@ -130,13 +130,13 @@
         </div>
         <div class="form-group">
           <label>Cargo</label>
-          <input type="text" class="form-control" id="nuevo-colab-cargo" placeholder="Cargo del colaborador">
+          <input type="text" class="form-control" id="nuevo-colab-cargo" placeholder="Cargo del coevaluador">
         </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-asignar-colaborador')">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarAsignarColaborador()">Asignar</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-asignar-coevaluador')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarAsignarCoevaluador()">Asignar</button>
     </div>
   </div>
 </div>
@@ -153,7 +153,7 @@
         <p style="font-weight:600;color:var(--color-primario);margin-bottom:10px;">Formato esperado del archivo Excel (.xlsx):</p>
         <p style="font-size:13px;margin-bottom:8px;">
           <strong>Columnas:</strong>
-          <code>Nombre</code>, <code>Email</code>, <code>Cargo</code>, <code>Password</code>, <code>Rol</code>, <code>Colaborador Nombre</code>, <code>Colaborador Email</code>
+          <code>Nombre</code>, <code>Email</code>, <code>Cargo</code>, <code>Password</code>, <code>Rol</code>, <code>Coevaluador Nombre</code>, <code>Coevaluador Email</code>
         </p>
         <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:8px;">
           <thead>
@@ -190,7 +190,7 @@
         </table>
         <p style="font-size:12px;color:var(--color-texto-sec);margin-top:10px;font-style:italic;">
           &bull; La columna <strong>Rol</strong> es opcional (por defecto = lider).<br>
-          &bull; Las columnas de <strong>Colaborador</strong> son opcionales. Si se incluyen, se crea el colaborador y se asigna al l&iacute;der autom&aacute;ticamente.<br>
+          &bull; Las columnas de <strong>Coevaluador</strong> son opcionales. Si se incluyen, se crea el coevaluador y se asigna al l&iacute;der autom&aacute;ticamente.<br>
           &bull; Se crear&aacute;n usuarios nuevos con la contrase&ntilde;a indicada. Si el email ya existe, se asocia el usuario existente.
         </p>
       </div>
@@ -207,7 +207,7 @@
           <table class="data-table" style="font-size:12px;">
             <thead>
               <tr>
-                <th>Nombre</th><th>Email</th><th>Cargo</th><th>Rol</th><th>Colaborador</th>
+                <th>Nombre</th><th>Email</th><th>Cargo</th><th>Rol</th><th>Coevaluador</th>
               </tr>
             </thead>
             <tbody id="tbody-preview-participantes"></tbody>
@@ -266,13 +266,13 @@
       return;
     }
 
-    // Separar lideres y colaboradores
+    // Separar lideres y coevaluadores
     var lideres = participantes.filter(function(p) { return p.rol_programa === 'lider'; });
-    var colaboradores = participantes.filter(function(p) { return p.rol_programa === 'colaborador'; });
+    var coevaluadores = participantes.filter(function(p) { return p.rol_programa === 'colaborador'; });
 
-    // Crear mapa de colaborador por lider_id
+    // Crear mapa de coevaluador por lider_id
     var colabMap = {};
-    colaboradores.forEach(function(c) {
+    coevaluadores.forEach(function(c) {
       if (c.lider_id) colabMap[c.lider_id] = c;
     });
 
@@ -288,7 +288,7 @@
         ? escapeHtml(colab.nombre) + '<br><span class="text-xs text-muted">' + escapeHtml(colab.email) + '</span>' +
           '<br><span id="pass-display-' + colab.usuario_id + '" class="text-muted" style="font-size:11px;">****** </span>' +
           '<button class="btn btn-sm btn-outline" style="font-size:10px;padding:1px 6px;margin-top:2px;" onclick="resetPassword(\'' + colab.usuario_id + '\',\'' + escapeHtml(colab.nombre) + '\')">Pass</button>'
-        : '<span class="text-muted">Sin asignar</span><br><button class="btn btn-sm btn-outline" style="margin-top:4px;" onclick="abrirAsignarColaborador(\'' + p.usuario_id + '\')">+ Asignar</button>';
+        : '<span class="text-muted">Sin asignar</span><br><button class="btn btn-sm btn-outline" style="margin-top:4px;" onclick="abrirAsignarCoevaluador(\'' + p.usuario_id + '\')">+ Asignar</button>';
       var estadoBadge = tieneColab
         ? '<span class="badge badge-success">Completo</span>'
         : '<span class="badge badge-warning">Pendiente</span>';
@@ -298,7 +298,7 @@
 
       var acciones = '';
       if (tieneColab) {
-        acciones += '<button class="btn btn-sm btn-outline" onclick="abrirAsignarColaborador(\'' + p.usuario_id + '\')">Cambiar colab.</button> ';
+        acciones += '<button class="btn btn-sm btn-outline" onclick="abrirAsignarCoevaluador(\'' + p.usuario_id + '\')">Cambiar colab.</button> ';
       }
       acciones += '<button class="btn btn-sm btn-outline" style="color:#c0392b;" onclick="quitarParticipantePanel(\'' + p.usuario_id + '\')">Quitar</button>';
 
@@ -462,23 +462,23 @@
     }
   }
 
-  /* ---- Modal: Asignar Colaborador ---- */
+  /* ---- Modal: Asignar Coevaluador ---- */
 
-  function abrirAsignarColaborador(liderId) {
+  function abrirAsignarCoevaluador(liderId) {
     document.getElementById('asignar-colab-lider-id').value = liderId;
 
     // Reset form
-    var radios = document.querySelectorAll('input[name="tipo-colaborador"]');
+    var radios = document.querySelectorAll('input[name="tipo-coevaluador"]');
     radios[0].checked = true;
-    toggleColaboradorForm();
+    toggleCoevaluadorForm();
     document.getElementById('nuevo-colab-nombre').value = '';
     document.getElementById('nuevo-colab-email').value = '';
     document.getElementById('nuevo-colab-cargo').value = '';
 
-    var select = document.getElementById('select-colaborador-existente');
+    var select = document.getElementById('select-coevaluador-existente');
     select.innerHTML = '<option value="">Cargando...</option>';
 
-    openModal('modal-asignar-colaborador');
+    openModal('modal-asignar-coevaluador');
 
     google.script.run
       .withSuccessHandler(function(r) {
@@ -501,10 +501,10 @@
       .obtenerUsuariosDisponibles(App.token, panelProgramaId);
   }
 
-  function toggleColaboradorForm() {
-    var tipo = document.querySelector('input[name="tipo-colaborador"]:checked').value;
-    var secExistente = document.getElementById('seccion-colaborador-existente');
-    var secNuevo = document.getElementById('seccion-colaborador-nuevo');
+  function toggleCoevaluadorForm() {
+    var tipo = document.querySelector('input[name="tipo-coevaluador"]:checked').value;
+    var secExistente = document.getElementById('seccion-coevaluador-existente');
+    var secNuevo = document.getElementById('seccion-coevaluador-nuevo');
 
     if (tipo === 'existente') {
       secExistente.classList.remove('hidden');
@@ -515,15 +515,15 @@
     }
   }
 
-  function confirmarAsignarColaborador() {
+  function confirmarAsignarCoevaluador() {
     var liderId = document.getElementById('asignar-colab-lider-id').value;
-    var tipo = document.querySelector('input[name="tipo-colaborador"]:checked').value;
-    var colaboradorUserId = null;
-    var colaboradorData = null;
+    var tipo = document.querySelector('input[name="tipo-coevaluador"]:checked').value;
+    var coevaluadorUserId = null;
+    var coevaluadorData = null;
 
     if (tipo === 'existente') {
-      colaboradorUserId = document.getElementById('select-colaborador-existente').value;
-      if (!colaboradorUserId) {
+      coevaluadorUserId = document.getElementById('select-coevaluador-existente').value;
+      if (!coevaluadorUserId) {
         showToast('Selecciona un usuario.', 'warning');
         return;
       }
@@ -537,34 +537,34 @@
         return;
       }
 
-      colaboradorData = {
+      coevaluadorData = {
         nombre: nombre,
         email: email,
         cargo: cargo
       };
     }
 
-    showToast('Asignando colaborador...', 'info');
+    showToast('Asignando coevaluador...', 'info');
 
     google.script.run
       .withSuccessHandler(function(r) {
         if (r && r.success) {
-          showToast('Colaborador asignado correctamente.', 'success');
-          closeModal('modal-asignar-colaborador');
+          showToast('Coevaluador asignado correctamente.', 'success');
+          closeModal('modal-asignar-coevaluador');
           // Clear cached data to force reload
           if (typeof panelData !== 'undefined') {
             panelData.participantes = null;
           }
           cargarParticipantesPanel();
         } else {
-          showToast(r ? r.error : 'Error al asignar colaborador.', 'error');
+          showToast(r ? r.error : 'Error al asignar coevaluador.', 'error');
         }
       })
       .withFailureHandler(function(err) {
-        console.error('Error asignarColaborador:', err);
-        showToast('Error de conexi&oacute;n al asignar colaborador.', 'error');
+        console.error('Error asignarCoevaluador:', err);
+        showToast('Error de conexi&oacute;n al asignar coevaluador.', 'error');
       })
-      .asignarColaborador(App.token, panelProgramaId, liderId, colaboradorUserId, colaboradorData);
+      .asignarColaborador(App.token, panelProgramaId, liderId, coevaluadorUserId, coevaluadorData);
   }
 
   /* ---- Quitar participante ---- */
@@ -662,8 +662,8 @@
             cargo: getV(r, ['cargo', 'puesto', 'position', 'rol empresa']),
             password: getV(r, ['password', 'contrasena', 'clave', 'pass']),
             rol: getV(r, ['rol', 'role', 'tipo']) || 'lider',
-            colaborador_nombre: getV(r, ['colaborador nombre', 'colaborador', 'colab. nombre', 'colab nombre', 'nombre colaborador']),
-            colaborador_email: getV(r, ['colaborador email', 'colab. email', 'colab email', 'email colaborador'])
+            colaborador_nombre: getV(r, ['coevaluador nombre', 'coevaluador', 'colaborador nombre', 'colaborador', 'colab. nombre', 'colab nombre', 'nombre coevaluador', 'nombre colaborador']),
+            colaborador_email: getV(r, ['coevaluador email', 'colaborador email', 'colab. email', 'colab email', 'email coevaluador', 'email colaborador'])
           };
         }).filter(function(p) { return p.nombre && p.email; });
 

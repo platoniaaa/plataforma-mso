@@ -8,10 +8,10 @@
       <select class="form-control" id="sel-tipo-reporte" onchange="onTipoReporteChange()" style="min-width:200px;" disabled>
         <option value="">Tipo de reporte...</option>
         <option value="consolidado">Informe Ejecutivo Consolidado</option>
-        <option value="individual">Informe Individual de Participante</option>
+        <option value="individual">Informe Individual de L&iacute;der</option>
       </select>
       <select class="form-control hidden" id="sel-participante-reporte" style="min-width:240px;">
-        <option value="">Selecciona participante...</option>
+        <option value="">Selecciona l&iacute;der...</option>
       </select>
     </div>
     <div style="display:flex;gap:8px;">
@@ -352,7 +352,7 @@
   }
 
   function buildIndividualPrompt(prog, part) {
-    return 'Genera el contenido para un INFORME INDIVIDUAL del participante "' + (part ? part.nombre : 'Participante') + '" en el programa "' + prog.nombre + '". ' +
+    return 'Genera el contenido para un INFORME INDIVIDUAL del l\u00edder "' + (part ? part.nombre : 'L\u00edder') + '" en el programa "' + prog.nombre + '". ' +
       'Responde SOLO en JSON con esta estructura exacta: ' +
       '{"lectura_global":"<html lectura global del perfil del l\u00edder>",' +
       '"analisis_competencias":[{"nombre":"...","brecha":"...","interpretacion":"...","evolucion":["...","..."]},{"nombre":"...","brecha":"...","interpretacion":"...","evolucion":["...","..."]},{"nombre":"...","brecha":"...","interpretacion":"...","evolucion":["...","..."]}],' +
@@ -511,7 +511,7 @@
   function renderIndividual(prog, part, ia) {
     reporteCharts.forEach(function(c) { c.destroy(); }); reporteCharts = [];
     var hoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
-    var nombre = part ? part.nombre : 'Participante';
+    var nombre = part ? part.nombre : 'L\u00edder';
 
     // Mock data individual
     var dims = [
@@ -538,7 +538,7 @@
 
     html += '<div class="rpt-context-box"><h3>Contexto</h3><p style="font-size:13px;opacity:0.9;">El presente informe expone los resultados de la evaluaci\u00f3n final del l\u00edder, en el marco del programa de desarrollo basado en la aplicaci\u00f3n pr\u00e1ctica de competencias.</p>';
     html += '<p style="font-size:12px;opacity:0.8;margin-top:10px;">El an\u00e1lisis considera:</p>';
-    html += '<ul><li>Autoevaluaci\u00f3n del l\u00edder</li><li>Coevaluaci\u00f3n de su jefatura directa</li><li>Identificaci\u00f3n de brechas de percepci\u00f3n</li></ul></div>';
+    html += '<ul><li>Autoevaluaci\u00f3n del l\u00edder</li><li>Coevaluaci\u00f3n de sus coevaluadores</li><li>Identificaci\u00f3n de brechas de percepci\u00f3n</li></ul></div>';
 
     html += '<div><div class="rpt-subsection-title">Competencias Evaluadas</div><div class="rpt-competencias">';
     var competencias = ['Delegar con prop\u00f3sito estrat\u00e9gico', 'Conversaciones que desarrollan al l\u00edder', 'Articulaci\u00f3n colaborativa'];

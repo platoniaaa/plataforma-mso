@@ -167,7 +167,7 @@
   }
 
   function activarChk(id) {
-    if (!confirmar('¿Activar este checklist? Estara disponible para observaciones de jefatura.')) return;
+    if (!confirmar('¿Activar este checklist? Estara disponible para observaciones de lideres.')) return;
     google.script.run.withSuccessHandler(function(r) {
       if (r.success) {
         showToast('Checklist activado.', 'success');

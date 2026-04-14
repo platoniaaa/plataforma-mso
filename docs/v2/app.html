@@ -1354,7 +1354,7 @@ function getBadge(estado) {
     'suspendido': 'badge-danger'
   };
   var clase = clases[estado] || 'badge-secondary';
-  var labels = { 'jefatura': 'Lider', 'participante': 'Participante', 'colaborador': 'Colaborador', 'admin': 'Admin', 'lider': 'Lider' };
+  var labels = { 'jefatura': 'L\u00edder', 'participante': 'Coevaluador', 'colaborador': 'Coevaluador', 'admin': 'Admin', 'lider': 'L\u00edder' };
   var label = labels[estado] || estado;
   return '<span class="badge ' + clase + '">' + escapeHtml(label) + '</span>';
 }
@@ -1498,7 +1498,7 @@ function _ejecutarConfirmacion() {
 
       // Mostrar datos del usuario
       document.getElementById('user-name').textContent = App.usuario.nombre;
-      var rolLabel = { admin: 'ADMIN', jefatura: 'LIDER', participante: 'PARTICIPANTE', colaborador: 'COLABORADOR' };
+      var rolLabel = { admin: 'ADMIN', jefatura: 'L\u00cdDER', participante: 'COEVALUADOR', colaborador: 'COEVALUADOR' };
       document.getElementById('user-role').textContent = rolLabel[App.usuario.rol] || App.usuario.rol.toUpperCase();
 
       // Construir menú

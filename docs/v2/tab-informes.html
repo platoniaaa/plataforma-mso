@@ -330,11 +330,11 @@
 <div class="modal-overlay" id="modal-selector-participante">
   <div class="modal" style="max-width: 520px;">
     <div class="modal-header">
-      <h3>Seleccionar Participante</h3>
+      <h3>Seleccionar L&iacute;der</h3>
       <button class="modal-close" onclick="closeModal('modal-selector-participante')">&times;</button>
     </div>
     <div class="modal-body">
-      <p class="text-sm text-muted mb-3">Selecciona el participante para generar su informe individual con IA.</p>
+      <p class="text-sm text-muted mb-3">Selecciona el l&iacute;der para generar su informe individual con IA.</p>
       <input type="text" class="form-control mb-3" id="buscar-participante-informe"
              placeholder="Buscar por nombre o email..." oninput="window.filtrarParticipantesInforme &amp;&amp; window.filtrarParticipantesInforme()">
       <div id="lista-participantes-informe" style="max-height: 350px; overflow-y: auto;">
@@ -650,7 +650,7 @@
 
     var part = participantesInforme.find(function(p) { return (p.id || p.usuario_id || p.user_id) === participanteId; });
     if (!part) {
-      showToast('No se encontr\u00f3 el participante seleccionado.', 'error');
+      showToast('No se encontr\u00f3 el l\u00edder seleccionado.', 'error');
       return;
     }
 
@@ -670,7 +670,7 @@
     var progress = document.getElementById('informe-ia-progress');
     var loadText = document.getElementById('informe-ia-loading-text');
     progress.style.width = '15%';
-    loadText.textContent = 'Recopilando datos del participante...';
+    loadText.textContent = 'Recopilando datos del l\u00edder...';
     setTimeout(function() { progress.style.width = '40%'; loadText.textContent = 'Consultando IA...'; }, 800);
 
     // Primero obtener datos reales del participante
@@ -718,7 +718,7 @@
       .withFailureHandler(function() {
         document.getElementById('informe-ia-loading').classList.add('hidden');
         progress.style.width = '0%';
-        showToast('Error al obtener datos del participante', 'error');
+        showToast('Error al obtener datos del l\u00edder', 'error');
       })
       .obtenerDatosInformeIndividual(App.token, panelProgramaId, participanteId, informeIAMomento);
   }
@@ -826,11 +826,11 @@
           ['Fecha termino', datos.programa.fecha_termino || ''],
           ['Objetivo', datos.programa.objetivo || ''],
           [],
-          ['Total Lideres', datos.totalLideres],
-          ['Total Colaboradores', datos.totalColaboradores],
+          ['Total L\u00edderes', datos.totalLideres],
+          ['Total Coevaluadores', datos.totalColaboradores],
           ['Total Respuestas', datos.totalRespuestas],
-          ['Lideres con Autoevaluacion', datos.lideresConAuto],
-          ['Colaboradores con Coevaluacion', datos.colabConCo],
+          ['L\u00edderes con Autoevaluaci\u00f3n', datos.lideresConAuto],
+          ['Coevaluadores con Coevaluaci\u00f3n', datos.colabConCo],
           [],
           ['Fecha exportacion', hoy]
         ];
@@ -892,7 +892,7 @@
     return 'Eres un consultor experto en desarrollo de liderazgo. Genera un ' + tituloInforme + ' del programa "' + prog.nombre + '" basandote en los DATOS REALES siguientes.\n\n' +
       'DATOS DEL PROGRAMA:\n' + dataJson + '\n\n' +
       'Los valores van de 1 a 4 (1=no aplica, 2=aplica con guia, 3=aplica consistente, 4=es referente). ' +
-      'brecha_pre/post = autopercepcion - percepcion de colaboradores. Valores positivos indican sobrestimacion. Null = sin dato.\n\n' +
+      'brecha_pre/post = autopercepcion - percepcion de coevaluadores. Valores positivos indican sobrestimacion. Null = sin dato.\n\n' +
       instrMomento + '\n\n' +
       'Responde SOLO con JSON (sin markdown ni backticks) con esta estructura exacta:\n' +
       '{"intro":"<html breve describiendo el informe citando nombre del programa y numero de lideres>",' +
@@ -917,7 +917,7 @@
 
     return 'Eres un coach ejecutivo. Genera un ' + tituloInforme + ' para "' + nombre + '" en el programa "' + prog.nombre + '" basandote en los DATOS REALES siguientes.\n\n' +
       'DATOS DEL PARTICIPANTE:\n' + dataJson + '\n\n' +
-      'Los valores van de 1 a 4. auto_pre/post = autoevaluacion del lider. co_pre/post = evaluacion de sus colaboradores. ' +
+      'Los valores van de 1 a 4. auto_pre/post = autoevaluacion del lider. co_pre/post = evaluacion de sus coevaluadores. ' +
       'brecha = auto - co (positivo = se sobrevalora). Null = sin dato.\n\n' +
       instrMomento + '\n\n' +
       'Responde SOLO con JSON (sin markdown ni backticks) con esta estructura exacta:\n' +
@@ -1340,7 +1340,7 @@
       : 'El presente informe expone los resultados de la evaluacion PRE (linea base) del lider, al inicio del programa. Sirve como diagnostico inicial para identificar focos de desarrollo.';
     html += '<div class="rpt-context-box"><h3>Contexto</h3><p style="font-size:13px;opacity:0.9;">' + ctxIntro + '</p>';
     html += '<p style="font-size:12px;opacity:0.8;margin-top:10px;">El analisis considera:</p>';
-    html += '<ul><li>Autoevaluacion del lider</li><li>Coevaluacion de sus colaboradores</li><li>Identificacion de brechas de percepcion</li></ul></div>';
+    html += '<ul><li>Autoevaluacion del lider</li><li>Coevaluacion de sus coevaluadores</li><li>Identificacion de brechas de percepcion</li></ul></div>';
 
     html += '<div><div class="rpt-subsection-title">Competencias Evaluadas</div><div class="rpt-competencias">';
     // Competencias reales del programa (no hardcodeadas)
