@@ -153,6 +153,44 @@ var backendFunctions = {
     return { success: true };
   },
 
+  // ============================================
+  // PASSWORD RESET (Edge Functions)
+  // ============================================
+  solicitarResetPassword: async function(email) {
+    try {
+      var r = await fetch(SUPABASE_URL + '/functions/v1/password-reset-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'apikey': SUPABASE_KEY
+        },
+        body: JSON.stringify({ email: email })
+      });
+      return await r.json();
+    } catch (e) {
+      // Incluso ante error de red, damos el mismo mensaje para no filtrar nada
+      return { success: true, message: 'Si el email esta registrado, recibiras un link en tu bandeja. Revisa tambien tu carpeta de spam.' };
+    }
+  },
+
+  confirmarResetPassword: async function(token, nuevaPassword) {
+    try {
+      var r = await fetch(SUPABASE_URL + '/functions/v1/password-reset-confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'apikey': SUPABASE_KEY
+        },
+        body: JSON.stringify({ token: token, new_password: nuevaPassword })
+      });
+      return await r.json();
+    } catch (e) {
+      return { success: false, error: 'Error de conexion. Intenta nuevamente.' };
+    }
+  },
+
   registrarUsuario: async function(datos) {
     try {
       var result = await _supabase.auth.signUp({

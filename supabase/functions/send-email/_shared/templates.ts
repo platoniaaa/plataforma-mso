@@ -58,6 +58,8 @@ export interface TemplateVars {
   url_login?: string;
   asunto_manual?: string;
   cuerpo_manual_html?: string;
+  reset_url?: string;
+  fecha_cambio?: string;
 }
 
 export interface RenderedTemplate {
@@ -128,6 +130,30 @@ export function renderTemplate(tipo: string, vars: TemplateVars, urlLogin: strin
       const asunto = v.asunto_manual || "Comunicacion del programa";
       const body = v.cuerpo_manual_html || "";
       return { asunto, html: baseLayout({ title: asunto, bodyHtml: body, ctaLabel: "Ingresar a la plataforma", ctaUrl: v.url_login }) };
+    }
+
+    case "reset_request": {
+      const asunto = "Restablecimiento de contrasena - MSO TPT";
+      const body = `
+        <p style="font-size:15px;line-height:1.6;">Hola <strong>${v.nombre || ""}</strong>,</p>
+        <p style="font-size:14px;line-height:1.6;color:#4A5568;">Recibimos una solicitud para restablecer tu contrasena en la plataforma MSO TPT.</p>
+        <p style="font-size:14px;line-height:1.6;color:#4A5568;">Haz click en el boton a continuacion para elegir una nueva contrasena. <strong>Este link expira en 1 hora</strong> y solo puede usarse una vez.</p>
+        <p style="font-size:13px;line-height:1.6;color:#718096;margin-top:24px;"><strong>Si no fuiste tu</strong> quien solicito este cambio, puedes ignorar este correo. Tu cuenta sigue segura y tu contrasena no ha cambiado.</p>
+      `;
+      return { asunto, html: baseLayout({ title: "Restablecer contrasena", bodyHtml: body, ctaLabel: "Restablecer contrasena", ctaUrl: v.reset_url || "#" }) };
+    }
+
+    case "reset_confirmacion": {
+      const asunto = "Tu contrasena fue actualizada - MSO TPT";
+      const body = `
+        <p style="font-size:15px;line-height:1.6;">Hola <strong>${v.nombre || ""}</strong>,</p>
+        <p style="font-size:14px;line-height:1.6;color:#4A5568;">Tu contrasena en la plataforma MSO TPT fue actualizada exitosamente${v.fecha_cambio ? ` el <strong>${v.fecha_cambio}</strong>` : ""}.</p>
+        <p style="font-size:14px;line-height:1.6;color:#4A5568;">Ya puedes iniciar sesion con tu nueva contrasena.</p>
+        <div style="background:#FEF3C7;border-left:4px solid #F59E0B;padding:12px 16px;border-radius:6px;margin:20px 0;">
+          <p style="font-size:13px;color:#92400E;margin:0;"><strong>&#9888; Si no fuiste tu</strong> quien cambio la contrasena, contacta al equipo MSO <strong>urgentemente</strong>.</p>
+        </div>
+      `;
+      return { asunto, html: baseLayout({ title: "Contrasena actualizada", bodyHtml: body, ctaLabel: "Iniciar sesion", ctaUrl: v.url_login }) };
     }
 
     default:

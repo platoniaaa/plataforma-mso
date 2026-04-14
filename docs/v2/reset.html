@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Nueva contrase&ntilde;a - MSO TPT</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    :root {
+      --color-primario: #3D0C4B;
+      --color-secundario: #F58220;
+      --color-texto: #2D3748;
+      --color-texto-sec: #718096;
+      --color-borde: #E2E8F0;
+      --color-exito: #27AE60;
+      --color-error: #E74C3C;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', Arial, sans-serif; color: var(--color-texto); }
+    .hidden { display: none !important; }
+    .auth-container {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #3D0C4B 0%, #6B1D7B 50%, #F58220 100%); padding: 20px;
+    }
+    .auth-card {
+      background: white; border-radius: 12px; padding: 40px; width: 100%; max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .auth-logo { text-align: center; margin-bottom: 24px; }
+    .auth-logo p { color: var(--color-texto-sec); font-size: 13px; margin-top: 4px; }
+    h2 { color: var(--color-primario); font-size: 20px; font-weight: 600; margin-bottom: 8px; text-align: center; }
+    .subtitulo { color: var(--color-texto-sec); font-size: 13px; text-align: center; margin-bottom: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .form-control {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--color-borde);
+      border-radius: 8px; font-size: 14px; font-family: 'Inter', Arial, sans-serif;
+      background: white; color: var(--color-texto);
+    }
+    .form-control:focus { outline: none; border-color: var(--color-secundario); box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.15); }
+    .password-wrapper { position: relative; }
+    .password-toggle {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; padding: 4px; color: #718096;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; border: none; gap: 8px;
+    }
+    .btn-primary { background: var(--color-secundario); color: white; }
+    .btn-primary:hover { background: #E0741A; }
+    .btn-block { width: 100%; }
+    .btn-lg { padding: 14px 20px; font-size: 15px; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+    .alert-success { background: #D1FAE5; color: #065F46; border-left: 4px solid #059669; }
+    .alert-error { background: #FEE2E2; color: #991B1B; border-left: 4px solid #DC2626; }
+    .text-link { color: var(--color-secundario); text-decoration: none; font-size: 13px; }
+    .text-link:hover { text-decoration: underline; }
+    .text-center { text-align: center; }
+    .mt-3 { margin-top: 16px; }
+    .hint { font-size: 11px; color: var(--color-texto-sec); margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <img src="https://lh3.googleusercontent.com/d/1F6ndRSX6rNraFsdVHUV6IfDw0o8uK7mf" alt="MSO Chile" style="max-width:180px;margin:0 auto 12px;display:block;">
+        <p>Transferencia al Puesto de Trabajo</p>
+      </div>
+
+      <div id="ui-missing-token" class="hidden">
+        <h2>Link invalido</h2>
+        <p class="subtitulo">El link no contiene un token valido. Solicita uno nuevo desde la pantalla de recuperacion.</p>
+        <div class="text-center">
+          <a href="forgot.html" class="btn btn-primary btn-block btn-lg" style="text-decoration:none;">Solicitar nuevo link</a>
+        </div>
+      </div>
+
+      <div id="ui-form">
+        <h2>Elige tu nueva contrase&ntilde;a</h2>
+        <p class="subtitulo">Minimo 6 caracteres. Despues podras iniciar sesion con ella.</p>
+
+        <div id="alert-container"></div>
+
+        <form id="reset-form" onsubmit="handleReset(event)">
+          <div class="form-group">
+            <label for="password">Nueva contrase&ntilde;a</label>
+            <div class="password-wrapper">
+              <input type="password" id="password" class="form-control" placeholder="Minimo 6 caracteres" required minlength="6" style="padding-right:40px;">
+              <button type="button" class="password-toggle" onclick="togglePw('password', this)" aria-label="Mostrar/ocultar">
+                <svg class="eye-show" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-hide hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="password2">Confirmar contrase&ntilde;a</label>
+            <div class="password-wrapper">
+              <input type="password" id="password2" class="form-control" placeholder="Repite la nueva contrase&ntilde;a" required minlength="6" style="padding-right:40px;">
+              <button type="button" class="password-toggle" onclick="togglePw('password2', this)" aria-label="Mostrar/ocultar">
+                <svg class="eye-show" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-hide hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+            <p class="hint">El link expira 1 hora despues de solicitarlo y solo puede usarse una vez.</p>
+          </div>
+
+          <button type="submit" id="btn-reset" class="btn btn-primary btn-block btn-lg">
+            Actualizar contrase&ntilde;a
+          </button>
+        </form>
+
+        <div class="text-center mt-3">
+          <a href="index.html" class="text-link">&larr; Volver al inicio de sesi&oacute;n</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+  <script>
+    function getQueryParam(name) {
+      var m = new RegExp('[?&]' + name + '=([^&]+)').exec(window.location.search);
+      return m ? decodeURIComponent(m[1]) : null;
+    }
+
+    var resetToken = getQueryParam('token');
+    if (!resetToken) {
+      document.getElementById('ui-form').classList.add('hidden');
+      document.getElementById('ui-missing-token').classList.remove('hidden');
+    }
+
+    function togglePw(id, btn) {
+      var input = document.getElementById(id);
+      var show = btn.querySelector('.eye-show');
+      var hide = btn.querySelector('.eye-hide');
+      if (input.type === 'password') {
+        input.type = 'text';
+        show.classList.add('hidden');
+        hide.classList.remove('hidden');
+      } else {
+        input.type = 'password';
+        show.classList.remove('hidden');
+        hide.classList.add('hidden');
+      }
+    }
+
+    function showAlert(msg, type) {
+      var c = document.getElementById('alert-container');
+      c.innerHTML = '<div class="alert alert-' + type + '">' + msg + '</div>';
+    }
+    function clearAlert() { document.getElementById('alert-container').innerHTML = ''; }
+
+    function handleReset(e) {
+      e.preventDefault();
+      clearAlert();
+
+      var p1 = document.getElementById('password').value;
+      var p2 = document.getElementById('password2').value;
+
+      if (p1.length < 6) { showAlert('La contrasena debe tener al menos 6 caracteres.', 'error'); return; }
+      if (p1 !== p2) { showAlert('Las contrasenas no coinciden.', 'error'); return; }
+
+      var btn = document.getElementById('btn-reset');
+      btn.disabled = true;
+      btn.textContent = 'Actualizando...';
+
+      google.script.run
+        .withSuccessHandler(function(r) {
+          btn.disabled = false;
+          btn.textContent = 'Actualizar contrasena';
+          if (r && r.success) {
+            // Redirigir al login con banner de confirmacion
+            window.location.href = 'index.html?reset=ok';
+          } else {
+            showAlert((r && r.error) || 'No se pudo actualizar la contrasena.', 'error');
+          }
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.textContent = 'Actualizar contrasena';
+          showAlert('Error de conexion. Intenta nuevamente.', 'error');
+        })
+        .confirmarResetPassword(resetToken, p1);
+    }
+  </script>
+</body>
+</html>
