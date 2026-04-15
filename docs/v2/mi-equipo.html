@@ -81,7 +81,7 @@
 
       if (participantes.length === 0) {
         document.getElementById('equipo-lista').innerHTML =
-          '<div class="empty-state"><p>No tienes coevaluadores asignados en este programa.</p></div>';
+          '<div class="empty-state"><p>No tienes colaboradores asignados en este programa.</p></div>';
         return;
       }
 
@@ -161,7 +161,6 @@
             '</div>' +
             '<p class="text-xs text-muted mb-3">Ultima observacion: ' + ultimaObs + '</p>' +
             '<div style="display:flex;gap:8px;">' +
-              '<button class="btn btn-sm btn-outline" style="flex:1;" onclick="irAObservar(\'' + progId + '\')">Observar</button>' +
               '<button class="btn btn-sm btn-secondary" style="flex:1;" onclick="irAFeedback(\'' + progId + '\', \'' + p.id + '\')">Dar Feedback</button>' +
             '</div>' +
           '</div>' +

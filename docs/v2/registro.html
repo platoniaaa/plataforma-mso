@@ -1282,7 +1282,7 @@ function getBadge(estado) {
     'suspendido': 'badge-danger'
   };
   var clase = clases[estado] || 'badge-secondary';
-  var labels = { 'jefatura': 'L\u00edder', 'participante': 'Coevaluador', 'colaborador': 'Coevaluador', 'admin': 'Admin', 'lider': 'L\u00edder' };
+  var labels = { 'jefatura': 'L\u00edder', 'participante': 'Colaborador', 'colaborador': 'Colaborador', 'admin': 'Admin', 'lider': 'L\u00edder' };
   var label = labels[estado] || estado;
   return '<span class="badge ' + clase + '">' + escapeHtml(label) + '</span>';
 }

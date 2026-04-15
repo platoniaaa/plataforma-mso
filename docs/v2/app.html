@@ -1354,7 +1354,7 @@ function getBadge(estado) {
     'suspendido': 'badge-danger'
   };
   var clase = clases[estado] || 'badge-secondary';
-  var labels = { 'jefatura': 'L\u00edder', 'participante': 'Coevaluador', 'colaborador': 'Coevaluador', 'admin': 'Admin', 'lider': 'L\u00edder' };
+  var labels = { 'jefatura': 'L\u00edder', 'participante': 'Colaborador', 'colaborador': 'Colaborador', 'admin': 'Admin', 'lider': 'L\u00edder' };
   var label = labels[estado] || estado;
   return '<span class="badge ' + clase + '">' + escapeHtml(label) + '</span>';
 }
@@ -1439,7 +1439,6 @@ function _ejecutarConfirmacion() {
         { id: 'clientes', label: 'Clientes', icon: 'building' },
         { id: 'programas', label: 'Programas', icon: 'clipboard' },
         { id: 'usuarios', label: 'Usuarios', icon: 'users' },
-        { id: 'hallazgos', label: 'Hallazgos', icon: 'lightbulb' },
         { id: 'gestion-observaciones', label: 'Incidencias', icon: 'alert' },
         { id: 'correos', label: 'Correos', icon: 'email' }
       ],
@@ -1451,16 +1450,14 @@ function _ejecutarConfirmacion() {
         { id: 'reportar', label: 'Incidencias', icon: 'alert' }
       ],
       participante: [
-        { id: 'mis-actividades', label: 'Mis Actividades', icon: 'calendar' },
         { id: 'mis-encuestas', label: 'Mis Encuestas', icon: 'survey' },
         { id: 'mis-recursos', label: 'Archivos y Recursos', icon: 'file' },
-        { id: 'mi-progreso', label: 'Mi Progreso', icon: 'chart' },
-        { id: 'feedback-recibido', label: 'Feedback Recibido', icon: 'message' },
         { id: 'reportar', label: 'Incidencias', icon: 'alert' }
       ],
       colaborador: [
         { id: 'mis-encuestas', label: 'Mis Encuestas', icon: 'survey' },
-        { id: 'mis-recursos', label: 'Archivos y Recursos', icon: 'file' }
+        { id: 'mis-recursos', label: 'Archivos y Recursos', icon: 'file' },
+        { id: 'reportar', label: 'Incidencias', icon: 'alert' }
       ]
     };
 
@@ -1498,7 +1495,7 @@ function _ejecutarConfirmacion() {
 
       // Mostrar datos del usuario
       document.getElementById('user-name').textContent = App.usuario.nombre;
-      var rolLabel = { admin: 'ADMIN', jefatura: 'L\u00cdDER', participante: 'COEVALUADOR', colaborador: 'COEVALUADOR' };
+      var rolLabel = { admin: 'ADMIN', jefatura: 'L\u00cdDER', participante: 'COLABORADOR', colaborador: 'COLABORADOR' };
       document.getElementById('user-role').textContent = rolLabel[App.usuario.rol] || App.usuario.rol.toUpperCase();
 
       // Construir menú

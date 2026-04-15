@@ -6,7 +6,7 @@
         <option value="">Selecciona un programa...</option>
       </select>
       <select class="form-control" id="sel-participante-fbj" onchange="onParticipanteFeedbackChange()" style="min-width:250px;" disabled>
-        <option value="">Selecciona coevaluador...</option>
+        <option value="">Selecciona colaborador...</option>
       </select>
     </div>
   </div>
@@ -22,11 +22,11 @@
         <form id="form-feedback-jef">
           <div class="form-group">
             <label>Fortaleza observada *</label>
-            <textarea name="fortaleza" class="form-control" required placeholder="Describe las fortalezas observadas en el coevaluador..."></textarea>
+            <textarea name="fortaleza" class="form-control" required placeholder="Describe las fortalezas observadas en el colaborador..."></textarea>
           </div>
           <div class="form-group">
             <label>Aspecto a reforzar *</label>
-            <textarea name="aspecto_reforzar" class="form-control" required placeholder="Describe los aspectos que el coevaluador debe reforzar..."></textarea>
+            <textarea name="aspecto_reforzar" class="form-control" required placeholder="Describe los aspectos que el colaborador debe reforzar..."></textarea>
           </div>
           <div class="form-group">
             <label>Recomendaci&oacute;n *</label>
@@ -52,7 +52,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;margin-bottom:16px;opacity:0.4;">
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
       </svg>
-      <p>Selecciona un programa y un coevaluador para registrar feedback.</p>
+      <p>Selecciona un programa y un colaborador para registrar feedback.</p>
     </div>
   </div>
 
@@ -93,7 +93,7 @@
   function onProgramaFeedbackChange() {
     var progId = document.getElementById('sel-programa-fbj').value;
     var selPart = document.getElementById('sel-participante-fbj');
-    selPart.innerHTML = '<option value="">Selecciona coevaluador...</option>';
+    selPart.innerHTML = '<option value="">Selecciona colaborador...</option>';
     selPart.disabled = !progId;
     document.getElementById('feedback-form-container').classList.add('hidden');
     document.getElementById('feedback-empty').classList.remove('hidden');
