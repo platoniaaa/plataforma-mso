@@ -104,6 +104,51 @@ serve(async (req) => {
           programa = { id: p.id, nombre: p.nombre };
         }
       }
+    } else if (body.evento === "notif_lider_coeval") {
+      // Notificar al lider asignado cuando un colaborador suyo completa una coevaluacion
+      if (!body.usuario_id) return json({ success: false, error: "usuario_id (colaborador) requerido" }, 400);
+      if (!body.encuesta_id) return json({ success: false, error: "encuesta_id requerido" }, 400);
+
+      // Resolver programa_id desde encuesta
+      const enc = await db.from("encuestas").select("id, programa_id, programas(id, nombre)").eq("id", body.encuesta_id).single();
+      if (enc.error || !enc.data) return json({ success: false, error: "Encuesta no encontrada" }, 404);
+      if (!programa) {
+        const p = Array.isArray((enc.data as { programas: { id: string; nombre: string } | { id: string; nombre: string }[] }).programas)
+          ? ((enc.data as { programas: { id: string; nombre: string }[] }).programas[0])
+          : ((enc.data as { programas: { id: string; nombre: string } }).programas);
+        programa = { id: p.id, nombre: p.nombre };
+      }
+
+      // Lider asignado al colaborador en este programa
+      const pp = await db
+        .from("participantes_programa")
+        .select("lider_id")
+        .eq("usuario_id", body.usuario_id)
+        .eq("programa_id", programa.id)
+        .maybeSingle();
+      if (!pp.data || !pp.data.lider_id) {
+        return json({ success: true, enviados: 0, mensaje: "Colaborador sin lider asignado, no hay a quien notificar" });
+      }
+
+      // Datos del lider y del colaborador
+      const lider = await db.from("usuarios").select("id, nombre, email").eq("id", pp.data.lider_id).single();
+      if (lider.error || !lider.data || !lider.data.email) {
+        return json({ success: true, enviados: 0, mensaje: "Lider sin email valido" });
+      }
+      const colab = await db.from("usuarios").select("nombre").eq("id", body.usuario_id).single();
+      const colabNombre = colab.data ? colab.data.nombre : "";
+
+      tipoTemplate = "notif_lider_coeval";
+      extraVars.lider_nombre = lider.data.nombre;
+      // Pasamos colaborador_nombre via destinatario para que el template lo capture
+      destinatarios = [{
+        usuario_id: lider.data.id,
+        email: lider.data.email,
+        nombre: lider.data.nombre,
+        lider_nombre: colabNombre, // hack: reusamos el slot lider_nombre para pasar el colaborador
+      }];
+      // override: el template real necesita colaborador_nombre, lo seteamos abajo con un trick
+      (extraVars as TemplateVars & { colaborador_nombre?: string }).colaborador_nombre = colabNombre;
     } else if (body.evento === "recordatorio_batch") {
       // Ejecutado por cron: busca encuestas activas con cierre en 1 o 3 dias
       return await handleRecordatorioBatch(db);
@@ -160,6 +205,7 @@ serve(async (req) => {
         programa: programa?.nombre || "",
         fecha_cierre: extraVars.fecha_cierre || "",
         lider_nombre: d.lider_nombre || "",
+        colaborador_nombre: (extraVars as TemplateVars).colaborador_nombre || "",
         asunto_manual: extraVars.asunto_manual,
         cuerpo_manual_html: extraVars.cuerpo_manual_html,
       };

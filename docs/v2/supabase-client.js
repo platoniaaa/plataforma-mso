@@ -909,8 +909,12 @@ var backendFunctions = {
       console.error('[enviarRespuestas] error', up.error);
       return { success: false, error: up.error.message };
     }
-    // Disparar correo de confirmacion (fire-and-forget)
+    // Disparar correo de confirmacion al usuario que respondio (fire-and-forget)
     _fireEmail({ evento: 'confirmacion', usuario_id: userId, encuesta_id: encuestaId });
+    // Si fue una coevaluacion, ademas notificar al lider asignado
+    if (tipoCuest === 'coevaluacion') {
+      _fireEmail({ evento: 'notif_lider_coeval', usuario_id: userId, encuesta_id: encuestaId });
+    }
     return { success: true, data: { message: 'Respuestas registradas.' } };
   },
 

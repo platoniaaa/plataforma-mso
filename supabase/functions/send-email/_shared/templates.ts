@@ -54,6 +54,7 @@ export interface TemplateVars {
   programa?: string;
   fecha_cierre?: string;
   lider_nombre?: string;
+  colaborador_nombre?: string;
   dias?: string;
   url_login?: string;
   asunto_manual?: string;
@@ -130,6 +131,16 @@ export function renderTemplate(tipo: string, vars: TemplateVars, urlLogin: strin
       const asunto = v.asunto_manual || "Comunicacion del programa";
       const body = v.cuerpo_manual_html || "";
       return { asunto, html: baseLayout({ title: asunto, bodyHtml: body, ctaLabel: "Ingresar a la plataforma", ctaUrl: v.url_login }) };
+    }
+
+    case "notif_lider_coeval": {
+      const asunto = "Tu colaborador completo la coevaluacion - " + (v.programa || "MSO TPT");
+      const body = `
+        <p style="font-size:15px;line-height:1.6;">Hola <strong>${v.nombre || "lider"}</strong>,</p>
+        <p style="font-size:14px;line-height:1.6;color:#4A5568;">Te informamos que tu colaborador <strong>${v.colaborador_nombre || ""}</strong> acaba de completar la coevaluacion en el programa <strong>${v.programa || ""}</strong>.</p>
+        <p style="font-size:14px;line-height:1.6;color:#4A5568;">Cuando todos tus colaboradores hayan respondido y la medicion se cierre, podras revisar tu informe individual con el analisis de brechas.</p>
+      `;
+      return { asunto, html: baseLayout({ title: "Coevaluacion completada", bodyHtml: body, ctaLabel: "Ingresar a la plataforma", ctaUrl: v.url_login }) };
     }
 
     case "reset_request": {

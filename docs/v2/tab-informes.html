@@ -232,45 +232,45 @@
     </div></div>
 
     <div class="flex-between mb-4">
-      <h3 class="informes-section-title">Informes PRE <span class="badge badge-info" style="font-size:10px;">LINEA BASE</span></h3>
+      <h3 class="informes-section-title">Informes Iniciales <span class="badge badge-info" style="font-size:10px;">L&Iacute;NEA BASE</span></h3>
     </div>
-    <p class="text-muted text-sm mb-3">Diagn&oacute;stico inicial del programa. Disponible una vez cerradas las encuestas Auto PRE y Coeval PRE.</p>
+    <p class="text-muted text-sm mb-3">Diagn&oacute;stico inicial del programa. Disponible una vez cerradas las encuestas Auto Inicial y Coeval Inicial.</p>
 
     <div class="informes-actions-grid">
       <div class="informe-action-card" id="card-individual-pre" onclick="window._informeIndividualPre &amp;&amp; window._informeIndividualPre()">
         <div class="action-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
-        <div class="action-title">Informe Individual PRE</div>
-        <div class="action-desc">L&iacute;nea base de un l&iacute;der: promedios PRE, brecha inicial y focos a desarrollar.</div>
+        <div class="action-title">Informe Individual Inicial</div>
+        <div class="action-desc">L&iacute;nea base de un l&iacute;der: promedios iniciales, brecha y focos a desarrollar.</div>
       </div>
       <div class="informe-action-card" id="card-consolidado-pre" onclick="window._informeConsolidadoPre &amp;&amp; window._informeConsolidadoPre()">
         <div class="action-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         </div>
-        <div class="action-title">Informe Consolidado PRE</div>
-        <div class="action-desc">Diagn&oacute;stico grupal inicial: promedios por competencia y brechas PRE.</div>
+        <div class="action-title">Informe Consolidado Inicial</div>
+        <div class="action-desc">Diagn&oacute;stico grupal inicial: promedios por competencia y brechas iniciales.</div>
       </div>
     </div>
 
     <div class="flex-between mb-4" style="margin-top:32px;">
-      <h3 class="informes-section-title">Informes POST <span class="badge badge-success" style="font-size:10px;">EVOLUCI&Oacute;N</span></h3>
+      <h3 class="informes-section-title">Informes Finales <span class="badge badge-success" style="font-size:10px;">EVOLUCI&Oacute;N</span></h3>
     </div>
-    <p class="text-muted text-sm mb-3">Informe completo con evoluci&oacute;n PRE&rarr;POST. Requiere que ya existan datos PRE cargados.</p>
+    <p class="text-muted text-sm mb-3">Informe completo con evoluci&oacute;n Inicial&rarr;Final. Requiere que ya existan datos iniciales cargados.</p>
 
     <div class="informes-actions-grid">
       <div class="informe-action-card" id="card-individual-post" onclick="window._informeIndividualPost &amp;&amp; window._informeIndividualPost()">
         <div class="action-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
-        <div class="action-title">Informe Individual POST</div>
-        <div class="action-desc">Informe completo: PRE, POST, evoluci&oacute;n y cierre de brecha.</div>
+        <div class="action-title">Informe Individual Final</div>
+        <div class="action-desc">Informe completo: Inicial, Final, evoluci&oacute;n y cierre de brecha.</div>
       </div>
       <div class="informe-action-card" id="card-consolidado-post" onclick="window._informeConsolidadoPost &amp;&amp; window._informeConsolidadoPost()">
         <div class="action-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         </div>
-        <div class="action-title">Informe Consolidado POST</div>
+        <div class="action-title">Informe Consolidado Final</div>
         <div class="action-desc">Informe global con evoluci&oacute;n grupal, ranking y cierre de brechas.</div>
       </div>
     </div>
@@ -419,7 +419,7 @@
       '</div>';
     }
     var grid = document.getElementById('informes-disponibilidad-grid');
-    grid.innerHTML = item('Auto PRE', disp.pre_auto) + item('Coeval PRE', disp.pre_co) + item('Auto POST', disp.post_auto) + item('Coeval POST', disp.post_co);
+    grid.innerHTML = item('Auto Inicial', disp.pre_auto) + item('Coeval Inicial', disp.pre_co) + item('Auto Final', disp.post_auto) + item('Coeval Final', disp.post_co);
     document.getElementById('informes-disponibilidad').classList.remove('hidden');
   }
 
@@ -456,8 +456,8 @@
         card.setAttribute('data-gated', msg);
       }
     }
-    var msgPre = preOk ? '' : 'Necesitas crear y activar al menos una encuesta PRE';
-    var msgPost = postOk ? '' : 'Necesitas crear y activar al menos una encuesta POST';
+    var msgPre = preOk ? '' : 'Necesitas crear y activar al menos una encuesta Inicial';
+    var msgPost = postOk ? '' : 'Necesitas crear y activar al menos una encuesta Final';
     setCardGate('card-individual-pre', preOk, msgPre);
     setCardGate('card-consolidado-pre', preOk, msgPre);
     setCardGate('card-individual-post', postOk, msgPost);
@@ -808,7 +808,7 @@
     }
     showToast('Preparando exportaci\u00f3n de datos...', 'info');
 
-    // Obtener datos POST del consolidado para tener la matriz completa
+    // Obtener datos Final del consolidado para tener la matriz completa
     google.script.run
       .withSuccessHandler(function(rPost) {
         var datos = (rPost && rPost.success) ? rPost.data : null;
@@ -836,8 +836,8 @@
         ];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'Resumen');
 
-        // Hoja 2: Competencias con promedios PRE y POST
-        var comps = [['Competencia', 'Foco Desarrollo', 'Auto PRE', 'Coeval PRE', 'Brecha PRE', 'Auto POST', 'Coeval POST', 'Brecha POST', 'Evolucion Auto', 'Evolucion Coeval', 'Cierre Brecha']];
+        // Hoja 2: Competencias con promedios Inicial y Final
+        var comps = [['Competencia', 'Foco Desarrollo', 'Auto Inicial', 'Coeval Inicial', 'Brecha Inicial', 'Auto Final', 'Coeval Final', 'Brecha Final', 'Evolucion Auto', 'Evolucion Coeval', 'Cierre Brecha']];
         (datos.competencias || []).forEach(function(c) {
           comps.push([
             c.nombre || '',
@@ -884,10 +884,10 @@
     var dataJson = datos ? JSON.stringify(datos, null, 2) : '{}';
     var momento = (datos && datos.momento) || 'post';
     var esPost = momento === 'post';
-    var tituloInforme = esPost ? 'INFORME EJECUTIVO CONSOLIDADO POST' : 'INFORME DIAGNOSTICO CONSOLIDADO PRE (LINEA BASE)';
+    var tituloInforme = esPost ? 'INFORME EJECUTIVO CONSOLIDADO FINAL' : 'INFORME DIAGN\u00d3STICO CONSOLIDADO INICIAL (L\u00cdNEA BASE)';
     var instrMomento = esPost
-      ? 'Este es un informe POST: analiza la EVOLUCION del programa comparando PRE (auto_pre, co_pre) vs POST (auto_post, co_post). Cita evolucion_auto, evolucion_co y cierre_brecha. Si sinPreHistorico=true, NO inventes evolucion: indica que no hay linea base PRE para comparar y analiza solo los datos POST.'
-      : 'Este es un informe PRE de linea base: analiza SOLO los datos PRE (auto_pre, co_pre, brecha_pre). NO menciones evolucion, POST, ni cierre de brecha porque no existen todavia. El objetivo es diagnosticar la situacion inicial y definir focos de desarrollo.';
+      ? 'Este es un informe Final: analiza la EVOLUCION del programa comparando Inicial (auto_pre, co_pre) vs Final (auto_post, co_post). Cita evolucion_auto, evolucion_co y cierre_brecha. Si sinPreHistorico=true, NO inventes evolucion: indica que no hay linea base Inicial para comparar y analiza solo los datos Final.'
+      : 'Este es un informe Inicial de linea base: analiza SOLO los datos Inicial (auto_pre, co_pre, brecha_pre). NO menciones evolucion, Final, ni cierre de brecha porque no existen todavia. El objetivo es diagnosticar la situacion inicial y definir focos de desarrollo.';
 
     return 'Eres un consultor experto en desarrollo de liderazgo. Genera un ' + tituloInforme + ' del programa "' + prog.nombre + '" basandote en los DATOS REALES siguientes.\n\n' +
       'DATOS DEL PROGRAMA:\n' + dataJson + '\n\n' +
@@ -910,10 +910,10 @@
     var nombre = part ? (part.nombre_completo || part.nombre || 'Participante') : 'Participante';
     var momento = (datos && datos.momento) || 'post';
     var esPost = momento === 'post';
-    var tituloInforme = esPost ? 'INFORME INDIVIDUAL POST (completo con evolucion)' : 'INFORME INDIVIDUAL PRE (linea base / diagnostico inicial)';
+    var tituloInforme = esPost ? 'INFORME INDIVIDUAL FINAL (completo con evolucion)' : 'INFORME INDIVIDUAL INICIAL (linea base / diagnostico inicial)';
     var instrMomento = esPost
-      ? 'Este es un informe POST: analiza la EVOLUCION del lider comparando PRE vs POST (evolucion_auto, evolucion_co, cierre_brecha). Si sinPreHistorico=true, indica que no hay linea base PRE y analiza solo los datos POST.'
-      : 'Este es un informe PRE de linea base: analiza SOLO los datos PRE (auto_pre, co_pre, brecha_pre). NO menciones evolucion ni POST porque no existen. El objetivo es identificar focos de desarrollo iniciales del lider.';
+      ? 'Este es un informe Final: analiza la EVOLUCION del lider comparando Inicial vs Final (evolucion_auto, evolucion_co, cierre_brecha). Si sinPreHistorico=true, indica que no hay linea base Inicial y analiza solo los datos Final.'
+      : 'Este es un informe Inicial de linea base: analiza SOLO los datos Inicial (auto_pre, co_pre, brecha_pre). NO menciones evolucion ni Final porque no existen. El objetivo es identificar focos de desarrollo iniciales del lider.';
 
     return 'Eres un coach ejecutivo. Genera un ' + tituloInforme + ' para "' + nombre + '" en el programa "' + prog.nombre + '" basandote en los DATOS REALES siguientes.\n\n' +
       'DATOS DEL PARTICIPANTE:\n' + dataJson + '\n\n' +
@@ -926,7 +926,7 @@
       '"insight":"<frase clave del siguiente nivel de desarrollo>",' +
       '"recomendaciones":[{"titulo":"...","items":["...","..."]},{"titulo":"...","items":["...","..."]},{"titulo":"...","items":["...","..."]}],' +
       '"compromiso":"<html compromiso de desarrollo especifico>"}.\n' +
-      'Genera un objeto en analisis_competencias por CADA competencia real. Si es PRE, en "evolucion" pon observaciones iniciales (no cambios). Usa <strong> para negritas. ' +
+      'Genera un objeto en analisis_competencias por CADA competencia real. Si es Inicial, en "evolucion" pon observaciones iniciales (no cambios). Usa <strong> para negritas. ' +
       'Si totalRespuestas=0, indicalo y ofrece recomendaciones generales basadas en el nombre y foco de las competencias.';
   }
 
@@ -946,7 +946,7 @@
     function fmt(v) { return (v === null || v === undefined) ? 's/d' : (typeof v === 'number' ? v.toFixed(2) : v); }
     if (datosReales && datosReales.competencias && datosReales.competencias.length > 0) {
       dims = datosReales.competencias.map(function(c) {
-        // En PRE solo hay *_pre. En POST priorizamos *_post pero caemos a *_pre si POST es null
+        // En Inicial solo hay *_pre. En Final priorizamos *_post pero caemos a *_pre si Final es null
         var auto = esPost ? (c.auto_post !== null ? c.auto_post : c.auto_pre) : c.auto_pre;
         var co = esPost ? (c.co_post !== null ? c.co_post : c.co_pre) : c.co_pre;
         return {
@@ -972,7 +972,7 @@
 
     /* Hero */
     html += '<div class="rpt-hero">';
-    html += '<h1>INFORME ' + (esPost ? 'EJECUTIVO CONSOLIDADO POST' : 'DIAGN\u00d3STICO CONSOLIDADO PRE') + '</h1>';
+    html += '<h1>INFORME ' + (esPost ? 'EJECUTIVO CONSOLIDADO FINAL' : 'DIAGN\u00d3STICO CONSOLIDADO INICIAL') + '</h1>';
     html += '<h2>Evaluaci\u00f3n de Liderazgo \u2013 ' + escapeHtml(prog.nombre) + '</h2>';
     html += '<div class="rpt-meta">' + escapeHtml(prog.cliente_nombre) + ' | Generado el ' + hoy + '</div>';
     html += '</div>';
@@ -996,11 +996,11 @@
     html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + colabConCo + '/' + totalColab + '</div><div class="rpt-kpi-big-label">Coevaluaciones completadas</div></div>';
     html += '</div></div>';
 
-    /* Advertencia si POST sin PRE historico */
+    /* Advertencia si Final sin Inicial historico */
     if (datosReales && datosReales.sinPreHistorico) {
       html += '<div style="background:#fef3e2;border-left:4px solid #f39c12;padding:12px 16px;margin:16px 0;border-radius:6px;">' +
-        '<strong style="color:#e67e22;">\u26A0 Sin l\u00ednea base PRE:</strong> ' +
-        '<span style="color:#7d5a1a;">Este informe POST no puede calcular evoluci\u00f3n porque no existen datos PRE cargados. Se presentan solo los resultados POST.</span>' +
+        '<strong style="color:#e67e22;">\u26A0 Sin l\u00ednea base Inicial:</strong> ' +
+        '<span style="color:#7d5a1a;">Este informe Final no puede calcular evoluci\u00f3n porque no existen datos Inicial cargados. Se presentan solo los resultados Final.</span>' +
       '</div>';
     }
     if (datosReales && datosReales.totalRespuestas === 0) {
@@ -1163,11 +1163,11 @@
       await cargarAnalisisPregunta(block, enc.id, p.id, false, 'individual');
     }
 
-    // 3) Si POST, agregar comparativas PRE -> POST
+    // 3) Si Final, agregar comparativas Inicial -> Final
     if (momento === 'post') {
       var sep = document.createElement('h3');
       sep.style.cssText = 'margin-top:24px;border-top:1px dashed #ccc;padding-top:16px;';
-      sep.textContent = 'Evolucion Cualitativa PRE \u2192 POST';
+      sep.textContent = 'Evolucion Cualitativa Inicial \u2192 Final';
       body.appendChild(sep);
 
       for (var j = 0; j < abiertas.length; j++) {
@@ -1240,7 +1240,7 @@
             a.cambios_significativos.map(function(s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul>'
           : '') +
         (a.recomendaciones_post && a.recomendaciones_post.length
-          ? '<p><strong>Recomendaciones POST:</strong></p><ul>' +
+          ? '<p><strong>Recomendaciones Final:</strong></p><ul>' +
             a.recomendaciones_post.map(function(s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul>'
           : '');
     }
@@ -1310,18 +1310,18 @@
 
     /* Hero */
     html += '<div class="rpt-hero">';
-    html += '<h1>' + (esPost ? 'Informe Individual POST' : 'Informe Individual PRE (L\u00ednea base)') + '</h1>';
+    html += '<h1>' + (esPost ? 'Informe Individual Final' : 'Informe Individual Inicial (L\u00ednea base)') + '</h1>';
     html += '<h2>Evaluaci\u00f3n de Liderazgo \u2013 ' + escapeHtml(nombre) + '</h2>';
     html += '<div class="rpt-meta">' + escapeHtml(prog.nombre) + ' | ' + escapeHtml(prog.cliente_nombre) + ' | ' + hoy + '</div>';
     html += '</div>';
 
     html += '<div class="rpt-body">';
 
-    /* Advertencia si POST sin PRE historico */
+    /* Advertencia si Final sin Inicial historico */
     if (datosReales && datosReales.sinPreHistorico) {
       html += '<div style="background:#fef3e2;border-left:4px solid #f39c12;padding:12px 16px;margin-bottom:20px;border-radius:6px;">' +
-        '<strong style="color:#e67e22;">\u26A0 Sin l\u00ednea base PRE:</strong> ' +
-        '<span style="color:#7d5a1a;">No existen datos PRE para este participante, por lo que no se puede calcular evoluci\u00f3n. Se presentan solo los resultados POST.</span>' +
+        '<strong style="color:#e67e22;">\u26A0 Sin l\u00ednea base Inicial:</strong> ' +
+        '<span style="color:#7d5a1a;">No existen datos Inicial para este participante, por lo que no se puede calcular evoluci\u00f3n. Se presentan solo los resultados Final.</span>' +
       '</div>';
     }
     if (datosReales && datosReales.totalRespuestas === 0) {
@@ -1336,8 +1336,8 @@
     html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">';
 
     var ctxIntro = esPost
-      ? 'El presente informe expone los resultados de la evaluacion POST del lider, en el marco del programa de desarrollo basado en la aplicacion practica de competencias. Permite visualizar la evolucion respecto a la linea base PRE.'
-      : 'El presente informe expone los resultados de la evaluacion PRE (linea base) del lider, al inicio del programa. Sirve como diagnostico inicial para identificar focos de desarrollo.';
+      ? 'El presente informe expone los resultados de la evaluacion Final del lider, en el marco del programa de desarrollo basado en la aplicacion practica de competencias. Permite visualizar la evolucion respecto a la linea base Inicial.'
+      : 'El presente informe expone los resultados de la evaluacion Inicial (linea base) del lider, al inicio del programa. Sirve como diagnostico inicial para identificar focos de desarrollo.';
     html += '<div class="rpt-context-box"><h3>Contexto</h3><p style="font-size:13px;opacity:0.9;">' + ctxIntro + '</p>';
     html += '<p style="font-size:12px;opacity:0.8;margin-top:10px;">El analisis considera:</p>';
     html += '<ul><li>Autoevaluacion del lider</li><li>Coevaluacion de sus colaboradores</li><li>Identificacion de brechas de percepcion</li></ul></div>';
