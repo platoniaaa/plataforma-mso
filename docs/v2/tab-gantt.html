@@ -1,0 +1,217 @@
+<!-- Tab: Carta Gantt del Programa (Panel Programa) -->
+<style>
+  .gantt-wrapper { background: white; border-radius: 12px; padding: 24px; border: 1px solid var(--color-borde); }
+  .gantt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .gantt-header h2 { margin: 0; font-size: 18px; color: var(--color-primario); }
+  .gantt-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; }
+  .gantt-legend-item { display: flex; align-items: center; gap: 6px; color: var(--color-texto-sec); }
+  .gantt-legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
+
+  .gantt-container { overflow-x: auto; padding-bottom: 12px; }
+  .gantt-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 0;
+    min-width: 800px;
+    border: 1px solid var(--color-borde);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .gantt-row { display: contents; }
+  .gantt-cell-label, .gantt-cell-bar {
+    border-bottom: 1px solid var(--color-borde);
+    padding: 12px 14px;
+    background: white;
+  }
+  .gantt-cell-label {
+    font-size: 13px;
+    font-weight: 500;
+    border-right: 1px solid var(--color-borde);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #FAFAFA;
+  }
+  .gantt-cell-label .gantt-fase-tag {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    width: fit-content;
+    margin-bottom: 4px;
+  }
+  .gantt-cell-bar {
+    position: relative;
+    background: repeating-linear-gradient(
+      90deg,
+      #FFFFFF 0,
+      #FFFFFF calc(100% / 12 - 1px),
+      #F1F5F9 calc(100% / 12 - 1px),
+      #F1F5F9 calc(100% / 12)
+    );
+    min-height: 48px;
+  }
+
+  .gantt-bar {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 24px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gantt-bar-inicial { background: linear-gradient(90deg, #2563EB 0%, #1D4ED8 100%); }
+  .gantt-bar-final { background: linear-gradient(90deg, #F58220 0%, #E0741A 100%); }
+  .gantt-bar-informe { background: linear-gradient(90deg, #6B1D7B 0%, #3D0C4B 100%); }
+  .gantt-bar-comparativo { background: linear-gradient(90deg, #059669 0%, #047857 100%); }
+
+  .gantt-header-meses {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    background: var(--color-primario);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+    min-width: 800px;
+  }
+  .gantt-meses-label { padding: 12px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid rgba(255,255,255,0.2); }
+  .gantt-meses-bar { display: grid; grid-template-columns: repeat(12, 1fr); }
+  .gantt-mes-label { padding: 12px 4px; font-size: 11px; font-weight: 600; text-align: center; border-left: 1px solid rgba(255,255,255,0.15); }
+
+  .gantt-empty {
+    padding: 40px 20px; text-align: center; color: var(--color-texto-sec);
+  }
+  .gantt-empty p { margin: 8px 0; font-size: 13px; }
+  .gantt-empty strong { color: var(--color-primario); }
+</style>
+
+<div class="gantt-wrapper">
+  <div class="gantt-header">
+    <h2>Carta Gantt del programa</h2>
+    <div class="gantt-legend">
+      <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#2563EB;"></div>Medici&oacute;n Inicial</div>
+      <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#F58220;"></div>Medici&oacute;n Final</div>
+      <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#6B1D7B;"></div>Informes</div>
+      <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#059669;"></div>Comparativo</div>
+    </div>
+  </div>
+
+  <div id="gantt-content" class="gantt-container">
+    <div class="text-center p-3"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  if (typeof panelData === 'undefined' || !panelData) {
+    document.getElementById('gantt-content').innerHTML =
+      '<div class="gantt-empty"><p><strong>Programa no cargado.</strong></p><p>Vuelve al tab Resumen y reintenta.</p></div>';
+    return;
+  }
+
+  var prog = panelData.programa || panelData;
+  var fechaIni = prog.fecha_inicio || prog.fechaInicio;
+  var fechaFin = prog.fecha_termino || prog.fechaTermino;
+
+  if (!fechaIni || !fechaFin) {
+    document.getElementById('gantt-content').innerHTML =
+      '<div class="gantt-empty">' +
+        '<p><strong>Sin fechas definidas.</strong></p>' +
+        '<p>Define la fecha de inicio y t&eacute;rmino del programa en el tab Resumen para ver la carta Gantt.</p>' +
+      '</div>';
+    return;
+  }
+
+  renderGantt(new Date(fechaIni), new Date(fechaFin));
+
+  function renderGantt(inicio, termino) {
+    var totalMs = termino.getTime() - inicio.getTime();
+    var totalDias = Math.max(1, Math.round(totalMs / (1000 * 60 * 60 * 24)));
+
+    // Calcular hitos del programa basado en la duracion
+    // 0% - 10%: Auto Inicial
+    // 5% - 15%: Coeval Inicial (parcialmente solapada)
+    // 15% - 25%: Informes Iniciales
+    // 25% - 75%: (intervencion / desarrollo - implicita)
+    // 75% - 85%: Auto Final
+    // 80% - 90%: Coeval Final
+    // 85% - 95%: Informes Finales
+    // 95% - 100%: Informe de Brechas
+
+    var hitos = [
+      { label: 'Autoevaluaci\u00f3n Inicial', fase: 'Inicial', tipo: 'inicial', startPct: 0, endPct: 10 },
+      { label: 'Coevaluaci\u00f3n Inicial', fase: 'Inicial', tipo: 'inicial', startPct: 5, endPct: 15 },
+      { label: 'Informe Individual Inicial', fase: 'Inicial', tipo: 'informe', startPct: 15, endPct: 22 },
+      { label: 'Informe Consolidado Inicial', fase: 'Inicial', tipo: 'informe', startPct: 18, endPct: 25 },
+      { label: 'Autoevaluaci\u00f3n Final', fase: 'Final', tipo: 'final', startPct: 75, endPct: 85 },
+      { label: 'Coevaluaci\u00f3n Final', fase: 'Final', tipo: 'final', startPct: 80, endPct: 90 },
+      { label: 'Informe Individual Final', fase: 'Final', tipo: 'informe', startPct: 85, endPct: 92 },
+      { label: 'Informe Consolidado Final', fase: 'Final', tipo: 'informe', startPct: 88, endPct: 95 },
+      { label: 'Informe de Brechas', fase: 'Comparativo', tipo: 'comparativo', startPct: 95, endPct: 100 }
+    ];
+
+    // Header con meses (12 columnas, dividimos el rango en 12)
+    var html = '<div class="gantt-header-meses">' +
+      '<div class="gantt-meses-label">Etapa</div>' +
+      '<div class="gantt-meses-bar">';
+    for (var i = 0; i < 12; i++) {
+      var pct = (i / 12) * 100;
+      var fechaCol = new Date(inicio.getTime() + (totalMs * pct / 100));
+      html += '<div class="gantt-mes-label">' + fechaCol.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) + '</div>';
+    }
+    html += '</div></div>';
+
+    // Grid de filas
+    html += '<div class="gantt-grid">';
+    hitos.forEach(function(h) {
+      var faseTag = '';
+      var faseColor = '';
+      if (h.fase === 'Inicial') { faseTag = 'Inicial'; faseColor = 'background:#DBEAFE;color:#1E40AF;'; }
+      else if (h.fase === 'Final') { faseTag = 'Final'; faseColor = 'background:#FED7AA;color:#9A3412;'; }
+      else { faseTag = 'Comparativo'; faseColor = 'background:#D1FAE5;color:#065F46;'; }
+
+      var fechaInicioHito = new Date(inicio.getTime() + (totalMs * h.startPct / 100));
+      var fechaFinHito = new Date(inicio.getTime() + (totalMs * h.endPct / 100));
+      var fechaStr = fechaInicioHito.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) +
+        ' \u2192 ' + fechaFinHito.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
+
+      var barClass = 'gantt-bar-' + h.tipo;
+      var width = h.endPct - h.startPct;
+
+      html += '<div class="gantt-row">' +
+        '<div class="gantt-cell-label">' +
+          '<span class="gantt-fase-tag" style="' + faseColor + '">' + faseTag + '</span>' +
+          h.label +
+        '</div>' +
+        '<div class="gantt-cell-bar">' +
+          '<div class="gantt-bar ' + barClass + '" ' +
+            'style="left:' + h.startPct + '%;width:' + width + '%;" ' +
+            'title="' + fechaStr + '">' +
+            fechaStr +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    // Nota informativa
+    html += '<p class="text-xs text-muted" style="margin-top:14px;font-style:italic;">' +
+      'Las fechas son aproximadas y se calculan como porcentaje de la duraci\u00f3n total del programa (' + totalDias + ' d\u00edas). ' +
+      'Las fechas exactas de cada hito se definen al activar las encuestas correspondientes.' +
+    '</p>';
+
+    document.getElementById('gantt-content').innerHTML = html;
+  }
+})();
+</script>

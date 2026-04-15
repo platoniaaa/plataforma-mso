@@ -108,6 +108,7 @@
     <button class="panel-tab" data-tab="participantes" onclick="switchTab('participantes')">Participantes</button>
     <button class="panel-tab" data-tab="encuestas" onclick="switchTab('encuestas')">Encuestas</button>
     <button class="panel-tab" data-tab="cronograma" onclick="switchTab('cronograma')">Actividades y Recursos</button>
+    <button class="panel-tab" data-tab="gantt" onclick="switchTab('gantt')">Carta Gantt</button>
     <button class="panel-tab" data-tab="seguimiento" onclick="switchTab('seguimiento')">Seguimiento</button>
     <button class="panel-tab" data-tab="informes" onclick="switchTab('informes')">Informes</button>
   </div>
@@ -368,6 +369,7 @@
     // Breadcrumb tab
     var tabLabels = { resumen: '', competencias: ' > Competencias', participantes: ' > Participantes',
       encuestas: ' > Encuestas', cronograma: ' > Actividades y Recursos',
+      gantt: ' > Carta Gantt',
       seguimiento: ' > Seguimiento', informes: ' > Informes' };
     document.getElementById('breadcrumb-tab').textContent = tabLabels[tabName] || '';
 
@@ -399,6 +401,7 @@
       'encuestas': 'tab-encuestas-programa',
       'actividades': 'tab-cronograma',
       'cronograma': 'tab-cronograma',
+      'gantt': 'tab-gantt',
       'seguimiento': 'tab-seguimiento',
       'informes': 'tab-informes'
     };
