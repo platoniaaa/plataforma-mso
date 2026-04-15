@@ -275,6 +275,21 @@
       </div>
     </div>
 
+    <div class="flex-between mb-4" style="margin-top:32px;">
+      <h3 class="informes-section-title">Informe de Brechas <span class="badge" style="font-size:10px;background:#FEF3C7;color:#92400E;">COMPARATIVO</span></h3>
+    </div>
+    <p class="text-muted text-sm mb-3">Comparaci&oacute;n global Inicial vs Final del programa: evoluci&oacute;n por competencia, cierre de brechas y narrativa de impacto. Requiere datos iniciales y finales cargados.</p>
+
+    <div class="informes-actions-grid" style="grid-template-columns:1fr;max-width:520px;">
+      <div class="informe-action-card" id="card-brechas" onclick="window._informeBrechas &amp;&amp; window._informeBrechas()">
+        <div class="action-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="action-title">Informe de Brechas (Inicial vs Final)</div>
+        <div class="action-desc">An&aacute;lisis comparativo del programa: cambios por competencia, evoluci&oacute;n auto/co y cierre de brechas con narrativa generada por IA.</div>
+      </div>
+    </div>
+
     <div class="informes-actions-grid" style="margin-top:24px;grid-template-columns:1fr;max-width:400px;">
       <div class="informe-action-card" onclick="window._informeExportar &amp;&amp; window._informeExportar()">
         <div class="action-icon">
@@ -462,6 +477,10 @@
     setCardGate('card-consolidado-pre', preOk, msgPre);
     setCardGate('card-individual-post', postOk, msgPost);
     setCardGate('card-consolidado-post', postOk, msgPost);
+    // Brechas requiere ambos
+    var brechasOk = preOk && postOk;
+    var msgBrechas = brechasOk ? '' : 'El informe de brechas requiere encuestas Iniciales Y Finales activadas';
+    setCardGate('card-brechas', brechasOk, msgBrechas);
   }
 
   function agregarBadgeCobertura(datos) {
@@ -795,6 +814,208 @@
         showToast('Error al obtener datos del programa', 'error');
       })
       .obtenerDatosInformeConsolidado(App.token, panelProgramaId, informeIAMomento);
+  }
+
+  /* ==========================================
+     GENERAR INFORME DE BRECHAS (Inicial vs Final)
+     ========================================== */
+
+  function generarInformeBrechas() {
+    if (!verificarGate('card-brechas')) return;
+    informeIATipo = 'brechas';
+    informeIAPartId = '';
+    informeIAMomento = 'post'; // siempre post para tener datos comparativos
+
+    var prog = {
+      id: panelProgramaId,
+      nombre: (typeof panelData !== 'undefined' && panelData.programa) ? (panelData.programa.nombre || 'Programa') : 'Programa',
+      cliente_nombre: (typeof panelData !== 'undefined' && panelData.programa) ? (panelData.programa.cliente_nombre || panelData.programa.cliente || '') : ''
+    };
+
+    document.getElementById('informe-ia-preview').classList.add('hidden');
+    document.getElementById('informe-ia-loading').classList.remove('hidden');
+    var progress = document.getElementById('informe-ia-progress');
+    var loadText = document.getElementById('informe-ia-loading-text');
+    progress.style.width = '15%';
+    loadText.textContent = 'Recopilando datos comparativos...';
+    setTimeout(function() { progress.style.width = '40%'; loadText.textContent = 'Analizando brechas con IA...'; }, 800);
+
+    google.script.run
+      .withSuccessHandler(function(rDatos) {
+        var datosReales = (rDatos && rDatos.success) ? rDatos.data : null;
+        if (!datosReales || !datosReales.tieneRespuestasPre || !datosReales.tieneRespuestasPost) {
+          document.getElementById('informe-ia-loading').classList.add('hidden');
+          progress.style.width = '0%';
+          showToast('El informe de brechas requiere datos iniciales Y finales cargados.', 'warning');
+          return;
+        }
+        var prompt = buildBrechasPrompt(prog, datosReales);
+
+        callGroqFromBrowser([{ role: 'user', content: prompt }])
+          .then(function(data) {
+            progress.style.width = '80%';
+            loadText.textContent = 'Generando informe de brechas...';
+
+            var iaData = {};
+            if (data.success && data.response) {
+              try {
+                var json = data.response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                iaData = JSON.parse(json);
+              } catch (e) {
+                iaData = { resumen: data.response };
+              }
+            }
+            iaData._datosReales = datosReales;
+
+            setTimeout(function() {
+              progress.style.width = '100%';
+              setTimeout(function() {
+                renderBrechas(prog, iaData);
+                document.getElementById('informe-ia-loading').classList.add('hidden');
+                document.getElementById('informe-ia-preview').classList.remove('hidden');
+                progress.style.width = '0%';
+                google.script.run.registrarInformeGenerado(App.token, panelProgramaId, 'brechas', 'comparativo', null);
+                setTimeout(cargarInformesGenerados, 800);
+              }, 500);
+            }, 600);
+          })
+          .catch(function(err) {
+            document.getElementById('informe-ia-loading').classList.add('hidden');
+            progress.style.width = '0%';
+            showToast('Error al generar informe de brechas: ' + (err.message || err), 'error');
+          });
+      })
+      .withFailureHandler(function() {
+        document.getElementById('informe-ia-loading').classList.add('hidden');
+        progress.style.width = '0%';
+        showToast('Error al obtener datos del programa', 'error');
+      })
+      .obtenerDatosInformeConsolidado(App.token, panelProgramaId, 'post');
+  }
+
+  function buildBrechasPrompt(prog, datos) {
+    var dataJson = datos ? JSON.stringify(datos, null, 2) : '{}';
+    return 'Eres un consultor experto en desarrollo de liderazgo. Genera un INFORME DE BRECHAS COMPARATIVO del programa "' + prog.nombre + '" que analiza la EVOLUCION desde la medicion Inicial hacia la medicion Final, basandote en los DATOS REALES siguientes.\n\n' +
+      'DATOS DEL PROGRAMA:\n' + dataJson + '\n\n' +
+      'Los valores van de 1 a 4. brecha_pre/post = autopercepcion - percepcion de colaboradores. evolucion_auto/co = post - pre. cierre_brecha = abs(brecha_pre) - abs(brecha_post). Valores positivos en cierre_brecha = brecha disminuyo (mejora).\n\n' +
+      'Responde SOLO con JSON valido (sin markdown ni backticks) con esta estructura exacta:\n' +
+      '{"resumen_ejecutivo":"<2-3 parrafos resumen del impacto del programa, citando numeros concretos>",' +
+      '"competencias_evolucion":[{"nombre":"...","auto_inicial":n,"auto_final":n,"co_inicial":n,"co_final":n,"brecha_inicial":n,"brecha_final":n,"cierre":n,"interpretacion":"<una linea>"}],' +
+      '"top_mejoras":["<3 hallazgos donde mas mejoro el programa>"],' +
+      '"areas_persistentes":["<3 hallazgos donde la brecha no cerro o empeoro>"],' +
+      '"impacto_global":{"variacion_auto_promedio":n,"variacion_co_promedio":n,"cierre_brecha_promedio":n,"narrativa":"<parrafo>"},' +
+      '"recomendaciones_continuidad":[{"titulo":"...","texto":"..."}],' +
+      '"cierre":"<parrafo de cierre ejecutivo>"}.\n' +
+      'Usa <strong> para negritas. Cita siempre numeros reales (ej "la brecha bajo de 0.45 a 0.12 = cierre de 0.33"). ' +
+      'Si para alguna competencia falta auto_pre o auto_post, indicalo en interpretacion como "sin dato" pero igual incluyela en la lista.';
+  }
+
+  function renderBrechas(prog, ia) {
+    reporteCharts.forEach(function(c) { c.destroy(); }); reporteCharts = [];
+    var hoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+    var datos = ia && ia._datosReales;
+    var comps = (datos && datos.competencias) || [];
+
+    function fmt(v) { return (v === null || v === undefined || isNaN(v)) ? 's/d' : (typeof v === 'number' ? v.toFixed(2) : v); }
+    function fmtSign(v) {
+      if (v === null || v === undefined || isNaN(v)) return 's/d';
+      var s = v >= 0 ? '+' : '';
+      return s + v.toFixed(2);
+    }
+
+    var html = '<div class="rpt" id="pdf-page">';
+    html += '<div class="rpt-hero" style="background:linear-gradient(135deg, rgba(245,130,32,0.92), rgba(61,12,75,0.85));">';
+    html += '<h1>INFORME DE BRECHAS</h1>';
+    html += '<h2>Comparativo Inicial &rarr; Final &mdash; ' + escapeHtml(prog.nombre) + '</h2>';
+    html += '<div class="rpt-meta">' + escapeHtml(prog.cliente_nombre) + ' | Generado el ' + hoy + '</div>';
+    html += '</div>';
+    html += '<div class="rpt-body">';
+
+    if (ia.resumen_ejecutivo) {
+      html += '<div class="rpt-intro">' + ia.resumen_ejecutivo + '</div>';
+    }
+
+    /* KPIs de impacto global */
+    var ig = ia.impacto_global || {};
+    html += '<div class="rpt-section"><div class="rpt-section-title">Impacto Global</div>';
+    html += '<div class="rpt-kpi-row">';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + fmtSign(ig.variacion_auto_promedio) + '</div><div class="rpt-kpi-big-label">Variaci\u00f3n Auto</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + fmtSign(ig.variacion_co_promedio) + '</div><div class="rpt-kpi-big-label">Variaci\u00f3n Co</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + fmtSign(ig.cierre_brecha_promedio) + '</div><div class="rpt-kpi-big-label">Cierre de Brecha</div></div>';
+    html += '</div>';
+    if (ig.narrativa) html += '<p style="font-size:13px;color:#555;margin-top:12px;">' + ig.narrativa + '</p>';
+    html += '</div>';
+
+    /* Tabla comparativa por competencia */
+    html += '<div class="rpt-section"><div class="rpt-section-title">Evoluci\u00f3n por Competencia</div>';
+    html += '<table class="rpt-table"><thead><tr>' +
+      '<th>Competencia</th>' +
+      '<th>Auto Inicial</th><th>Auto Final</th>' +
+      '<th>Co Inicial</th><th>Co Final</th>' +
+      '<th>Brecha Inicial</th><th>Brecha Final</th>' +
+      '<th>Cierre</th>' +
+      '</tr></thead><tbody>';
+    comps.forEach(function(c) {
+      var cierre = c.cierre_brecha;
+      var cls = (cierre != null && cierre > 0.05) ? 'style="background:#D4EFDF;"' : (cierre != null && cierre < -0.05) ? 'style="background:#FADBD8;"' : '';
+      html += '<tr ' + cls + '>' +
+        '<td><strong>' + escapeHtml(c.nombre) + '</strong></td>' +
+        '<td>' + fmt(c.auto_pre) + '</td><td>' + fmt(c.auto_post) + '</td>' +
+        '<td>' + fmt(c.co_pre) + '</td><td>' + fmt(c.co_post) + '</td>' +
+        '<td>' + fmt(c.brecha_pre) + '</td><td>' + fmt(c.brecha_post) + '</td>' +
+        '<td><strong>' + fmtSign(cierre) + '</strong></td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+    html += '<p style="font-size:11px;color:#888;margin-top:8px;">Verde = la brecha cerr&oacute; (mejora). Rojo = la brecha aument&oacute;.</p>';
+    html += '</div>';
+
+    /* Análisis IA por competencia */
+    if (Array.isArray(ia.competencias_evolucion) && ia.competencias_evolucion.length > 0) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">An&aacute;lisis por Competencia</div>';
+      html += '<div class="rpt-findings-grid">';
+      ia.competencias_evolucion.forEach(function(c) {
+        html += '<div class="rpt-finding-card"><h4>' + escapeHtml(c.nombre || '') + '</h4>' +
+          '<p style="font-size:12px;color:#555;">' + (c.interpretacion || '') + '</p></div>';
+      });
+      html += '</div></div>';
+    }
+
+    /* Top mejoras y áreas persistentes */
+    if (Array.isArray(ia.top_mejoras) && ia.top_mejoras.length > 0) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">D&oacute;nde m&aacute;s impactamos</div>';
+      html += '<ul style="font-size:13px;color:#555;line-height:1.7;">';
+      ia.top_mejoras.forEach(function(t) { html += '<li>' + t + '</li>'; });
+      html += '</ul></div>';
+    }
+    if (Array.isArray(ia.areas_persistentes) && ia.areas_persistentes.length > 0) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">&Aacute;reas pendientes</div>';
+      html += '<ul style="font-size:13px;color:#555;line-height:1.7;">';
+      ia.areas_persistentes.forEach(function(t) { html += '<li>' + t + '</li>'; });
+      html += '</ul></div>';
+    }
+
+    /* Recomendaciones de continuidad */
+    if (Array.isArray(ia.recomendaciones_continuidad) && ia.recomendaciones_continuidad.length > 0) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">Recomendaciones de Continuidad</div>';
+      html += '<div class="rpt-recs-grid">';
+      ia.recomendaciones_continuidad.forEach(function(r, i) {
+        html += '<div class="rpt-rec-card"><div class="rpt-rec-num">' + (i + 1) + '</div><div class="rpt-rec-body"><h4>' + (r.titulo || '') + '</h4><p>' + (r.texto || '') + '</p></div></div>';
+      });
+      html += '</div></div>';
+    }
+
+    /* Cierre */
+    if (ia.cierre) {
+      html += '<div class="rpt-section-title" style="margin-top:28px;">Cierre Ejecutivo</div>';
+      html += '<div class="rpt-cierre"><p>' + ia.cierre + '</p></div>';
+    }
+
+    html += '</div>';
+    html += '<div class="rpt-footer">Informe generado por MSO Chile \u2013 Plataforma TPT | Asistido por Inteligencia Artificial | ' + hoy + '</div>';
+    html += '</div>';
+
+    document.getElementById('informe-ia-contenido').innerHTML = html;
   }
 
   /* ==========================================
@@ -1536,6 +1757,7 @@
   window._informeIndividualPost = function() { abrirSelectorParticipante('post'); };
   window._informeConsolidadoPre = function() { generarInformeConsolidado('pre'); };
   window._informeConsolidadoPost = function() { generarInformeConsolidado('post'); };
+  window._informeBrechas = function() { generarInformeBrechas(); };
   // Legacy (por compatibilidad)
   window._informeIndividual = function() { abrirSelectorParticipante('post'); };
   window._informeConsolidado = function() { generarInformeConsolidado('post'); };
