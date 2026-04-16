@@ -14,10 +14,10 @@
         <thead>
           <tr>
             <th>L&iacute;der</th>
-            <th>Cargo</th>
-            <th>Email</th>
+            <th>Email L&iacute;der</th>
             <th>Contrase&ntilde;a</th>
             <th>Colaborador</th>
+            <th>Email Colaborador</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>
@@ -266,53 +266,75 @@
       return;
     }
 
-    // Separar lideres y colaboradores
     var lideres = participantes.filter(function(p) { return p.rol_programa === 'lider'; });
     var colaboradores = participantes.filter(function(p) { return p.rol_programa === 'colaborador'; });
 
-    // Crear mapa de colaborador por lider_id
     var colabMap = {};
     colaboradores.forEach(function(c) {
       if (c.lider_id) colabMap[c.lider_id] = c;
     });
 
     if (!lideres.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-4">No hay lideres asociados a este programa.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-4">No hay l&iacute;deres asociados a este programa.</td></tr>';
       return;
     }
 
     tbody.innerHTML = lideres.map(function(p) {
       var colab = colabMap[p.usuario_id];
       var tieneColab = !!colab;
-      var colabInfo = tieneColab
-        ? escapeHtml(colab.nombre) + '<br><span class="text-xs text-muted">' + escapeHtml(colab.email) + '</span>' +
-          '<br><span id="pass-display-' + colab.usuario_id + '" class="text-muted" style="font-size:11px;">****** </span>' +
-          '<button class="btn btn-sm btn-outline" style="font-size:10px;padding:1px 6px;margin-top:2px;" onclick="resetPassword(\'' + colab.usuario_id + '\',\'' + escapeHtml(colab.nombre) + '\')">Pass</button>'
-        : '<span class="text-muted">Sin asignar</span><br><button class="btn btn-sm btn-outline" style="margin-top:4px;" onclick="abrirAsignarColaborador(\'' + p.usuario_id + '\')">+ Asignar</button>';
+      var passVal = escapeHtml(p.password_visible || '------');
+      var passwordCol =
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+          '<span id="pass-text-' + p.usuario_id + '" style="font-family:monospace;font-size:13px;">&bull;&bull;&bull;&bull;&bull;&bull;</span>' +
+          '<input type="hidden" id="pass-val-' + p.usuario_id + '" value="' + passVal + '">' +
+          '<button class="btn btn-sm btn-outline" style="padding:2px 6px;font-size:13px;line-height:1;" title="Ver/ocultar" onclick="togglePassVisibility(\'' + p.usuario_id + '\',this)">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+          '</button>' +
+        '</div>';
+
+      var colabNombre = tieneColab ? escapeHtml(colab.nombre) : '<span class="text-muted">Sin asignar</span>';
+      var colabEmail = tieneColab
+        ? '<span style="font-size:13px;">' + escapeHtml(colab.email) + '</span>'
+        : '<button class="btn btn-sm btn-outline" style="margin-top:2px;" onclick="abrirAsignarColaborador(\'' + p.usuario_id + '\')">+ Asignar</button>';
+
       var estadoBadge = tieneColab
         ? '<span class="badge badge-success">Completo</span>'
         : '<span class="badge badge-warning">Pendiente</span>';
 
-      var passwordCol = '<span id="pass-display-' + p.usuario_id + '" class="text-muted">******</span> ' +
-        '<button class="btn btn-sm btn-outline" style="font-size:11px;padding:2px 8px;" onclick="resetPassword(\'' + p.usuario_id + '\',\'' + escapeHtml(p.nombre) + '\')">Cambiar</button>';
-
-      var acciones = '';
-      if (tieneColab) {
-        acciones += '<button class="btn btn-sm btn-outline" onclick="abrirAsignarColaborador(\'' + p.usuario_id + '\')">Cambiar colab.</button> ';
-      }
-      acciones += '<button class="btn btn-sm btn-outline" style="color:#c0392b;" onclick="quitarParticipantePanel(\'' + p.usuario_id + '\')">Quitar</button>';
+      var acciones =
+        '<div style="display:flex;gap:4px;align-items:center;">' +
+          (tieneColab ? '<button class="btn btn-sm btn-outline" title="Cambiar colaborador" onclick="abrirAsignarColaborador(\'' + p.usuario_id + '\')" style="padding:4px 6px;">&#9998;</button>' : '') +
+          '<button class="btn btn-sm btn-outline" title="Eliminar participante" style="padding:4px 6px;color:#c0392b;" onclick="quitarParticipantePanel(\'' + p.usuario_id + '\')">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>' +
+          '</button>' +
+        '</div>';
 
       return '<tr>' +
-        '<td><strong>' + escapeHtml(p.nombre) + '</strong></td>' +
-        '<td>' + escapeHtml(p.cargo || '-') + '</td>' +
+        '<td><strong>' + escapeHtml(p.nombre) + '</strong><br><span class="text-xs text-muted">' + escapeHtml(p.cargo || '-') + '</span></td>' +
         '<td style="font-size:13px;">' + escapeHtml(p.email || '-') + '</td>' +
         '<td>' + passwordCol + '</td>' +
-        '<td>' + colabInfo + '</td>' +
+        '<td>' + colabNombre + '</td>' +
+        '<td>' + colabEmail + '</td>' +
         '<td>' + estadoBadge + '</td>' +
         '<td>' + acciones + '</td>' +
       '</tr>';
     }).join('');
   }
+
+  function togglePassVisibility(userId, btn) {
+    var span = document.getElementById('pass-text-' + userId);
+    var val = document.getElementById('pass-val-' + userId).value;
+    if (span.dataset.visible === '1') {
+      span.innerHTML = '&bull;&bull;&bull;&bull;&bull;&bull;';
+      span.dataset.visible = '0';
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    } else {
+      span.textContent = val;
+      span.dataset.visible = '1';
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+    }
+  }
+  window.togglePassVisibility = togglePassVisibility;
 
   /* ---- Modal: Agregar Lider ---- */
 

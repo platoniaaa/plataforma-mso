@@ -475,7 +475,7 @@ var backendFunctions = {
       if (!progId) return { success: true, data: [] };
       if (!_supabase) return { success: false, error: 'Supabase no inicializado' };
       var r = await _supabase.from('participantes_programa')
-        .select('*, usuarios!participantes_programa_usuario_id_fkey(id, nombre, email, cargo, rol)')
+        .select('*, usuarios!participantes_programa_usuario_id_fkey(id, nombre, email, cargo, rol, password_visible)')
         .eq('programa_id', progId);
       if (r.error) {
         console.error('[listarParticipantesPrograma] supabase error', r.error);
@@ -483,7 +483,6 @@ var backendFunctions = {
       }
       var data = (r.data || []).map(function(a) {
         var u = a.usuarios;
-        // Supabase a veces devuelve el join como array si hay ambiguedad
         if (Array.isArray(u)) u = u[0];
         if (!u) return null;
         return {
@@ -492,6 +491,7 @@ var backendFunctions = {
           nombre: u.nombre || '',
           email: u.email || '',
           cargo: u.cargo || '',
+          password_visible: u.password_visible || '',
           rol_programa: a.rol_programa,
           lider_id: a.lider_id || null
         };
