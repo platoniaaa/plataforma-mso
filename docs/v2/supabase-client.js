@@ -543,6 +543,15 @@ var backendFunctions = {
     return { success: true };
   },
 
+  eliminarTodosParticipantes: async function(token, progId) {
+    var r = await _supabase.from('participantes_programa').select('usuario_id').eq('programa_id', progId);
+    var userIds = (r.data || []).map(function(p) { return p.usuario_id; });
+    if (!userIds.length) return { success: true, data: { count: 0 } };
+    await _supabase.from('participantes_programa').delete().eq('programa_id', progId);
+    await _supabase.from('usuarios').delete().in('id', userIds).neq('rol', 'admin');
+    return { success: true, data: { count: userIds.length } };
+  },
+
   // ============================================
   // COMPETENCIAS
   // ============================================

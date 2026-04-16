@@ -630,34 +630,24 @@
       showToast('No hay participantes para eliminar.', 'warning');
       return;
     }
-    if (!confirm('¿Est\u00e1s seguro de eliminar TODOS los participantes del programa? Esta acci\u00f3n no se puede deshacer.')) return;
+    if (!confirm('¿Est\u00e1s seguro de eliminar TODOS los participantes del programa y sus usuarios? Esta acci\u00f3n no se puede deshacer.')) return;
 
-    var ids = participantesPanelData.map(function(p) { return p.usuario_id; });
-    var removed = 0;
-    var total = ids.length;
+    showToast('Eliminando participantes y usuarios...', 'info');
 
-    showToast('Eliminando ' + total + ' participantes...', 'info');
-
-    ids.forEach(function(uid) {
-      google.script.run
-        .withSuccessHandler(function(r) {
-          removed++;
-          if (removed === total) {
-            showToast('Todos los participantes fueron eliminados.', 'success');
-            if (typeof panelData !== 'undefined') panelData.participantes = null;
-            cargarParticipantesPanel();
-          }
-        })
-        .withFailureHandler(function() {
-          removed++;
-          if (removed === total) {
-            showToast('Proceso completado con algunos errores.', 'warning');
-            if (typeof panelData !== 'undefined') panelData.participantes = null;
-            cargarParticipantesPanel();
-          }
-        })
-        .desasociarParticipante(App.token, panelProgramaId, uid);
-    });
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.success) {
+          showToast((r.data.count || 0) + ' participantes eliminados correctamente.', 'success');
+          if (typeof panelData !== 'undefined') panelData.participantes = null;
+          cargarParticipantesPanel();
+        } else {
+          showToast(r ? r.error : 'Error al eliminar.', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        showToast('Error de conexi\u00f3n: ' + (err.message || err), 'error');
+      })
+      .eliminarTodosParticipantes(App.token, panelProgramaId);
   }
   window.eliminarTodosParticipantes = eliminarTodosParticipantes;
 
