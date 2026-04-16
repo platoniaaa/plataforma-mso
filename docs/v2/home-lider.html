@@ -15,71 +15,65 @@
     color: var(--color-primario);
   }
 
-  /* Stepper */
-  .hl-stepper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    padding: 20px 16px;
-    background: #fff;
-    border-radius: 12px;
+  /* Phase cards stepper (mismo visual que mi-programa) */
+  .hl-phase-card {
+    background: white; border-radius: 12px; padding: 20px 24px; margin-bottom: 18px;
     border: 1px solid var(--color-borde);
-    margin-bottom: 24px;
   }
-  .hl-step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    min-width: 100px;
+  .hl-phase-head {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    flex-wrap: wrap; gap: 8px;
   }
-  .hl-step-dot {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: 700;
-    transition: all 0.3s;
+  .hl-phase-head h4 {
+    margin: 0; font-size: 14px; font-weight: 700; color: var(--color-primario);
+    display: flex; align-items: center; gap: 8px;
   }
-  .hl-step.completada .hl-step-dot {
-    background: #10B981;
-    color: #fff;
+  .hl-phase-icon {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 11px; font-weight: 700;
   }
-  .hl-step.en-progreso .hl-step-dot {
-    background: #fff;
-    border: 3px solid var(--color-secundario);
-    color: var(--color-secundario);
-    animation: hl-pulse 2s infinite;
+  .hl-phase-icon.inicial { background: linear-gradient(135deg, #2563EB, #1D4ED8); }
+  .hl-phase-icon.final { background: linear-gradient(135deg, #059669, #047857); }
+  .hl-phase-icon.comparativo { background: linear-gradient(135deg, #6B1D7B, #3D0C4B); }
+  .hl-progress-pill {
+    font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 10px;
+    background: #F1F5F9; color: #475569;
   }
-  .hl-step.pendiente .hl-step-dot {
-    background: #E5E7EB;
-    color: #9CA3AF;
+  .hl-progress-pill.completo { background: #D1FAE5; color: #065F46; }
+  .hl-progress-pill.en-curso { background: #FED7AA; color: #9A3412; }
+  .hl-hstepper {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 4px 0;
   }
-  @keyframes hl-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 130, 32, 0.3); }
-    50% { box-shadow: 0 0 0 8px rgba(245, 130, 32, 0); }
+  .hl-hstepper.cols-1 { grid-template-columns: 1fr; justify-items: center; }
+  .hl-hstep {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    text-align: center; padding: 0 4px;
   }
-  .hl-step-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #6B7280;
-    text-align: center;
+  .hl-hstep:not(:last-child)::after {
+    content: ''; position: absolute; top: 18px;
+    left: calc(50% + 22px); right: calc(-50% + 22px);
+    height: 3px; background: #E2E8F0; border-radius: 2px; z-index: 0;
   }
-  .hl-step.en-progreso .hl-step-label { color: var(--color-secundario); }
-  .hl-step.completada .hl-step-label { color: #10B981; }
-  .hl-step-connector {
-    flex: 1;
-    height: 2px;
-    background: #E5E7EB;
-    min-width: 30px;
-    margin: 0 4px;
-    margin-bottom: 28px;
+  .hl-hstep.completada:not(:last-child)::after { background: var(--color-exito); }
+  .hl-hstep-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 3px solid #CBD5E0; background: white;
+    font-size: 13px; font-weight: 700; color: #94A3B8;
+    z-index: 1; transition: all 0.25s;
   }
-  .hl-step.completada + .hl-step-connector { background: #10B981; }
+  .hl-hstep.completada .hl-hstep-icon { border-color: var(--color-exito); background: var(--color-exito); color: white; }
+  .hl-hstep.en-curso .hl-hstep-icon { border-color: var(--color-secundario); color: var(--color-secundario); box-shadow: 0 0 0 4px rgba(245,130,32,0.18); }
+  .hl-hstep.bloqueada .hl-hstep-icon { border-color: #E2E8F0; background: #F8FAFC; color: #CBD5E0; }
+  .hl-hstep-label { font-size: 11px; font-weight: 600; color: var(--color-texto); margin-top: 8px; line-height: 1.3; }
+  .hl-hstep.bloqueada .hl-hstep-label { color: #CBD5E0; }
+  .hl-hstep.completada .hl-hstep-label { color: var(--color-exito); }
+  .hl-hstep.en-curso .hl-hstep-label { color: var(--color-secundario); }
+  @media (max-width: 600px) {
+    .hl-hstepper { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .hl-hstep:not(:last-child)::after { display: none; }
+  }
 
   /* Seccion pendientes */
   .hl-section-title {
@@ -257,8 +251,8 @@
   <h1 class="hl-saludo" id="hl-saludo">Hola</h1>
   <p class="hl-programa" id="hl-programa"></p>
 
-  <!-- Stepper -->
-  <div class="hl-stepper" id="hl-stepper"></div>
+  <!-- Fases del programa -->
+  <div id="hl-fases"></div>
 
   <!-- Pendientes -->
   <div id="hl-pendientes"></div>
@@ -303,8 +297,8 @@
         '<strong>' + escapeHtml(data.programa.nombre) + '</strong>' +
         (data.programa.cliente_nombre ? ' \u2014 ' + escapeHtml(data.programa.cliente_nombre) : '');
 
-      // Stepper
-      renderStepper(data.stepper);
+      // Fases (stepper por fase)
+      cargarFasesHome(data.programa.id);
 
       // Pendientes
       renderPendientes(data.pendientes || []);
@@ -329,29 +323,93 @@ function capitalizar(texto) {
   }).join(' ');
 }
 
-function renderStepper(stepper) {
-  if (!stepper) return;
-  var steps = [
-    { key: 'autoevaluacion', label: 'Autoevaluacion' },
-    { key: 'coevaluacion', label: 'Coevaluacion' },
-    { key: 'informe_individual', label: 'Informe Individual' },
-    { key: 'informe_ejecutivo', label: 'Informe Ejecutivo' }
+function cargarFasesHome(progId) {
+  google.script.run
+    .withSuccessHandler(function(rEnc) {
+      var encs = (rEnc && rEnc.data) ? rEnc.data : [];
+      google.script.run
+        .withSuccessHandler(function(rPend) {
+          var pend = (rPend && rPend.data) ? rPend.data : [];
+          renderFasesHome(encs, pend);
+        })
+        .obtenerEncuestaPendiente(App.token);
+    })
+    .listarEncuestas(App.token, progId);
+}
+
+function renderFasesHome(encuestas, encuestasUsuario) {
+  function findEnc(tipo, cuest) {
+    return encuestas.find(function(e) { return e.tipo === tipo && e.tipo_cuestionario === cuest; });
+  }
+  function findUserStatus(encId) {
+    var u = encuestasUsuario.find(function(e) { return e.id === encId; });
+    return u ? u.estado : null;
+  }
+  function statusEnc(enc) {
+    if (!enc) return { s: 'bloqueada', l: 'No creada' };
+    if (enc.estado === 'borrador') return { s: 'bloqueada', l: 'En preparaci\u00f3n' };
+    if (enc.estado === 'cerrada') return { s: 'completada', l: 'Cerrada' };
+    var us = findUserStatus(enc.id);
+    if (us === 'completada') return { s: 'completada', l: 'Respondida' };
+    if (us === 'pendiente') return { s: 'en-curso', l: 'Pendiente' };
+    return { s: 'pendiente', l: 'Activa' };
+  }
+  function infoSt(a, c) {
+    var ac = (a && a.estado === 'cerrada') && (c && c.estado === 'cerrada');
+    if (ac) return { s: 'completada', l: 'Disponible' };
+    if ((a && a.estado === 'activa') || (c && c.estado === 'activa')) return { s: 'pendiente', l: 'En curso' };
+    return { s: 'bloqueada', l: 'Pendiente' };
+  }
+
+  var ai = findEnc('pre', 'autoevaluacion'), ci = findEnc('pre', 'coevaluacion');
+  var af = findEnc('post', 'autoevaluacion'), cf = findEnc('post', 'coevaluacion');
+  var siI = infoSt(ai, ci), siF = infoSt(af, cf);
+  var sBr = (siI.s === 'completada' && siF.s === 'completada')
+    ? { s: 'completada', l: 'Disponible' }
+    : { s: 'bloqueada', l: 'Requiere ambas mediciones' };
+
+  var fases = [
+    { key: 'inicial', icon: 'A', titulo: 'Medici\u00f3n Inicial', steps: [
+      { l: 'Autoevaluaci\u00f3n Inicial', st: statusEnc(ai) },
+      { l: 'Coevaluaci\u00f3n Inicial', st: statusEnc(ci) },
+      { l: 'Informe Individual', st: siI },
+      { l: 'Informe Consolidado', st: siI }
+    ]},
+    { key: 'final', icon: 'B', titulo: 'Medici\u00f3n Final', steps: [
+      { l: 'Autoevaluaci\u00f3n Final', st: statusEnc(af) },
+      { l: 'Coevaluaci\u00f3n Final', st: statusEnc(cf) },
+      { l: 'Informe Individual', st: siF },
+      { l: 'Informe Consolidado', st: siF }
+    ]},
+    { key: 'comparativo', icon: 'C', titulo: 'Comparativo', steps: [
+      { l: 'Informe de Brechas', st: sBr }
+    ]}
   ];
 
   var html = '';
-  steps.forEach(function(s, i) {
-    var estado = stepper[s.key] || 'pendiente';
-    var icon = estado === 'completada' ? '\u2713' :
-               estado === 'en-progreso' ? (i + 1) : (i + 1);
+  fases.forEach(function(fase) {
+    var total = fase.steps.length;
+    var done = fase.steps.filter(function(s) { return s.st.s === 'completada'; }).length;
+    var pillCls = done === total ? 'completo' : (done > 0 ? 'en-curso' : '');
+    var gridCls = total === 1 ? 'cols-1' : '';
 
-    if (i > 0) html += '<div class="hl-step-connector"></div>';
-    html += '<div class="hl-step ' + estado + '">' +
-      '<div class="hl-step-dot">' + icon + '</div>' +
-      '<span class="hl-step-label">' + s.label + '</span>' +
-    '</div>';
+    html += '<div class="hl-phase-card">' +
+      '<div class="hl-phase-head">' +
+        '<h4><span class="hl-phase-icon ' + fase.key + '">' + fase.icon + '</span>' + fase.titulo + '</h4>' +
+        '<span class="hl-progress-pill ' + pillCls + '">' + done + ' / ' + total + '</span>' +
+      '</div>' +
+      '<div class="hl-hstepper ' + gridCls + '">';
+    fase.steps.forEach(function(step, i) {
+      var ic = step.st.s === 'completada' ? '\u2713' : String(i + 1);
+      html += '<div class="hl-hstep ' + step.st.s + '">' +
+        '<div class="hl-hstep-icon">' + ic + '</div>' +
+        '<div class="hl-hstep-label">' + step.l + '</div>' +
+      '</div>';
+    });
+    html += '</div></div>';
   });
 
-  document.getElementById('hl-stepper').innerHTML = html;
+  document.getElementById('hl-fases').innerHTML = html;
 }
 
 function renderPendientes(pendientes) {
