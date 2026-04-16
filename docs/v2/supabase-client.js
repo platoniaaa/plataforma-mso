@@ -2406,9 +2406,15 @@ var backendFunctions = {
 
     async function upsertUsuario(nombre, email, rol, cargo, password) {
       if (!email) return null;
-      var existing = await _supabase.from('usuarios').select('*').eq('email', email).maybeSingle();
-      if (existing.data) return existing.data;
       var pwd = password || '123456';
+      var existing = await _supabase.from('usuarios').select('*').eq('email', email).maybeSingle();
+      if (existing.data) {
+        if (!existing.data.password_visible) {
+          await _supabase.from('usuarios').update({ password_visible: pwd }).eq('id', existing.data.id);
+          existing.data.password_visible = pwd;
+        }
+        return existing.data;
+      }
       var payload = {
         nombre: nombre || email, email: email,
         rol: rol, cargo: cargo || '', estado: 'Activo',
