@@ -931,6 +931,19 @@ var backendFunctions = {
 
   enviarRespuestaEncuesta: async function() { return { success: true }; },
 
+  rehacerEncuesta: async function(token, encuestaId) {
+    var userId = null;
+    try {
+      var u = JSON.parse(sessionStorage.getItem('tpt_usuario') || 'null');
+      if (u && u.id) userId = u.id;
+    } catch (e) {}
+    if (!userId) return { success: false, error: 'Usuario no identificado' };
+    var del = await _supabase.from('respuestas').delete()
+      .eq('encuesta_id', encuestaId).eq('evaluador_id', userId);
+    if (del.error) return { success: false, error: del.error.message };
+    return { success: true };
+  },
+
   // ============================================
   // ARCHIVOS
   // ============================================
