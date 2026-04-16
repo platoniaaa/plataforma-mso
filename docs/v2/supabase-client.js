@@ -389,7 +389,8 @@ var backendFunctions = {
       rol: datos.rol || 'participante',
       cargo: datos.cargo || '',
       cliente_id: datos.cliente_id || null,
-      estado: 'Activo'
+      estado: 'Activo',
+      password_visible: datos.password || '123456'
     }).select().single();
     if (r.error) return { success: false, error: r.error.message };
     return { success: true, data: { id: r.data.id } };
@@ -2407,9 +2408,11 @@ var backendFunctions = {
       if (!email) return null;
       var existing = await _supabase.from('usuarios').select('*').eq('email', email).maybeSingle();
       if (existing.data) return existing.data;
+      var pwd = password || '123456';
       var payload = {
         nombre: nombre || email, email: email,
-        rol: rol, cargo: cargo || '', estado: 'Activo'
+        rol: rol, cargo: cargo || '', estado: 'Activo',
+        password_visible: pwd
       };
       var ins = await _supabase.from('usuarios').insert(payload).select().single();
       if (ins.error) {
@@ -2464,7 +2467,8 @@ var backendFunctions = {
     var colabR = await _supabase.from('usuarios').insert({
       nombre: datos.nombre || datos.colaborador_nombre || '',
       email: datos.email || datos.colaborador_email || '',
-      rol: 'participante', estado: 'Activo'
+      rol: 'participante', estado: 'Activo',
+      password_visible: datos.password || '123456'
     }).select().single();
     if (colabR.data) {
       await _supabase.from('participantes_programa').insert({
