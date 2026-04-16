@@ -1443,7 +1443,6 @@ function _ejecutarConfirmacion() {
         { id: 'correos', label: 'Correos', icon: 'email' }
       ],
       jefatura: [
-        { id: 'home-lider', label: 'Inicio', icon: 'home' },
         { id: 'mi-programa', label: 'Mi Programa', icon: 'clipboard' },
         { id: 'mis-encuestas', label: 'Mis Evaluaciones', icon: 'survey' },
         { id: 'mi-equipo', label: 'Mi Equipo', icon: 'users' },
@@ -1506,8 +1505,7 @@ function _ejecutarConfirmacion() {
 
       // Cargar vista inicial
       var rol = App.getRol();
-      var defaultView = rol === 'jefatura' ? 'home-lider' :
-                         (rol === 'participante' || rol === 'colaborador') ? 'mis-encuestas' : 'dashboard';
+      var defaultView = (rol === 'jefatura' || rol === 'participante' || rol === 'colaborador') ? 'mi-programa' : 'dashboard';
       cargarVista(defaultView);
 
       // Cargar notificaciones
