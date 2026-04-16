@@ -418,7 +418,7 @@ var backendFunctions = {
     p.cliente_nombre = p.clientes ? p.clientes.nombre : '';
 
     var parts = await _supabase.from('participantes_programa')
-      .select('*, usuarios!participantes_programa_usuario_id_fkey(id, nombre, email, cargo, estado, rol)')
+      .select('*, usuarios!participantes_programa_usuario_id_fkey(id, nombre, email, cargo, estado, rol, password_visible)')
       .eq('programa_id', progId);
 
     var comps = await _supabase.from('competencias').select('*').eq('programa_id', progId).order('orden');
@@ -431,6 +431,7 @@ var backendFunctions = {
       return {
         usuario_id: u.id, nombre: u.nombre, nombre_lider: u.nombre,
         email: u.email, email_lider: u.email, cargo: u.cargo,
+        password_visible: u.password_visible || '',
         rol_programa: a.rol_programa || 'lider',
         lider_id: a.lider_id || null,
         lider_nombre: lider && lider.usuarios ? lider.usuarios.nombre : null,
