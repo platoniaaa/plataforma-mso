@@ -88,14 +88,6 @@
     </div>
   </div>
 
-  <!-- Acceso a informes (lider only) -->
-  <div class="mp-section hidden" id="mp-informes-section">
-    <h3>Mis Informes</h3>
-    <p class="text-sm text-muted mb-3">Acceso a los informes individuales generados sobre tu desempe&ntilde;o.</p>
-    <div id="mp-informes-list">
-      <p class="text-muted text-sm">Cargando...</p>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -122,7 +114,6 @@
       var prog = progs[0];
       renderHeader(prog);
       cargarEtapas(prog);
-      if (esLider) cargarMisInformes(prog);
     })
     .listarProgramasDashboard(App.token, userId);
 
@@ -244,32 +235,5 @@
     '</div>';
   }
 
-  function cargarMisInformes(prog) {
-    var section = document.getElementById('mp-informes-section');
-    section.classList.remove('hidden');
-    var listEl = document.getElementById('mp-informes-list');
-    google.script.run
-      .withSuccessHandler(function(r) {
-        var todos = (r && r.data) ? r.data : [];
-        // Filtrar solo los individuales del propio lider
-        var mios = todos.filter(function(i) {
-          return i.tipo === 'individual' && i.participante_id === userId;
-        });
-        if (mios.length === 0) {
-          listEl.innerHTML = '<p class="text-muted text-sm">A&uacute;n no se ha generado ning&uacute;n informe individual sobre ti. Cuando tu informe est&eacute; disponible aparecer&aacute; aqu&iacute;.</p>';
-          return;
-        }
-        listEl.innerHTML = mios.map(function(i) {
-          return '<div style="padding:12px;border:1px solid var(--color-borde);border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">' +
-            '<div>' +
-              '<strong style="font-size:13px;">' + escapeHtml(i.nombre) + '</strong>' +
-              '<div class="text-xs text-muted">Generado el ' + formatDate(i.fecha) + '</div>' +
-            '</div>' +
-            '<span class="text-xs text-muted">' + escapeHtml(i.generado_por || '') + '</span>' +
-          '</div>';
-        }).join('');
-      })
-      .listarInformesGenerados(App.token, prog.id);
-  }
 })();
 </script>
