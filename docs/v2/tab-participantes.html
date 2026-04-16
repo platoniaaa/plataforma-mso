@@ -3,6 +3,7 @@
   <div class="flex-between mb-4">
     <h3 style="margin:0;">Participantes del Programa</h3>
     <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline" style="color:#c0392b;border-color:#c0392b;" onclick="eliminarTodosParticipantes()">Eliminar todos</button>
       <button class="btn btn-outline" onclick="openModal('modal-importar-participantes')">Cargar desde Excel</button>
       <button class="btn btn-primary" onclick="abrirModalAgregarLider()">+ Agregar L&iacute;der</button>
     </div>
@@ -293,8 +294,16 @@
         '</div>';
 
       var colabNombre = tieneColab ? escapeHtml(colab.nombre) : '<span class="text-muted">Sin asignar</span>';
+      var colabPassVal = tieneColab ? escapeHtml(colab.password_visible || '------') : '';
       var colabEmail = tieneColab
-        ? '<span style="font-size:13px;">' + escapeHtml(colab.email) + '</span>'
+        ? '<span style="font-size:13px;">' + escapeHtml(colab.email) + '</span>' +
+          '<div style="display:flex;align-items:center;gap:6px;margin-top:4px;">' +
+            '<span id="pass-text-' + colab.usuario_id + '" style="font-family:monospace;font-size:12px;color:var(--color-texto-sec);">&bull;&bull;&bull;&bull;&bull;&bull;</span>' +
+            '<input type="hidden" id="pass-val-' + colab.usuario_id + '" value="' + colabPassVal + '">' +
+            '<button class="btn btn-sm btn-outline" style="padding:1px 4px;font-size:12px;line-height:1;" title="Ver/ocultar" onclick="togglePassVisibility(\'' + colab.usuario_id + '\',this)">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+            '</button>' +
+          '</div>'
         : '<button class="btn btn-sm btn-outline" style="margin-top:2px;" onclick="abrirAsignarColaborador(\'' + p.usuario_id + '\')">+ Asignar</button>';
 
       var estadoBadge = tieneColab
@@ -615,6 +624,42 @@
       })
       .desasociarParticipante(App.token, panelProgramaId, userId);
   }
+
+  function eliminarTodosParticipantes() {
+    if (!participantesPanelData || !participantesPanelData.length) {
+      showToast('No hay participantes para eliminar.', 'warning');
+      return;
+    }
+    if (!confirm('¿Est\u00e1s seguro de eliminar TODOS los participantes del programa? Esta acci\u00f3n no se puede deshacer.')) return;
+
+    var ids = participantesPanelData.map(function(p) { return p.usuario_id; });
+    var removed = 0;
+    var total = ids.length;
+
+    showToast('Eliminando ' + total + ' participantes...', 'info');
+
+    ids.forEach(function(uid) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          removed++;
+          if (removed === total) {
+            showToast('Todos los participantes fueron eliminados.', 'success');
+            if (typeof panelData !== 'undefined') panelData.participantes = null;
+            cargarParticipantesPanel();
+          }
+        })
+        .withFailureHandler(function() {
+          removed++;
+          if (removed === total) {
+            showToast('Proceso completado con algunos errores.', 'warning');
+            if (typeof panelData !== 'undefined') panelData.participantes = null;
+            cargarParticipantesPanel();
+          }
+        })
+        .desasociarParticipante(App.token, panelProgramaId, uid);
+    });
+  }
+  window.eliminarTodosParticipantes = eliminarTodosParticipantes;
 
   /* ---- Reset Password ---- */
 
