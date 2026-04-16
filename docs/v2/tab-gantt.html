@@ -3,21 +3,61 @@
   .gantt-wrapper { background: white; border-radius: 12px; padding: 24px; border: 1px solid var(--color-borde); }
   .gantt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
   .gantt-header h2 { margin: 0; font-size: 18px; color: var(--color-primario); }
-  .gantt-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; }
+  .gantt-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .gantt-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; margin-bottom: 16px; }
   .gantt-legend-item { display: flex; align-items: center; gap: 6px; color: var(--color-texto-sec); }
   .gantt-legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
 
   .gantt-container { overflow-x: auto; padding-bottom: 12px; }
+
+  .gantt-header-meses {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    background: var(--color-primario);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+    min-width: 880px;
+  }
+  .gantt-meses-label { padding: 12px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; }
+  .gantt-meses-bar { display: grid; }
+  .gantt-mes-label { padding: 12px 4px; font-size: 11px; font-weight: 600; text-align: center; border-left: 1px solid rgba(255,255,255,0.15); white-space: nowrap; }
+
   .gantt-grid {
     display: grid;
-    grid-template-columns: 240px 1fr;
-    gap: 0;
-    min-width: 800px;
+    grid-template-columns: 280px 1fr;
+    min-width: 880px;
     border: 1px solid var(--color-borde);
-    border-radius: 8px;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
     overflow: hidden;
   }
+
+  .gantt-fase-header {
+    grid-column: 1 / -1;
+    background: linear-gradient(90deg, #F3F4F6, #FAFAFA);
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primario);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-top: 2px solid var(--color-borde);
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .gantt-fase-header:hover { background: linear-gradient(90deg, #E5E7EB, #F3F4F6); }
+  .gantt-fase-chevron { transition: transform 0.2s; display: inline-block; font-size: 10px; }
+  .gantt-fase-header.collapsed .gantt-fase-chevron { transform: rotate(-90deg); }
+  .gantt-fase-count { margin-left: auto; font-size: 10px; background: var(--color-primario); color: white; padding: 2px 8px; border-radius: 10px; }
+
   .gantt-row { display: contents; }
+  .gantt-row.hidden-row .gantt-cell-label,
+  .gantt-row.hidden-row .gantt-cell-bar { display: none; }
+
   .gantt-cell-label, .gantt-cell-bar {
     border-bottom: 1px solid var(--color-borde);
     padding: 12px 14px;
@@ -27,30 +67,36 @@
     font-size: 13px;
     font-weight: 500;
     border-right: 1px solid var(--color-borde);
+    background: #FAFAFA;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    background: #FAFAFA;
+    position: relative;
   }
-  .gantt-cell-label .gantt-fase-tag {
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 2px 8px;
-    border-radius: 10px;
-    width: fit-content;
-    margin-bottom: 4px;
+  .gantt-cell-label:hover .gantt-row-actions { display: flex; }
+  .gantt-row-actions {
+    display: none;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    gap: 4px;
   }
+  .gantt-row-actions button {
+    background: white;
+    border: 1px solid var(--color-borde);
+    border-radius: 4px;
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--color-texto-sec);
+  }
+  .gantt-row-actions button:hover { background: var(--color-fondo-alt); color: var(--color-primario); }
+
   .gantt-cell-bar {
     position: relative;
-    background: repeating-linear-gradient(
-      90deg,
-      #FFFFFF 0,
-      #FFFFFF calc(100% / 12 - 1px),
-      #F1F5F9 calc(100% / 12 - 1px),
-      #F1F5F9 calc(100% / 12)
-    );
+    background-color: #FFFFFF;
     min-height: 48px;
   }
 
@@ -58,8 +104,8 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    height: 24px;
-    border-radius: 12px;
+    height: 26px;
+    border-radius: 13px;
     display: flex;
     align-items: center;
     padding: 0 12px;
@@ -71,40 +117,90 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .gantt-bar-inicial { background: linear-gradient(90deg, #2563EB 0%, #1D4ED8 100%); }
-  .gantt-bar-final { background: linear-gradient(90deg, #F58220 0%, #E0741A 100%); }
-  .gantt-bar-informe { background: linear-gradient(90deg, #6B1D7B 0%, #3D0C4B 100%); }
-  .gantt-bar-comparativo { background: linear-gradient(90deg, #059669 0%, #047857 100%); }
+  .gantt-bar-formacion, .gantt-bar-inicial { background: linear-gradient(90deg, #2563EB 0%, #1D4ED8 100%); }
+  .gantt-bar-practica, .gantt-bar-intervencion { background: linear-gradient(90deg, #F58220 0%, #E0741A 100%); }
+  .gantt-bar-cierre, .gantt-bar-final { background: linear-gradient(90deg, #059669 0%, #047857 100%); }
+  .gantt-bar-general { background: linear-gradient(90deg, #6B7280 0%, #4B5563 100%); }
+  .gantt-bar-comparativo { background: linear-gradient(90deg, #6B1D7B 0%, #3D0C4B 100%); }
 
-  .gantt-header-meses {
-    display: grid;
-    grid-template-columns: 240px 1fr;
-    background: var(--color-primario);
-    color: white;
-    border-radius: 8px 8px 0 0;
-    overflow: hidden;
-    min-width: 800px;
+  .gantt-pin {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
-  .gantt-meses-label { padding: 12px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid rgba(255,255,255,0.2); }
-  .gantt-meses-bar { display: grid; grid-template-columns: repeat(12, 1fr); }
-  .gantt-mes-label { padding: 12px 4px; font-size: 11px; font-weight: 600; text-align: center; border-left: 1px solid rgba(255,255,255,0.15); }
+  .gantt-pin-formacion, .gantt-pin-inicial { background: #2563EB; }
+  .gantt-pin-practica, .gantt-pin-intervencion { background: #F58220; }
+  .gantt-pin-cierre, .gantt-pin-final { background: #059669; }
+  .gantt-pin-general { background: #6B7280; }
+  .gantt-pin-comparativo { background: #6B1D7B; }
 
   .gantt-empty {
-    padding: 40px 20px; text-align: center; color: var(--color-texto-sec);
+    padding: 60px 20px; text-align: center; color: var(--color-texto-sec);
   }
-  .gantt-empty p { margin: 8px 0; font-size: 13px; }
-  .gantt-empty strong { color: var(--color-primario); }
+  .gantt-empty h3 { color: var(--color-primario); margin-bottom: 8px; }
+  .gantt-empty p { margin: 8px 0 16px; font-size: 13px; }
+  .gantt-empty-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  /* Modal */
+  .gantt-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 9999; padding: 20px;
+  }
+  .gantt-modal {
+    background: white; border-radius: 12px; max-width: 720px; width: 100%;
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  }
+  .gantt-modal-header {
+    padding: 18px 24px; border-bottom: 1px solid var(--color-borde);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .gantt-modal-header h3 { margin: 0; color: var(--color-primario); font-size: 17px; }
+  .gantt-modal-body { padding: 20px 24px; }
+  .gantt-modal-footer {
+    padding: 14px 24px; border-top: 1px solid var(--color-borde);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+
+  .gantt-dropzone {
+    border: 2px dashed var(--color-borde);
+    border-radius: 8px; padding: 30px; text-align: center;
+    background: var(--color-fondo-alt); cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .gantt-dropzone:hover, .gantt-dropzone.drag-over {
+    border-color: var(--color-secundario);
+    background: #FEF3E2;
+  }
 </style>
 
 <div class="gantt-wrapper">
   <div class="gantt-header">
     <h2>Carta Gantt del programa</h2>
-    <div class="gantt-legend">
-      <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#2563EB;"></div>Medici&oacute;n Inicial</div>
-      <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#F58220;"></div>Medici&oacute;n Final</div>
-      <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#6B1D7B;"></div>Informes</div>
-      <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#059669;"></div>Comparativo</div>
+    <div class="gantt-actions">
+      <button class="btn btn-outline btn-sm" onclick="descargarPlantillaGantt()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Plantilla
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="abrirModalUploadGantt()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Cargar Excel
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="abrirModalHito(null)">+ Agregar hito</button>
     </div>
+  </div>
+
+  <div class="gantt-legend">
+    <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#2563EB;"></div>Formaci&oacute;n / Inicial</div>
+    <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#F58220;"></div>Pr&aacute;ctica / Intervenci&oacute;n</div>
+    <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#059669;"></div>Cierre / Final</div>
+    <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#6B1D7B;"></div>Comparativo</div>
+    <div class="gantt-legend-item"><div class="gantt-legend-swatch" style="background:#6B7280;"></div>General</div>
   </div>
 
   <div id="gantt-content" class="gantt-container">
@@ -112,106 +208,476 @@
   </div>
 </div>
 
+<!-- Modal: Upload Excel -->
+<div class="gantt-modal-overlay" id="gantt-modal-upload">
+  <div class="gantt-modal">
+    <div class="gantt-modal-header">
+      <h3>Cargar Carta Gantt desde Excel</h3>
+      <button class="btn btn-outline btn-sm" onclick="cerrarModalUploadGantt()">&times;</button>
+    </div>
+    <div class="gantt-modal-body">
+      <p class="text-sm text-muted mb-3">
+        Sube un archivo .xlsx con las columnas: <strong>Actividad</strong>, <strong>Fase</strong>, <strong>Fecha Inicio</strong>, <strong>Fecha Termino</strong>.
+        <a href="#" onclick="descargarPlantillaGantt();return false;" style="color:var(--color-secundario);">Descargar plantilla vac&iacute;a</a>.
+      </p>
+
+      <div class="gantt-dropzone" id="gantt-dropzone" onclick="document.getElementById('gantt-file-input').click()">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.4;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p style="margin:10px 0 4px;font-weight:500;">Haz click o arrastra el archivo aqu&iacute;</p>
+        <p class="text-xs text-muted">Solo .xlsx</p>
+        <input type="file" id="gantt-file-input" accept=".xlsx,.xls" style="display:none;" onchange="onGanttFileSelected(event)">
+      </div>
+
+      <div id="gantt-preview" class="hidden" style="margin-top:16px;">
+        <p class="text-sm mb-2"><strong id="gantt-preview-count">0</strong> hitos detectados:</p>
+        <div style="max-height:240px;overflow-y:auto;border:1px solid var(--color-borde);border-radius:6px;">
+          <table class="data-table" style="font-size:12px;margin:0;">
+            <thead>
+              <tr>
+                <th>#</th><th>Actividad</th><th>Fase</th><th>Inicio</th><th>T&eacute;rmino</th>
+              </tr>
+            </thead>
+            <tbody id="gantt-preview-body"></tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:14px;padding:10px;background:#EFF6FF;border-left:3px solid #3B82F6;border-radius:4px;font-size:12px;color:#1E3A8A;">
+          <strong>&iquest;Qu&eacute; hacer con los hitos existentes?</strong><br>
+          <label style="display:block;margin-top:6px;"><input type="radio" name="gantt-modo" value="reemplazar" checked> Reemplazar todos los hitos actuales</label>
+          <label style="display:block;"><input type="radio" name="gantt-modo" value="agregar"> Agregar a los existentes</label>
+        </div>
+
+        <p class="text-xs text-muted" style="margin-top:10px;font-style:italic;">
+          Al confirmar, tambi&eacute;n se ajustar&aacute;n las fechas del programa (inicio/t&eacute;rmino) y las fechas de cierre de las encuestas cuyos nombres coincidan con los hitos.
+        </p>
+      </div>
+    </div>
+    <div class="gantt-modal-footer">
+      <button class="btn btn-outline" onclick="cerrarModalUploadGantt()">Cancelar</button>
+      <button class="btn btn-primary hidden" id="btn-confirmar-upload-gantt" onclick="confirmarUploadGantt()">Confirmar carga</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Crear/Editar Hito -->
+<div class="gantt-modal-overlay" id="gantt-modal-hito">
+  <div class="gantt-modal" style="max-width:520px;">
+    <div class="gantt-modal-header">
+      <h3 id="gantt-modal-hito-title">Agregar hito</h3>
+      <button class="btn btn-outline btn-sm" onclick="cerrarModalHito()">&times;</button>
+    </div>
+    <div class="gantt-modal-body">
+      <input type="hidden" id="gantt-hito-id">
+      <div class="form-group">
+        <label>Actividad *</label>
+        <input type="text" id="gantt-hito-actividad" class="form-control" placeholder="Ej: Ejecuci&oacute;n Taller 1">
+      </div>
+      <div class="form-group">
+        <label>Fase</label>
+        <select id="gantt-hito-fase" class="form-control">
+          <option value="">— Sin agrupar —</option>
+          <option value="Formaci&oacute;n">Formaci&oacute;n</option>
+          <option value="Pr&aacute;ctica Guiada">Pr&aacute;ctica Guiada</option>
+          <option value="Cierre">Cierre</option>
+          <option value="Inicial">Inicial</option>
+          <option value="Final">Final</option>
+          <option value="Comparativo">Comparativo</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label>Fecha inicio *</label>
+          <input type="date" id="gantt-hito-fecha-inicio" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Fecha t&eacute;rmino *</label>
+          <input type="date" id="gantt-hito-fecha-termino" class="form-control">
+        </div>
+      </div>
+    </div>
+    <div class="gantt-modal-footer">
+      <button class="btn btn-outline" id="gantt-btn-eliminar-hito" onclick="eliminarHitoConfirmar()" style="margin-right:auto;color:var(--color-error);">Eliminar</button>
+      <button class="btn btn-outline" onclick="cerrarModalHito()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarHito()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
-  if (typeof panelData === 'undefined' || !panelData) {
-    document.getElementById('gantt-content').innerHTML =
-      '<div class="gantt-empty"><p><strong>Programa no cargado.</strong></p><p>Vuelve al tab Resumen y reintenta.</p></div>';
-    return;
+  var ganttHitos = [];
+  var ganttParsedRows = []; // preview del upload
+  var ganttFasesColapsadas = {}; // { 'Fase A': true, 'Fase B': false }
+
+  // ============================================
+  // LOAD
+  // ============================================
+  function cargarHitos() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        ganttHitos = (r && r.data) ? r.data : [];
+        renderGantt();
+      })
+      .withFailureHandler(function() {
+        document.getElementById('gantt-content').innerHTML =
+          '<div class="gantt-empty"><p>Error de conexi&oacute;n al cargar hitos.</p></div>';
+      })
+      .listarHitosPrograma(App.token, panelProgramaId);
   }
+  cargarHitos();
+  window.cargarHitos = cargarHitos;
 
-  var prog = panelData.programa || panelData;
-  var fechaIni = prog.fecha_inicio || prog.fechaInicio;
-  var fechaFin = prog.fecha_termino || prog.fechaTermino;
+  // ============================================
+  // RENDER
+  // ============================================
+  function renderGantt() {
+    var container = document.getElementById('gantt-content');
 
-  if (!fechaIni || !fechaFin) {
-    document.getElementById('gantt-content').innerHTML =
-      '<div class="gantt-empty">' +
-        '<p><strong>Sin fechas definidas.</strong></p>' +
-        '<p>Define la fecha de inicio y t&eacute;rmino del programa en el tab Resumen para ver la carta Gantt.</p>' +
-      '</div>';
-    return;
-  }
-
-  renderGantt(new Date(fechaIni), new Date(fechaFin));
-
-  function renderGantt(inicio, termino) {
-    var totalMs = termino.getTime() - inicio.getTime();
-    var totalDias = Math.max(1, Math.round(totalMs / (1000 * 60 * 60 * 24)));
-
-    // Calcular hitos del programa basado en la duracion
-    // 0% - 10%: Auto Inicial
-    // 5% - 15%: Coeval Inicial (parcialmente solapada)
-    // 15% - 25%: Informes Iniciales
-    // 25% - 75%: (intervencion / desarrollo - implicita)
-    // 75% - 85%: Auto Final
-    // 80% - 90%: Coeval Final
-    // 85% - 95%: Informes Finales
-    // 95% - 100%: Informe de Brechas
-
-    var hitos = [
-      { label: 'Autoevaluaci\u00f3n Inicial', fase: 'Inicial', tipo: 'inicial', startPct: 0, endPct: 10 },
-      { label: 'Coevaluaci\u00f3n Inicial', fase: 'Inicial', tipo: 'inicial', startPct: 5, endPct: 15 },
-      { label: 'Informe Individual Inicial', fase: 'Inicial', tipo: 'informe', startPct: 15, endPct: 22 },
-      { label: 'Informe Consolidado Inicial', fase: 'Inicial', tipo: 'informe', startPct: 18, endPct: 25 },
-      { label: 'Autoevaluaci\u00f3n Final', fase: 'Final', tipo: 'final', startPct: 75, endPct: 85 },
-      { label: 'Coevaluaci\u00f3n Final', fase: 'Final', tipo: 'final', startPct: 80, endPct: 90 },
-      { label: 'Informe Individual Final', fase: 'Final', tipo: 'informe', startPct: 85, endPct: 92 },
-      { label: 'Informe Consolidado Final', fase: 'Final', tipo: 'informe', startPct: 88, endPct: 95 },
-      { label: 'Informe de Brechas', fase: 'Comparativo', tipo: 'comparativo', startPct: 95, endPct: 100 }
-    ];
-
-    // Header con meses (12 columnas, dividimos el rango en 12)
-    var html = '<div class="gantt-header-meses">' +
-      '<div class="gantt-meses-label">Etapa</div>' +
-      '<div class="gantt-meses-bar">';
-    for (var i = 0; i < 12; i++) {
-      var pct = (i / 12) * 100;
-      var fechaCol = new Date(inicio.getTime() + (totalMs * pct / 100));
-      html += '<div class="gantt-mes-label">' + fechaCol.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) + '</div>';
-    }
-    html += '</div></div>';
-
-    // Grid de filas
-    html += '<div class="gantt-grid">';
-    hitos.forEach(function(h) {
-      var faseTag = '';
-      var faseColor = '';
-      if (h.fase === 'Inicial') { faseTag = 'Inicial'; faseColor = 'background:#DBEAFE;color:#1E40AF;'; }
-      else if (h.fase === 'Final') { faseTag = 'Final'; faseColor = 'background:#FED7AA;color:#9A3412;'; }
-      else { faseTag = 'Comparativo'; faseColor = 'background:#D1FAE5;color:#065F46;'; }
-
-      var fechaInicioHito = new Date(inicio.getTime() + (totalMs * h.startPct / 100));
-      var fechaFinHito = new Date(inicio.getTime() + (totalMs * h.endPct / 100));
-      var fechaStr = fechaInicioHito.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) +
-        ' \u2192 ' + fechaFinHito.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
-
-      var barClass = 'gantt-bar-' + h.tipo;
-      var width = h.endPct - h.startPct;
-
-      html += '<div class="gantt-row">' +
-        '<div class="gantt-cell-label">' +
-          '<span class="gantt-fase-tag" style="' + faseColor + '">' + faseTag + '</span>' +
-          h.label +
-        '</div>' +
-        '<div class="gantt-cell-bar">' +
-          '<div class="gantt-bar ' + barClass + '" ' +
-            'style="left:' + h.startPct + '%;width:' + width + '%;" ' +
-            'title="' + fechaStr + '">' +
-            fechaStr +
+    if (!ganttHitos.length) {
+      container.innerHTML =
+        '<div class="gantt-empty">' +
+          '<h3>A&uacute;n no hay hitos cargados</h3>' +
+          '<p>Sube un Excel con las fases del programa o agrega hitos manualmente.</p>' +
+          '<div class="gantt-empty-actions">' +
+            '<button class="btn btn-outline" onclick="descargarPlantillaGantt()">Descargar plantilla</button>' +
+            '<button class="btn btn-primary" onclick="abrirModalUploadGantt()">Cargar Excel</button>' +
+            '<button class="btn btn-secondary" onclick="abrirModalHito(null)">+ Agregar hito</button>' +
           '</div>' +
-        '</div>' +
-      '</div>';
+        '</div>';
+      return;
+    }
+
+    // Rango de fechas
+    var todasInicios = ganttHitos.map(function(h) { return new Date(h.fecha_inicio); });
+    var todosFines = ganttHitos.map(function(h) { return new Date(h.fecha_termino); });
+    var minDate = new Date(Math.min.apply(null, todasInicios));
+    var maxDate = new Date(Math.max.apply(null, todosFines));
+    // Padding 3 dias a cada lado
+    minDate.setDate(minDate.getDate() - 3);
+    maxDate.setDate(maxDate.getDate() + 3);
+    var totalMs = maxDate.getTime() - minDate.getTime();
+    var totalDias = Math.max(1, Math.round(totalMs / 86400000));
+    // Columnas del header: mostrar aprox 10 ticks
+    var numCols = Math.min(10, Math.max(4, Math.round(totalDias / 7)));
+
+    // Agrupar por fase preservando el orden (segun el primer hito de cada fase)
+    var fasesOrdenadas = [];
+    var fasesMap = {};
+    ganttHitos.forEach(function(h) {
+      var fase = h.fase || 'General';
+      if (!fasesMap[fase]) {
+        fasesMap[fase] = [];
+        fasesOrdenadas.push(fase);
+      }
+      fasesMap[fase].push(h);
     });
-    html += '</div>';
 
-    // Nota informativa
-    html += '<p class="text-xs text-muted" style="margin-top:14px;font-style:italic;">' +
-      'Las fechas son aproximadas y se calculan como porcentaje de la duraci\u00f3n total del programa (' + totalDias + ' d\u00edas). ' +
-      'Las fechas exactas de cada hito se definen al activar las encuestas correspondientes.' +
-    '</p>';
+    // Header de fechas
+    var headerHtml = '<div class="gantt-header-meses">' +
+      '<div class="gantt-meses-label">Etapa / Hito</div>' +
+      '<div class="gantt-meses-bar" style="grid-template-columns:repeat(' + numCols + ',1fr);">';
+    for (var i = 0; i < numCols; i++) {
+      var pct = i / numCols;
+      var fechaCol = new Date(minDate.getTime() + (totalMs * pct));
+      headerHtml += '<div class="gantt-mes-label">' + fechaCol.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) + '</div>';
+    }
+    headerHtml += '</div></div>';
 
-    document.getElementById('gantt-content').innerHTML = html;
+    // Grid con filas agrupadas por fase
+    var gridHtml = '<div class="gantt-grid">';
+    fasesOrdenadas.forEach(function(fase) {
+      var hitos = fasesMap[fase];
+      var colapsada = !!ganttFasesColapsadas[fase];
+      gridHtml += '<div class="gantt-fase-header ' + (colapsada ? 'collapsed' : '') + '" data-fase="' + escapeHtml(fase) + '" onclick="toggleGanttFase(this.getAttribute(\'data-fase\'))">' +
+        '<span class="gantt-fase-chevron">\u25BC</span>' +
+        '<span>' + escapeHtml(fase) + '</span>' +
+        '<span class="gantt-fase-count">' + hitos.length + '</span>' +
+      '</div>';
+
+      hitos.forEach(function(h) {
+        var inicio = new Date(h.fecha_inicio);
+        var termino = new Date(h.fecha_termino);
+        var startPct = ((inicio.getTime() - minDate.getTime()) / totalMs) * 100;
+        var endPct = ((termino.getTime() - minDate.getTime()) / totalMs) * 100;
+        var width = Math.max(1, endPct - startPct);
+        var esPuntual = inicio.getTime() === termino.getTime();
+
+        var tipoFase = (fase || '').toLowerCase();
+        var barClass = 'gantt-bar-general';
+        var pinClass = 'gantt-pin-general';
+        if (/formaci|inicial/.test(tipoFase)) { barClass = 'gantt-bar-formacion'; pinClass = 'gantt-pin-formacion'; }
+        else if (/pr.ctica|interv/.test(tipoFase)) { barClass = 'gantt-bar-practica'; pinClass = 'gantt-pin-practica'; }
+        else if (/cierre|final/.test(tipoFase)) { barClass = 'gantt-bar-cierre'; pinClass = 'gantt-pin-cierre'; }
+        else if (/compar/.test(tipoFase)) { barClass = 'gantt-bar-comparativo'; pinClass = 'gantt-pin-comparativo'; }
+
+        var fechaStr = inicio.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) +
+          (esPuntual ? '' : ' \u2192 ' + termino.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }));
+
+        gridHtml += '<div class="gantt-row ' + (colapsada ? 'hidden-row' : '') + '" data-fase="' + escapeHtml(fase) + '">' +
+          '<div class="gantt-cell-label">' +
+            '<span>' + escapeHtml(h.actividad) + '</span>' +
+            '<span class="text-xs text-muted">' + fechaStr + '</span>' +
+            '<div class="gantt-row-actions">' +
+              '<button title="Editar" onclick="abrirModalHito(\'' + h.id + '\')">\u270e</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="gantt-cell-bar">';
+        if (esPuntual) {
+          gridHtml += '<div class="gantt-pin ' + pinClass + '" style="left:' + startPct + '%;" title="' + escapeHtml(h.actividad) + ' \u00b7 ' + fechaStr + '"></div>';
+        } else {
+          gridHtml += '<div class="gantt-bar ' + barClass + '" style="left:' + startPct + '%;width:' + width + '%;" title="' + escapeHtml(h.actividad) + ' \u00b7 ' + fechaStr + '">' + fechaStr + '</div>';
+        }
+        gridHtml += '</div></div>';
+      });
+    });
+    gridHtml += '</div>';
+
+    container.innerHTML = headerHtml + gridHtml;
   }
+
+  function toggleGanttFase(fase) {
+    ganttFasesColapsadas[fase] = !ganttFasesColapsadas[fase];
+    renderGantt();
+  }
+  window.toggleGanttFase = toggleGanttFase;
+
+  // ============================================
+  // DESCARGAR PLANTILLA
+  // ============================================
+  function descargarPlantillaGantt() {
+    var data = [
+      ['Actividad', 'Fase', 'Fecha Inicio', 'Fecha Termino'],
+      ['Ejemplo: Ejecuci\u00f3n Taller 1', 'Formaci\u00f3n', '2026-04-20', '2026-04-24'],
+      ['Ejemplo: Aplicaci\u00f3n Autoevaluaci\u00f3n Inicial', 'Inicial', '2026-04-27', '2026-04-30'],
+      ['Ejemplo: Aplicaci\u00f3n Coevaluaci\u00f3n Inicial', 'Inicial', '2026-04-30', '2026-04-30'],
+      ['Ejemplo: CheckPoint 1', 'Pr\u00e1ctica Guiada', '2026-05-11', '2026-05-13'],
+      ['Ejemplo: Aplicaci\u00f3n Auto y Coeval Finales', 'Final', '2026-07-03', '2026-07-03'],
+      ['Ejemplo: Informe de Cierre', 'Cierre', '2026-07-07', '2026-07-10']
+    ];
+    var ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{ wch: 40 }, { wch: 20 }, { wch: 14 }, { wch: 14 }];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Carta Gantt');
+    XLSX.writeFile(wb, 'plantilla-carta-gantt.xlsx');
+  }
+  window.descargarPlantillaGantt = descargarPlantillaGantt;
+
+  // ============================================
+  // UPLOAD EXCEL
+  // ============================================
+  function abrirModalUploadGantt() {
+    ganttParsedRows = [];
+    document.getElementById('gantt-preview').classList.add('hidden');
+    document.getElementById('btn-confirmar-upload-gantt').classList.add('hidden');
+    document.getElementById('gantt-file-input').value = '';
+    document.getElementById('gantt-modal-upload').style.display = 'flex';
+  }
+  function cerrarModalUploadGantt() {
+    document.getElementById('gantt-modal-upload').style.display = 'none';
+  }
+  window.abrirModalUploadGantt = abrirModalUploadGantt;
+  window.cerrarModalUploadGantt = cerrarModalUploadGantt;
+
+  function onGanttFileSelected(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, { type: 'array', cellDates: true });
+        var sheet = wb.Sheets[wb.SheetNames[0]];
+        var rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+        function getV(r, keys) {
+          for (var i = 0; i < keys.length; i++) {
+            var k = Object.keys(r).find(function(x) { return x.toLowerCase().trim() === keys[i]; });
+            if (k && r[k] !== '' && r[k] != null) return r[k];
+          }
+          return '';
+        }
+        function toISODate(v) {
+          if (!v) return '';
+          if (v instanceof Date) return v.toISOString().substring(0, 10);
+          var s = String(v).trim();
+          // Si es ya YYYY-MM-DD
+          if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+          // DD/MM/YYYY
+          var m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+          if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+          // numero serial de excel
+          var n = parseFloat(s);
+          if (!isNaN(n) && n > 10000) {
+            var d = new Date((n - 25569) * 86400 * 1000);
+            return d.toISOString().substring(0, 10);
+          }
+          return s;
+        }
+
+        ganttParsedRows = rows.map(function(r) {
+          return {
+            actividad: String(getV(r, ['actividad', 'actividades', 'hito', 'nombre']) || '').trim(),
+            fase: String(getV(r, ['fase', 'etapa', 'categoria']) || '').trim(),
+            fecha_inicio: toISODate(getV(r, ['fecha inicio', 'fecha_inicio', 'inicio', 'desde', 'start'])),
+            fecha_termino: toISODate(getV(r, ['fecha termino', 'fecha_termino', 'fecha t\u00e9rmino', 'termino', 't\u00e9rmino', 'hasta', 'fin', 'end']))
+          };
+        }).filter(function(r) { return r.actividad && r.fecha_inicio && r.fecha_termino; });
+
+        if (!ganttParsedRows.length) {
+          showToast('No se detectaron filas v\u00e1lidas. Verifica que el archivo tenga las columnas requeridas.', 'error');
+          return;
+        }
+
+        // Preview
+        document.getElementById('gantt-preview-count').textContent = ganttParsedRows.length;
+        var tbody = document.getElementById('gantt-preview-body');
+        tbody.innerHTML = ganttParsedRows.map(function(r, i) {
+          return '<tr>' +
+            '<td>' + (i + 1) + '</td>' +
+            '<td>' + escapeHtml(r.actividad) + '</td>' +
+            '<td>' + escapeHtml(r.fase || '—') + '</td>' +
+            '<td>' + r.fecha_inicio + '</td>' +
+            '<td>' + r.fecha_termino + '</td>' +
+          '</tr>';
+        }).join('');
+        document.getElementById('gantt-preview').classList.remove('hidden');
+        document.getElementById('btn-confirmar-upload-gantt').classList.remove('hidden');
+      } catch (err) {
+        showToast('Error al procesar el archivo: ' + err.message, 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  window.onGanttFileSelected = onGanttFileSelected;
+
+  function confirmarUploadGantt() {
+    if (!ganttParsedRows.length) return;
+    var modo = document.querySelector('input[name="gantt-modo"]:checked').value;
+    var btn = document.getElementById('btn-confirmar-upload-gantt');
+    btnLoading(btn, true);
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btnLoading(btn, false);
+        if (r && r.success) {
+          var d = r.data || {};
+          var msg = d.importados + ' hitos importados';
+          if (d.encuestas_actualizadas && d.encuestas_actualizadas.length) {
+            msg += ' \u00b7 ' + d.encuestas_actualizadas.length + ' encuesta(s) ajustada(s)';
+          }
+          showToast(msg, 'success');
+          if (d.errores && d.errores.length) {
+            console.warn('[gantt] advertencias:', d.errores);
+          }
+          cerrarModalUploadGantt();
+          cargarHitos();
+          // Tambien recargar panelData para que el header del programa muestre las nuevas fechas
+          if (typeof initPanel === 'function') initPanel(panelProgramaId);
+        } else {
+          showToast((r && r.error) || 'Error al importar', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        btnLoading(btn, false);
+        showToast('Error de conexi\u00f3n: ' + (err.message || err), 'error');
+      })
+      .importarHitosExcel(App.token, panelProgramaId, ganttParsedRows, { reemplazar: modo === 'reemplazar' });
+  }
+  window.confirmarUploadGantt = confirmarUploadGantt;
+
+  // Drag & drop
+  (function() {
+    var dz = document.getElementById('gantt-dropzone');
+    if (!dz) return;
+    dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', function() { dz.classList.remove('drag-over'); });
+    dz.addEventListener('drop', function(e) {
+      e.preventDefault(); dz.classList.remove('drag-over');
+      if (e.dataTransfer.files.length) {
+        document.getElementById('gantt-file-input').files = e.dataTransfer.files;
+        onGanttFileSelected({ target: { files: e.dataTransfer.files } });
+      }
+    });
+  })();
+
+  // ============================================
+  // CREATE / EDIT HITO (modal manual)
+  // ============================================
+  function abrirModalHito(id) {
+    document.getElementById('gantt-hito-id').value = id || '';
+    document.getElementById('gantt-btn-eliminar-hito').style.display = id ? '' : 'none';
+    if (id) {
+      var h = ganttHitos.find(function(x) { return x.id === id; });
+      if (!h) return;
+      document.getElementById('gantt-modal-hito-title').textContent = 'Editar hito';
+      document.getElementById('gantt-hito-actividad').value = h.actividad;
+      document.getElementById('gantt-hito-fase').value = h.fase || '';
+      document.getElementById('gantt-hito-fecha-inicio').value = h.fecha_inicio;
+      document.getElementById('gantt-hito-fecha-termino').value = h.fecha_termino;
+    } else {
+      document.getElementById('gantt-modal-hito-title').textContent = 'Agregar hito';
+      document.getElementById('gantt-hito-actividad').value = '';
+      document.getElementById('gantt-hito-fase').value = '';
+      document.getElementById('gantt-hito-fecha-inicio').value = '';
+      document.getElementById('gantt-hito-fecha-termino').value = '';
+    }
+    document.getElementById('gantt-modal-hito').style.display = 'flex';
+  }
+  function cerrarModalHito() {
+    document.getElementById('gantt-modal-hito').style.display = 'none';
+  }
+  window.abrirModalHito = abrirModalHito;
+  window.cerrarModalHito = cerrarModalHito;
+
+  function guardarHito() {
+    var id = document.getElementById('gantt-hito-id').value;
+    var datos = {
+      actividad: document.getElementById('gantt-hito-actividad').value.trim(),
+      fase: document.getElementById('gantt-hito-fase').value || null,
+      fecha_inicio: document.getElementById('gantt-hito-fecha-inicio').value,
+      fecha_termino: document.getElementById('gantt-hito-fecha-termino').value
+    };
+    if (!datos.actividad || !datos.fecha_inicio || !datos.fecha_termino) {
+      showToast('Completa todos los campos obligatorios', 'error');
+      return;
+    }
+    if (new Date(datos.fecha_termino) < new Date(datos.fecha_inicio)) {
+      showToast('La fecha de t\u00e9rmino no puede ser anterior a la de inicio', 'error');
+      return;
+    }
+
+    function onOk(r) {
+      if (r && r.success) {
+        showToast('Hito guardado', 'success');
+        cerrarModalHito();
+        cargarHitos();
+      } else {
+        showToast((r && r.error) || 'Error al guardar', 'error');
+      }
+    }
+    if (id) {
+      google.script.run.withSuccessHandler(onOk).actualizarHito(App.token, id, datos);
+    } else {
+      google.script.run.withSuccessHandler(onOk).crearHito(App.token, panelProgramaId, datos);
+    }
+  }
+  window.guardarHito = guardarHito;
+
+  function eliminarHitoConfirmar() {
+    var id = document.getElementById('gantt-hito-id').value;
+    if (!id) return;
+    if (!confirm('\u00bfEliminar este hito?')) return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.success) {
+          showToast('Hito eliminado', 'success');
+          cerrarModalHito();
+          cargarHitos();
+        } else {
+          showToast((r && r.error) || 'Error al eliminar', 'error');
+        }
+      })
+      .eliminarHito(App.token, id);
+  }
+  window.eliminarHitoConfirmar = eliminarHitoConfirmar;
 })();
 </script>

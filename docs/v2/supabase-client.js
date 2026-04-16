@@ -2084,6 +2084,182 @@ var backendFunctions = {
   generarInformeConsolidado: async function() { return { success: true, data: { url: '#', mensaje: 'Informe generado' } }; },
   generarInformeIndividual: async function() { return { success: true, data: { url: '#', mensaje: 'Informe generado' } }; },
   exportarDatosExcel: async function() { return { success: true, data: { url: '#' } }; },
+  // ============================================
+  // HITOS (Carta Gantt del programa)
+  // ============================================
+  listarHitosPrograma: async function(token, progId) {
+    if (!progId) return { success: true, data: [] };
+    var r = await _supabase.from('hitos_programa')
+      .select('*').eq('programa_id', progId).order('orden', { ascending: true });
+    if (r.error) {
+      console.error('[listarHitosPrograma]', r.error);
+      return { success: true, data: [] };
+    }
+    return { success: true, data: r.data || [] };
+  },
+
+  crearHito: async function(token, progId, datos) {
+    datos = datos || {};
+    if (!progId || !datos.actividad || !datos.fecha_inicio || !datos.fecha_termino) {
+      return { success: false, error: 'Datos incompletos' };
+    }
+    // Calcular orden = max + 1
+    var existing = await _supabase.from('hitos_programa').select('orden')
+      .eq('programa_id', progId).order('orden', { ascending: false }).limit(1);
+    var nextOrden = 1;
+    if (existing.data && existing.data.length > 0 && existing.data[0].orden) {
+      nextOrden = existing.data[0].orden + 1;
+    }
+    var row = {
+      programa_id: progId,
+      actividad: datos.actividad,
+      fase: datos.fase || null,
+      fecha_inicio: datos.fecha_inicio,
+      fecha_termino: datos.fecha_termino,
+      orden: datos.orden != null ? datos.orden : nextOrden,
+      color: datos.color || null,
+      encuesta_id: datos.encuesta_id || null
+    };
+    var r = await _supabase.from('hitos_programa').insert(row).select().single();
+    if (r.error) return { success: false, error: r.error.message };
+    return { success: true, data: r.data };
+  },
+
+  actualizarHito: async function(token, id, datos) {
+    if (!id) return { success: false, error: 'ID requerido' };
+    var allowed = ['actividad', 'fase', 'fecha_inicio', 'fecha_termino', 'orden', 'color', 'encuesta_id'];
+    var upd = {};
+    Object.keys(datos || {}).forEach(function(k) { if (allowed.indexOf(k) >= 0) upd[k] = datos[k]; });
+    var r = await _supabase.from('hitos_programa').update(upd).eq('id', id);
+    if (r.error) return { success: false, error: r.error.message };
+    return { success: true };
+  },
+
+  eliminarHito: async function(token, id) {
+    if (!id) return { success: false, error: 'ID requerido' };
+    var r = await _supabase.from('hitos_programa').delete().eq('id', id);
+    if (r.error) return { success: false, error: r.error.message };
+    return { success: true };
+  },
+
+  importarHitosExcel: async function(token, progId, hitos, opts) {
+    opts = opts || {};
+    if (!progId || !Array.isArray(hitos) || hitos.length === 0) {
+      return { success: false, error: 'Sin hitos para importar' };
+    }
+
+    // Validar filas
+    var filasValidas = [];
+    var errores = [];
+    hitos.forEach(function(h, i) {
+      if (!h.actividad || !h.fecha_inicio || !h.fecha_termino) {
+        errores.push('Fila ' + (i + 1) + ': faltan campos obligatorios');
+        return;
+      }
+      if (new Date(h.fecha_termino) < new Date(h.fecha_inicio)) {
+        errores.push('Fila ' + (i + 1) + ': fecha_termino anterior a fecha_inicio');
+        return;
+      }
+      filasValidas.push({
+        programa_id: progId,
+        actividad: String(h.actividad).trim(),
+        fase: h.fase ? String(h.fase).trim() : null,
+        fecha_inicio: h.fecha_inicio,
+        fecha_termino: h.fecha_termino,
+        orden: i + 1,
+        color: h.color || null
+      });
+    });
+    if (filasValidas.length === 0) {
+      return { success: false, error: 'Ninguna fila valida. ' + errores.join(' | ') };
+    }
+
+    // Reemplazar vs agregar
+    if (opts.reemplazar) {
+      var del = await _supabase.from('hitos_programa').delete().eq('programa_id', progId);
+      if (del.error) return { success: false, error: 'Error borrando hitos previos: ' + del.error.message };
+    } else {
+      // Si solo agrega, offsetear el orden para no chocar
+      var existing = await _supabase.from('hitos_programa').select('orden')
+        .eq('programa_id', progId).order('orden', { ascending: false }).limit(1);
+      var offset = (existing.data && existing.data.length > 0 && existing.data[0].orden) ? existing.data[0].orden : 0;
+      filasValidas.forEach(function(f, i) { f.orden = offset + i + 1; });
+    }
+
+    var ins = await _supabase.from('hitos_programa').insert(filasValidas);
+    if (ins.error) return { success: false, error: 'Error insertando: ' + ins.error.message };
+
+    // Auto-ajustar fechas del programa a min/max de los hitos
+    var fechas = filasValidas.map(function(f) { return f.fecha_inicio; }).concat(
+      filasValidas.map(function(f) { return f.fecha_termino; })
+    );
+    fechas.sort();
+    var fechaIniProg = fechas[0];
+    var fechaFinProg = fechas[fechas.length - 1];
+
+    // Si es "agregar", consideramos tambien los hitos previos del programa
+    if (!opts.reemplazar) {
+      var todos = await _supabase.from('hitos_programa')
+        .select('fecha_inicio, fecha_termino').eq('programa_id', progId);
+      var rangos = (todos.data || []).map(function(h) { return [h.fecha_inicio, h.fecha_termino]; });
+      var flat = [].concat.apply([], rangos);
+      flat.sort();
+      if (flat.length > 0) {
+        fechaIniProg = flat[0];
+        fechaFinProg = flat[flat.length - 1];
+      }
+    }
+    await _supabase.from('programas').update({
+      fecha_inicio: fechaIniProg,
+      fecha_termino: fechaFinProg
+    }).eq('id', progId);
+
+    // Auto-linkear hitos a encuestas por keywords y actualizar fecha_cierre
+    var encs = await _supabase.from('encuestas').select('id, tipo, tipo_cuestionario').eq('programa_id', progId);
+    var encsPrograma = encs.data || [];
+    var actualizaciones = [];
+
+    filasValidas.forEach(function(h) {
+      var actLower = String(h.actividad).toLowerCase();
+      var esFinal = /final|post|cierre/.test(actLower);
+      var esInicial = /inicial|pre|linea base|l\u00ednea base|diagn/.test(actLower);
+      var esAuto = /auto/.test(actLower);
+      var esCo = /coev|co-/.test(actLower) || /co\s/.test(actLower);
+      var esAutoYCo = esAuto && esCo;
+
+      encsPrograma.forEach(function(e) {
+        var matchTipo = (esFinal && e.tipo === 'post') || (esInicial && e.tipo === 'pre');
+        if (!matchTipo) return;
+        var matchCuest = false;
+        if (esAutoYCo) matchCuest = true; // ambos tipos
+        else if (esAuto && e.tipo_cuestionario === 'autoevaluacion') matchCuest = true;
+        else if (esCo && e.tipo_cuestionario === 'coevaluacion') matchCuest = true;
+        if (matchCuest) actualizaciones.push({ id: e.id, fecha_cierre: h.fecha_termino, actividad: h.actividad });
+      });
+    });
+
+    // Aplicar la ultima actualizacion por encuesta (si hay varias, gana la ultima)
+    var ultimoPorEnc = {};
+    actualizaciones.forEach(function(a) { ultimoPorEnc[a.id] = a; });
+    var encsActualizadas = [];
+    for (var encId in ultimoPorEnc) {
+      var a = ultimoPorEnc[encId];
+      await _supabase.from('encuestas').update({ fecha_cierre: a.fecha_cierre }).eq('id', encId);
+      encsActualizadas.push({ encuesta_id: encId, fecha_cierre: a.fecha_cierre, desde_actividad: a.actividad });
+    }
+
+    return {
+      success: true,
+      data: {
+        importados: filasValidas.length,
+        errores: errores,
+        programa_fecha_inicio: fechaIniProg,
+        programa_fecha_termino: fechaFinProg,
+        encuestas_actualizadas: encsActualizadas
+      }
+    };
+  },
+
   listarInformesGenerados: async function(token, progId) {
     if (!progId) return { success: true, data: [] };
     var r = await _supabase.from('informes_generados')
