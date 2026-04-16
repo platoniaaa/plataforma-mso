@@ -251,9 +251,6 @@
   <h1 class="hl-saludo" id="hl-saludo">Hola</h1>
   <p class="hl-programa" id="hl-programa"></p>
 
-  <!-- Fases del programa -->
-  <div id="hl-fases"></div>
-
   <!-- Pendientes -->
   <div id="hl-pendientes"></div>
 
@@ -296,9 +293,6 @@
       document.getElementById('hl-programa').innerHTML =
         '<strong>' + escapeHtml(data.programa.nombre) + '</strong>' +
         (data.programa.cliente_nombre ? ' \u2014 ' + escapeHtml(data.programa.cliente_nombre) : '');
-
-      // Fases (stepper por fase)
-      cargarFasesHome(data.programa.id);
 
       // Pendientes
       renderPendientes(data.pendientes || []);
