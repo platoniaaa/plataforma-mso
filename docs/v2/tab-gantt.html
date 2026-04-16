@@ -347,9 +347,12 @@
       return;
     }
 
+    function parseLocalDate(s) {
+      return new Date(s + 'T12:00:00');
+    }
     // Rango de fechas
-    var todasInicios = ganttHitos.map(function(h) { return new Date(h.fecha_inicio); });
-    var todosFines = ganttHitos.map(function(h) { return new Date(h.fecha_termino); });
+    var todasInicios = ganttHitos.map(function(h) { return parseLocalDate(h.fecha_inicio); });
+    var todosFines = ganttHitos.map(function(h) { return parseLocalDate(h.fecha_termino); });
     var minDate = new Date(Math.min.apply(null, todasInicios));
     var maxDate = new Date(Math.max.apply(null, todosFines));
     // Padding 3 dias a cada lado
@@ -395,8 +398,8 @@
       '</div>';
 
       hitos.forEach(function(h) {
-        var inicio = new Date(h.fecha_inicio);
-        var termino = new Date(h.fecha_termino);
+        var inicio = parseLocalDate(h.fecha_inicio);
+        var termino = parseLocalDate(h.fecha_termino);
         var startPct = ((inicio.getTime() - minDate.getTime()) / totalMs) * 100;
         var endPct = ((termino.getTime() - minDate.getTime()) / totalMs) * 100;
         var width = Math.max(1, endPct - startPct);
