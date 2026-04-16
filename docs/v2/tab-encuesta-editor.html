@@ -122,8 +122,10 @@
     <div class="fe-footer">
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
         <button class="btn btn-outline" onclick="switchTab('encuestas')">Volver</button>
-        <button class="btn btn-primary" id="fe-btn-activar" onclick="feActivar()">Guardar encuesta y notificar participantes</button>
+        <button class="btn btn-secondary" id="fe-btn-guardar" onclick="feGuardar()">Guardar cambios</button>
+        <button class="btn btn-primary" id="fe-btn-activar" onclick="feActivar()">Activar y notificar participantes</button>
         <button class="btn btn-outline hidden" style="color:#c0392b;" id="fe-btn-cerrar" onclick="feCerrar()">Cerrar Encuesta</button>
+        <button class="btn btn-outline hidden" style="color:var(--color-secundario);" id="fe-btn-reabrir" onclick="feReabrir()">Reabrir Encuesta</button>
       </div>
       <p class="text-sm text-muted mt-2" id="fe-estado"></p>
     </div>
@@ -182,8 +184,11 @@ function feRender(){
   document.getElementById('fe-b2').textContent=(feEnc.tipo||'pre').toUpperCase();
   document.getElementById('fe-b3').textContent=(feEnc.estado||'borrador');
   document.getElementById('fe-estado').textContent='Estado: '+(feEnc.estado||'borrador');
-  if(feEnc.estado==='activa'){document.getElementById('fe-btn-activar').classList.add('hidden');document.getElementById('fe-btn-cerrar').classList.remove('hidden');}
-  else if(feEnc.estado==='cerrada'){document.getElementById('fe-btn-activar').classList.add('hidden');}
+  var estado=(feEnc.estado||'borrador').toLowerCase();
+  document.getElementById('fe-btn-guardar').classList.toggle('hidden', estado==='cerrada');
+  document.getElementById('fe-btn-activar').classList.toggle('hidden', estado==='activa'||estado==='cerrada');
+  document.getElementById('fe-btn-cerrar').classList.toggle('hidden', estado!=='activa');
+  document.getElementById('fe-btn-reabrir').classList.toggle('hidden', estado!=='cerrada');
   feRenderPregs();
 }
 
@@ -401,11 +406,29 @@ function feActivar(){
   }).activarEncuesta(App.token,feId);
 }
 
+function feGuardar(){
+  showToast('Guardando cambios...','info');
+  google.script.run.withSuccessHandler(function(r){
+    if(r&&r.success){showToast('Encuesta guardada correctamente.','success');}
+    else showToast(r?r.error:'Error al guardar.','error');
+  }).withFailureHandler(function(){showToast('Error de conexion.','error');
+  }).actualizarEncuesta(App.token,feId,{nombre:feEnc.nombre,instrucciones:feEnc.instrucciones});
+}
+
 function feCerrar(){
   if(!confirm('Cerrar encuesta?'))return;
   google.script.run.withSuccessHandler(function(r){
     if(r&&r.success){showToast('Cerrada.','success');feEnc.estado='cerrada';feRender();}
     else showToast(r?r.error:'Error','error');
   }).cerrarEncuesta(App.token,feId);
+}
+
+function feReabrir(){
+  if(!confirm('Reabrir encuesta? Los participantes podran volver a responder.'))return;
+  google.script.run.withSuccessHandler(function(r){
+    if(r&&r.success){showToast('Encuesta reabierta.','success');feEnc.estado='activa';feRender();}
+    else showToast(r?r.error:'Error','error');
+  }).withFailureHandler(function(){showToast('Error de conexion.','error');
+  }).activarEncuesta(App.token,feId);
 }
 </script>

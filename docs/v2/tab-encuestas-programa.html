@@ -499,6 +499,8 @@
       accionesHtml += '<button class="btn btn-sm btn-success" onclick="activarEncuestaPrograma(\'' + enc.id + '\')">Activar</button>';
     } else if (estado === 'activa') {
       accionesHtml += '<button class="btn btn-sm btn-warning" onclick="cerrarEncuestaPrograma(\'' + enc.id + '\')">Cerrar</button>';
+    } else if (estado === 'cerrada') {
+      accionesHtml += '<button class="btn btn-sm btn-success" onclick="reabrirEncuestaPrograma(\'' + enc.id + '\')">Reabrir</button>';
     }
 
     return '<div class="encuesta-slot">' +
@@ -703,6 +705,24 @@
         showToast('Error de conexi\u00f3n al cerrar encuesta.', 'error');
       })
       .cerrarEncuesta(App.token, id);
+  }
+
+  function reabrirEncuestaPrograma(id) {
+    if (!confirmar('\u00bfReabrir esta encuesta? Los participantes podr\u00e1n volver a responder.')) return;
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.success) {
+          showToast('Encuesta reabierta.', 'success');
+          cargarEncuestasPrograma();
+        } else {
+          showToast(r ? r.error : 'Error al reabrir.', 'error');
+        }
+      })
+      .withFailureHandler(function() {
+        showToast('Error de conexi\u00f3n al reabrir encuesta.', 'error');
+      })
+      .activarEncuesta(App.token, id);
   }
 
   function eliminarEncuestaPrograma(id) {
