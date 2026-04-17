@@ -172,9 +172,11 @@
   }
 
   function irAFeedback(progId, partId) {
-    // Navegar a la vista de feedback
+    try {
+      sessionStorage.setItem('tpt_feedback_target', JSON.stringify({ programaId: progId, participanteId: partId }));
+    } catch (e) {}
     if (typeof cargarVista === 'function') {
-      cargarVista('feedback-jefatura');
+      cargarVista('feedback');
     }
   }
 </script>

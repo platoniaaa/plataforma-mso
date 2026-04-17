@@ -1869,9 +1869,85 @@ var backendFunctions = {
   listarFeedbackJefatura: async function() { return { success: true, data: [] }; },
   crearFeedback: async function() { return { success: true, data: { id: null } }; },
   enviarFeedback: async function() { return { success: true }; },
-  registrarFeedback: async function() { return { success: true }; },
-  listarFeedbackRecibido: async function() { return { success: true, data: [] }; },
-  listarFeedbackEquipo: async function() { return { success: true, data: [] }; },
+  registrarFeedback: async function(token, payload) {
+    payload = payload || {};
+    var userId = null;
+    try {
+      var u = JSON.parse(sessionStorage.getItem('tpt_usuario') || 'null');
+      if (u && u.id) userId = u.id;
+    } catch (e) {}
+    if (!userId) return { success: false, error: 'Usuario no identificado' };
+    if (!payload.programaId || !payload.participanteId) {
+      return { success: false, error: 'Faltan programa o colaborador' };
+    }
+    if (!payload.fortaleza || !payload.aspecto_reforzar || !payload.recomendacion) {
+      return { success: false, error: 'Completa todos los campos obligatorios' };
+    }
+    var ins = await _supabase.from('feedback').insert({
+      programa_id: payload.programaId,
+      lider_id: userId,
+      participante_id: payload.participanteId,
+      observacion_id: payload.observacionId || null,
+      fortaleza: payload.fortaleza,
+      aspecto_reforzar: payload.aspecto_reforzar,
+      recomendacion: payload.recomendacion
+    }).select().single();
+    if (ins.error) {
+      console.error('[registrarFeedback] error', ins.error);
+      return { success: false, error: ins.error.message };
+    }
+    return { success: true, data: { id: ins.data.id } };
+  },
+  listarFeedbackRecibido: async function(token) {
+    var userId = null;
+    try {
+      var u = JSON.parse(sessionStorage.getItem('tpt_usuario') || 'null');
+      if (u && u.id) userId = u.id;
+    } catch (e) {}
+    if (!userId) return { success: true, data: [] };
+    var r = await _supabase.from('feedback')
+      .select('*, lider:usuarios!feedback_lider_id_fkey(id,nombre), programa:programas(nombre)')
+      .eq('participante_id', userId)
+      .order('created_at', { ascending: false });
+    if (r.error) return { success: false, error: r.error.message };
+    var data = (r.data || []).map(function(f) {
+      return {
+        id: f.id,
+        fecha_feedback: f.created_at,
+        fortaleza: f.fortaleza,
+        aspecto_reforzar: f.aspecto_reforzar,
+        recomendacion: f.recomendacion,
+        lider_nombre: f.lider ? f.lider.nombre : '',
+        programa_nombre: f.programa ? f.programa.nombre : ''
+      };
+    });
+    return { success: true, data: data };
+  },
+  listarFeedbackEquipo: async function(token, progId) {
+    var userId = null;
+    try {
+      var u = JSON.parse(sessionStorage.getItem('tpt_usuario') || 'null');
+      if (u && u.id) userId = u.id;
+    } catch (e) {}
+    if (!userId || !progId) return { success: true, data: [] };
+    var r = await _supabase.from('feedback')
+      .select('*, participante:usuarios!feedback_participante_id_fkey(id,nombre)')
+      .eq('programa_id', progId)
+      .eq('lider_id', userId)
+      .order('created_at', { ascending: false });
+    if (r.error) return { success: false, error: r.error.message };
+    var data = (r.data || []).map(function(f) {
+      return {
+        id: f.id,
+        fecha_feedback: f.created_at,
+        fortaleza: f.fortaleza,
+        aspecto_reforzar: f.aspecto_reforzar,
+        recomendacion: f.recomendacion,
+        participante_nombre: f.participante ? f.participante.nombre : ''
+      };
+    });
+    return { success: true, data: data };
+  },
   listarMiEquipo: async function() { return { success: true, data: [] }; },
   listarObservacionesJefatura: async function() { return { success: true, data: [] }; },
   guardarObservacion: async function() { return { success: true }; },

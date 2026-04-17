@@ -75,6 +75,15 @@
   var participantesFbj = [];
   var feedbackDadoData = [];
 
+  var feedbackPreselect = null;
+  try {
+    var raw = sessionStorage.getItem('tpt_feedback_target');
+    if (raw) {
+      feedbackPreselect = JSON.parse(raw);
+      sessionStorage.removeItem('tpt_feedback_target');
+    }
+  } catch (e) {}
+
   (function() {
     // Cargar programas del dashboard (jefatura ve sus programas)
     google.script.run.withSuccessHandler(function(r) {
@@ -86,6 +95,10 @@
           opt.textContent = p.nombre;
           sel.appendChild(opt);
         });
+        if (feedbackPreselect && feedbackPreselect.programaId) {
+          sel.value = feedbackPreselect.programaId;
+          onProgramaFeedbackChange();
+        }
       }
     }).listarProgramasDashboard(App.token);
   })();
@@ -104,18 +117,30 @@
       return;
     }
 
-    // Cargar participantes asignados
+    // Cargar colaboradores asignados al lider
     google.script.run.withSuccessHandler(function(r) {
       if (r.success) {
         participantesFbj = r.data;
+        var userId = null;
+        try {
+          var u = JSON.parse(sessionStorage.getItem('tpt_usuario') || 'null');
+          if (u && u.id) userId = u.id;
+        } catch (e) {}
         r.data.forEach(function(p) {
-          if (p.rol_programa === 'participante') {
+          var esColab = p.rol_programa === 'colaborador' || p.rol_programa === 'participante';
+          var esDelLider = !userId || !p.lider_id || p.lider_id === userId;
+          if (esColab && esDelLider) {
             var opt = document.createElement('option');
             opt.value = p.id;
             opt.textContent = p.nombre + (p.cargo ? ' - ' + p.cargo : '');
             selPart.appendChild(opt);
           }
         });
+        if (feedbackPreselect && feedbackPreselect.participanteId) {
+          selPart.value = feedbackPreselect.participanteId;
+          feedbackPreselect = null;
+          onParticipanteFeedbackChange();
+        }
       }
     }).listarParticipantesPrograma(App.token, progId);
 
