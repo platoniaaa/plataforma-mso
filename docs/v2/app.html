@@ -970,6 +970,9 @@
         </div>
       </header>
 
+      <!-- Banner de estado de licencia -->
+      <div id="licencia-banner" class="hidden" style="padding:14px 24px;font-size:14px;line-height:1.4;border-left:4px solid;"></div>
+
       <div class="content-area" id="content-area">
         <!-- Contenido dinámico se carga aquí -->
         <div class="text-center" style="padding:60px 20px;">
@@ -1059,6 +1062,19 @@ var App = {
    */
   isParticipante: function() {
     return this.getRol() === 'participante';
+  },
+
+  /**
+   * Estado de licencia del cliente actual.
+   * Se carga en init() y se usa para bloquear acciones de escritura.
+   */
+  licencia: { estado: 'activa', dias_restantes: null, fecha_expiracion: null, nivel_aviso: null, es_admin_mso: false },
+
+  /**
+   * Indica si la plataforma esta en modo solo lectura (licencia vencida + gracia agotada)
+   */
+  isSoloLectura: function() {
+    return this.licencia && this.licencia.estado === 'solo_lectura' && !this.licencia.es_admin_mso;
   },
 
   /**
@@ -1510,7 +1526,102 @@ function _ejecutarConfirmacion() {
 
       // Cargar notificaciones
       cargarContadorNotificaciones();
+
+      // Cargar estado de licencia y pintar banner
+      cargarEstadoLicencia();
     });
+
+    // ============================================
+    // CONTROL DE LICENCIA
+    // ============================================
+    function cargarEstadoLicencia() {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (r && r.success) {
+            App.licencia = r.data || App.licencia;
+            pintarBannerLicencia();
+            aplicarSoloLectura();
+          }
+        })
+        .withFailureHandler(function() {})
+        .obtenerEstadoLicencia(App.token, null);
+    }
+
+    function pintarBannerLicencia() {
+      var banner = document.getElementById('licencia-banner');
+      if (!banner) return;
+      var l = App.licencia || {};
+      if (l.es_admin_mso) { banner.classList.add('hidden'); return; }
+
+      var d = l.dias_restantes;
+      var estado = l.estado || 'activa';
+      var mensaje = '';
+      var bg = '', border = '', color = '';
+
+      if (estado === 'solo_lectura') {
+        bg = '#f8d7da'; border = '#c0392b'; color = '#721c24';
+        mensaje = '<strong>Servicio en modo solo lectura.</strong> La licencia vencio' +
+          (l.fecha_expiracion ? ' el ' + l.fecha_expiracion : '') +
+          '. Puedes consultar la informacion pero no realizar cambios. Contacta a MSO para regularizar.';
+      } else if (l.nivel_aviso === 'urgente') {
+        bg = '#f8d7da'; border = '#e74c3c'; color = '#721c24';
+        mensaje = '<strong>Atencion:</strong> La licencia vence en ' + d + ' dia' + (d !== 1 ? 's' : '') +
+          (l.fecha_expiracion ? ' (' + l.fecha_expiracion + ')' : '') +
+          '. Regulariza el pago para evitar la suspension del servicio.';
+      } else if (l.nivel_aviso === 'proximo') {
+        bg = '#fff3cd'; border = '#f39c12'; color = '#856404';
+        mensaje = 'La licencia vence en ' + d + ' dias' +
+          (l.fecha_expiracion ? ' (' + l.fecha_expiracion + ')' : '') +
+          '. Contacta a MSO para renovar.';
+      } else {
+        banner.classList.add('hidden');
+        return;
+      }
+      banner.style.background = bg;
+      banner.style.borderLeftColor = border;
+      banner.style.color = color;
+      banner.innerHTML = mensaje;
+      banner.classList.remove('hidden');
+    }
+
+    function aplicarSoloLectura() {
+      if (!App.isSoloLectura()) {
+        document.body.classList.remove('licencia-solo-lectura');
+        return;
+      }
+      document.body.classList.add('licencia-solo-lectura');
+      // Observer que bloquea los botones que aparezcan en vistas cargadas dinamicamente
+      if (window._licenciaObserver) return;
+      window._licenciaObserver = new MutationObserver(function() { bloquearAccionesSoloLectura(); });
+      window._licenciaObserver.observe(document.getElementById('content-area'), { childList: true, subtree: true });
+      bloquearAccionesSoloLectura();
+    }
+
+    function bloquearAccionesSoloLectura() {
+      if (!App.isSoloLectura()) return;
+      var area = document.getElementById('content-area');
+      if (!area) return;
+      var btns = area.querySelectorAll('button, input[type="submit"], input[type="button"]');
+      btns.forEach(function(btn) {
+        if (btn.dataset.licenciaBloqueado === '1') return;
+        var txt = (btn.textContent || btn.value || '').toLowerCase();
+        var cls = (btn.className || '').toLowerCase();
+        // Permitir botones de navegacion, cerrar modales y descargar/ver
+        var permitidos = /volver|cerrar|cancelar|descargar|ver|exportar|imprimir|filtrar|buscar/;
+        var accionesEscritura = /guardar|enviar|responder|activar|crear|eliminar|agregar|cargar|importar|asignar|subir|nuevo|actualizar|generar|rehacer|reabrir|notificar|rese?tear|pass|cambiar|borrar|quitar|reemplazar|editar|modificar|registrar/;
+        if (permitidos.test(txt)) return;
+        if (accionesEscritura.test(txt) || accionesEscritura.test(cls)) {
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'not-allowed';
+          btn.title = 'Accion deshabilitada: licencia vencida';
+          btn.dataset.licenciaBloqueado = '1';
+        }
+      });
+      // Deshabilitar inputs de archivo y forms editables en encuestas
+      var inputs = area.querySelectorAll('input[type="file"]');
+      inputs.forEach(function(i) { i.disabled = true; i.title = 'Licencia vencida'; });
+    }
 
     // ============================================
     // MENÚ DE NAVEGACIÓN

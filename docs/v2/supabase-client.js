@@ -226,7 +226,7 @@ var backendFunctions = {
   },
 
   crearCliente: async function(token, datos) {
-    var r = await _supabase.from('clientes').insert({
+    var payload = {
       nombre: datos.nombre || '',
       razon_social: datos.razon_social || '',
       rubro: datos.rubro || '',
@@ -234,13 +234,30 @@ var backendFunctions = {
       contacto_nombre: datos.contacto_nombre || '',
       contacto_email: datos.contacto_email || '',
       estado: 'Activo'
-    }).select().single();
+    };
+    if (datos.fecha_expiracion) payload.fecha_expiracion = datos.fecha_expiracion;
+    if (datos.dias_gracia !== undefined && datos.dias_gracia !== '' && datos.dias_gracia !== null) {
+      payload.dias_gracia = Number(datos.dias_gracia);
+    }
+    var r = await _supabase.from('clientes').insert(payload).select().single();
     if (r.error) return { success: false, error: r.error.message };
     return { success: true, data: { id: r.data.id } };
   },
 
   actualizarCliente: async function(token, id, datos) {
-    var r = await _supabase.from('clientes').update(datos).eq('id', id);
+    var payload = {};
+    Object.keys(datos || {}).forEach(function(k) {
+      if (k === 'id') return;
+      var v = datos[k];
+      if (k === 'fecha_expiracion') {
+        payload.fecha_expiracion = (v && String(v).trim()) ? String(v).substring(0, 10) : null;
+      } else if (k === 'dias_gracia') {
+        payload.dias_gracia = (v === '' || v === null || v === undefined) ? 15 : Number(v);
+      } else {
+        payload[k] = v;
+      }
+    });
+    var r = await _supabase.from('clientes').update(payload).eq('id', id);
     if (r.error) return { success: false, error: r.error.message };
     return { success: true };
   },
@@ -255,6 +272,58 @@ var backendFunctions = {
   eliminarCliente: async function(token, id) {
     await _supabase.from('clientes').delete().eq('id', id);
     return { success: true };
+  },
+
+  obtenerEstadoLicencia: async function(token, clienteId) {
+    if (!clienteId) {
+      var usuario = null;
+      try { usuario = JSON.parse(sessionStorage.getItem('tpt_usuario') || 'null'); } catch (e) {}
+      if (usuario && usuario.rol === 'admin') {
+        return { success: true, data: { estado: 'activa', dias_restantes: null, es_admin_mso: true } };
+      }
+      if (usuario && usuario.id) {
+        var pp = await _supabase.from('participantes_programa')
+          .select('programa_id').eq('usuario_id', usuario.id).limit(1).maybeSingle();
+        if (pp.data && pp.data.programa_id) {
+          var prog = await _supabase.from('programas').select('cliente_id').eq('id', pp.data.programa_id).maybeSingle();
+          if (prog.data && prog.data.cliente_id) clienteId = prog.data.cliente_id;
+        }
+      }
+    }
+    if (!clienteId) return { success: true, data: { estado: 'activa', dias_restantes: null } };
+    var cli = await _supabase.from('clientes').select('id, nombre, fecha_expiracion, dias_gracia').eq('id', clienteId).maybeSingle();
+    if (!cli.data || !cli.data.fecha_expiracion) {
+      return { success: true, data: { estado: 'activa', dias_restantes: null, cliente_id: clienteId } };
+    }
+    var hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    var exp = new Date(cli.data.fecha_expiracion + 'T12:00:00');
+    exp.setHours(0, 0, 0, 0);
+    var diffMs = exp.getTime() - hoy.getTime();
+    var dias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    var gracia = Number(cli.data.dias_gracia || 15);
+    var estado = 'activa';
+    var nivel_aviso = null;
+    if (dias <= 0) {
+      if (Math.abs(dias) <= gracia) estado = 'solo_lectura';
+      else estado = 'solo_lectura';
+    } else if (dias <= 7) {
+      nivel_aviso = 'urgente';
+    } else if (dias <= 30) {
+      nivel_aviso = 'proximo';
+    }
+    return {
+      success: true,
+      data: {
+        cliente_id: cli.data.id,
+        cliente_nombre: cli.data.nombre,
+        fecha_expiracion: cli.data.fecha_expiracion,
+        dias_restantes: dias,
+        dias_gracia: gracia,
+        estado: estado,
+        nivel_aviso: nivel_aviso
+      }
+    };
   },
 
   // ============================================

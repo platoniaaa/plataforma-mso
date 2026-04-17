@@ -25,11 +25,12 @@
             <th>Contacto</th>
             <th>Email Contacto</th>
             <th>Estado</th>
+            <th>Licencia</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="tbody-clientes">
-          <tr><td colspan="6" class="text-center text-muted p-4">Cargando...</td></tr>
+          <tr><td colspan="7" class="text-center text-muted p-4">Cargando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -82,6 +83,20 @@
           <input type="email" name="contacto_email" class="form-control" required
                  placeholder="contacto@empresa.cl">
         </div>
+
+        <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-borde);">
+        <h4 style="margin:0 0 12px;color:var(--color-primario);font-size:14px;">Control de licencia</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label>Fecha de expiraci&oacute;n</label>
+            <input type="date" name="fecha_expiracion" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>D&iacute;as de gracia</label>
+            <input type="number" name="dias_gracia" class="form-control" min="0" placeholder="15">
+          </div>
+        </div>
+        <p class="text-xs text-muted" style="margin-top:-8px;">Si queda vac&iacute;a, el servicio no tiene restricci&oacute;n de licencia.</p>
       </form>
     </div>
     <div class="modal-footer">
@@ -119,17 +134,33 @@
     var tbody = document.getElementById('tbody-clientes');
 
     if (!clientes || clientes.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-4">No hay clientes registrados.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-4">No hay clientes registrados.</td></tr>';
       return;
     }
 
     tbody.innerHTML = clientes.map(function(c) {
+      var licBadge = '<span class="text-muted text-xs">Sin limite</span>';
+      if (c.fecha_expiracion) {
+        var hoy = new Date(); hoy.setHours(0,0,0,0);
+        var exp = new Date(c.fecha_expiracion + 'T12:00:00'); exp.setHours(0,0,0,0);
+        var d = Math.round((exp.getTime() - hoy.getTime()) / 86400000);
+        if (d < 0) {
+          licBadge = '<span class="badge badge-danger" title="' + c.fecha_expiracion + '">Vencida (' + Math.abs(d) + 'd)</span>';
+        } else if (d <= 7) {
+          licBadge = '<span class="badge badge-warning" title="' + c.fecha_expiracion + '">Vence en ' + d + 'd</span>';
+        } else if (d <= 30) {
+          licBadge = '<span class="badge badge-info" title="' + c.fecha_expiracion + '">Vence en ' + d + 'd</span>';
+        } else {
+          licBadge = '<span class="badge badge-success" title="' + c.fecha_expiracion + '">Activa</span>';
+        }
+      }
       return '<tr>' +
         '<td><strong>' + escapeHtml(c.nombre) + '</strong></td>' +
         '<td>' + escapeHtml(c.rubro || '-') + '</td>' +
         '<td>' + escapeHtml(c.contacto_nombre) + '</td>' +
         '<td>' + escapeHtml(c.contacto_email) + '</td>' +
         '<td>' + getBadge(c.estado) + '</td>' +
+        '<td>' + licBadge + '</td>' +
         '<td style="white-space:nowrap;">' +
           '<div style="display:inline-flex;gap:6px;align-items:center;">' +
           '<button class="btn btn-sm btn-outline" onclick="editarCliente(\'' + c.id + '\')">Editar</button>' +
