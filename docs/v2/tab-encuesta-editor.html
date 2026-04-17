@@ -81,6 +81,11 @@
       </div>
       <input class="fe-header-title" id="fe-titulo" placeholder="Titulo de la encuesta" onblur="saveEncField('nombre',this.value)">
       <textarea class="fe-header-desc" id="fe-desc" rows="2" placeholder="Descripcion / instrucciones para los participantes" onblur="saveEncField('instrucciones',this.value)"></textarea>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--color-borde);flex-wrap:wrap;">
+        <label style="font-size:13px;color:var(--color-texto-sec);font-weight:500;">Fecha limite:</label>
+        <input type="date" id="fe-fecha-cierre" class="form-control" style="max-width:180px;font-size:13px;padding:6px 10px;" onchange="saveEncField('fecha_cierre',this.value)">
+        <span style="font-size:11px;color:var(--color-texto-sec);font-style:italic;">Se actualiza automaticamente al subir la carta Gantt.</span>
+      </div>
     </div>
 
     <!-- Leyenda de Niveles -->
@@ -180,6 +185,8 @@ function feRender(){
   var tc=feEnc.tipo_cuestionario||'autoevaluacion';
   document.getElementById('fe-titulo').value=feEnc.nombre||'';
   document.getElementById('fe-desc').value=feEnc.instrucciones||'';
+  var fc=feEnc.fecha_cierre||'';
+  document.getElementById('fe-fecha-cierre').value=fc?String(fc).substring(0,10):'';
   document.getElementById('fe-b1').textContent=tc==='autoevaluacion'?'Autoevaluacion':'Coevaluacion';
   document.getElementById('fe-b2').textContent=(feEnc.tipo||'pre').toUpperCase();
   document.getElementById('fe-b3').textContent=(feEnc.estado||'borrador');
@@ -288,10 +295,11 @@ function feRenderPregs(){
 
 /* ---- Guardar campos ---- */
 function saveEncField(campo,val){
-  val=val.trim();
-  if(feEnc[campo]===val)return;
-  feEnc[campo]=val;
-  var d={};d[campo]=val;
+  val=(val||'').trim();
+  var toSend=(campo==='fecha_cierre'&&!val)?null:val;
+  if((feEnc[campo]||'')===(toSend||''))return;
+  feEnc[campo]=toSend;
+  var d={};d[campo]=toSend;
   google.script.run.actualizarEncuesta(App.token,feId,d);
 }
 
