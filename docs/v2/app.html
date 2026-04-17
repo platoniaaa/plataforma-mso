@@ -1071,9 +1071,15 @@ var App = {
   licencia: { estado: 'activa', dias_restantes: null, fecha_expiracion: null, nivel_aviso: null, es_admin_mso: false },
 
   /**
-   * Indica si la plataforma esta en modo solo lectura (licencia vencida + gracia agotada)
+   * Config global de plataforma (kill switch del proveedor).
+   */
+  configPlataforma: { activa: true, modo_solo_lectura: false, mensaje: null },
+
+  /**
+   * Indica si la plataforma esta en modo solo lectura (por licencia del cliente o por config global del proveedor).
    */
   isSoloLectura: function() {
+    if (this.configPlataforma && this.configPlataforma.modo_solo_lectura) return true;
     return this.licencia && this.licencia.estado === 'solo_lectura' && !this.licencia.es_admin_mso;
   },
 
@@ -1511,6 +1517,42 @@ function _ejecutarConfirmacion() {
         return;
       }
 
+      // Kill switch del proveedor: verificar config global antes de todo
+      google.script.run
+        .withSuccessHandler(function(r) {
+          var cfg = (r && r.success) ? (r.data || {}) : { activa: true, modo_solo_lectura: false };
+          if (cfg.activa === false) {
+            mostrarPantallaMantenimiento(cfg.mensaje);
+            return;
+          }
+          App.configPlataforma = cfg;
+          inicializarApp();
+        })
+        .withFailureHandler(function() {
+          App.configPlataforma = { activa: true, modo_solo_lectura: false };
+          inicializarApp();
+        })
+        .obtenerConfigPlataforma();
+    });
+
+    function mostrarPantallaMantenimiento(mensajeCustom) {
+      document.body.innerHTML =
+        '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f5f7;padding:24px;">' +
+          '<div style="max-width:480px;text-align:center;background:white;border-radius:12px;padding:48px 32px;box-shadow:0 4px 20px rgba(0,0,0,0.08);">' +
+            '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#6b5b95" stroke-width="1.5" style="margin-bottom:20px;">' +
+              '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' +
+            '</svg>' +
+            '<h1 style="font-size:22px;color:#2d1b4e;margin-bottom:12px;">Servicio temporalmente no disponible</h1>' +
+            '<p style="color:#666;line-height:1.5;font-size:14px;margin-bottom:20px;">' +
+              (mensajeCustom ? String(mensajeCustom).replace(/</g, '&lt;') :
+                'La plataforma se encuentra en mantenimiento. Por favor contacta al administrador del servicio para mas informacion.') +
+            '</p>' +
+            '<button onclick="sessionStorage.clear();window.location.href=\'index.html\'" style="background:#6b5b95;color:white;border:none;padding:10px 24px;border-radius:6px;cursor:pointer;font-size:14px;">Cerrar sesi\u00f3n</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function inicializarApp() {
       // Mostrar datos del usuario
       document.getElementById('user-name').textContent = App.usuario.nombre;
       var rolLabel = { admin: 'ADMIN', jefatura: 'L\u00cdDER', participante: 'COLABORADOR', colaborador: 'COLABORADOR' };
@@ -1529,7 +1571,7 @@ function _ejecutarConfirmacion() {
 
       // Cargar estado de licencia y pintar banner
       cargarEstadoLicencia();
-    });
+    }
 
     // ============================================
     // CONTROL DE LICENCIA
@@ -1551,6 +1593,20 @@ function _ejecutarConfirmacion() {
       var banner = document.getElementById('licencia-banner');
       if (!banner) return;
       var l = App.licencia || {};
+      var cfg = App.configPlataforma || {};
+
+      // Prioridad 1: modo solo lectura activado a nivel global (proveedor)
+      if (cfg.modo_solo_lectura) {
+        banner.style.background = '#f8d7da';
+        banner.style.borderLeftColor = '#c0392b';
+        banner.style.color = '#721c24';
+        banner.innerHTML = cfg.mensaje
+          ? String(cfg.mensaje).replace(/</g, '&lt;')
+          : '<strong>Servicio en modo solo lectura.</strong> Puedes consultar la informacion pero no realizar cambios. Contacta al administrador del servicio.';
+        banner.classList.remove('hidden');
+        return;
+      }
+
       if (l.es_admin_mso) { banner.classList.add('hidden'); return; }
 
       var d = l.dias_restantes;

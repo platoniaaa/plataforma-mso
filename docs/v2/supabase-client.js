@@ -274,6 +274,18 @@ var backendFunctions = {
     return { success: true };
   },
 
+  obtenerConfigPlataforma: async function() {
+    try {
+      var r = await _supabase.from('plataforma_config').select('*').eq('id', 1).maybeSingle();
+      if (r.error || !r.data) {
+        return { success: true, data: { activa: true, modo_solo_lectura: false, mensaje: null } };
+      }
+      return { success: true, data: r.data };
+    } catch (e) {
+      return { success: true, data: { activa: true, modo_solo_lectura: false, mensaje: null } };
+    }
+  },
+
   obtenerEstadoLicencia: async function(token, clienteId) {
     if (!clienteId) {
       var usuario = null;
