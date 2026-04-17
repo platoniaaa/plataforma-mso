@@ -149,17 +149,12 @@
               '<h3 style="font-size:16px;color:var(--color-primario);">' + escapeHtml(p.nombre) + '</h3>' +
               '<p class="text-sm text-muted">' + escapeHtml(p.cargo || 'Sin cargo') + '</p>' +
             '</div>' +
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">' +
-              '<div style="background:var(--color-fondo-alt);padding:8px 12px;border-radius:6px;text-align:center;">' +
-                '<div class="text-xs text-muted">Observaciones</div>' +
-                '<div style="font-size:20px;font-weight:700;color:var(--color-primario);">' + numObs + '</div>' +
-              '</div>' +
+            '<div style="margin-bottom:12px;">' +
               '<div style="background:var(--color-fondo-alt);padding:8px 12px;border-radius:6px;text-align:center;">' +
                 '<div class="text-xs text-muted">Feedback</div>' +
                 '<div style="font-size:20px;font-weight:700;color:var(--color-primario);">' + numFb + '</div>' +
               '</div>' +
             '</div>' +
-            '<p class="text-xs text-muted mb-3">Ultima observacion: ' + ultimaObs + '</p>' +
             '<div style="display:flex;gap:8px;">' +
               '<button class="btn btn-sm btn-secondary" style="flex:1;" onclick="irAFeedback(\'' + progId + '\', \'' + p.id + '\')">Dar Feedback</button>' +
             '</div>' +
