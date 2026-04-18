@@ -253,7 +253,7 @@
     // Merge: encuestas internas pendientes + actividades externas pendientes
     todasPendientes = encPendientes.concat(actPendientes);
 
-    // Ordenar por fecha limite (las que vencen antes, primero)
+    // Ordenar por fecha límite (las que vencen antes, primero)
     todasPendientes.sort(function(a, b) {
       if (!a.fecha_limite && !b.fecha_limite) return 0;
       if (!a.fecha_limite) return 1;

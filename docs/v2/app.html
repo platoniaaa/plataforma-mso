@@ -1396,7 +1396,7 @@ function debounce(func, wait) {
 }
 
 /**
- * Confirmar accion (backward-compatible: synchronous fallback)
+ * Confirmar acción (backward-compatible: synchronous fallback)
  * If called with only a string argument, uses native confirm() for backward compat.
  * Use confirmarAccion() for the async modal version.
  */
@@ -1407,14 +1407,14 @@ function confirmar(mensaje) {
 /**
  * Muestra un modal de confirmacion personalizado (async, callback-based)
  * @param {string} mensaje - Titulo del modal
- * @param {string} descripcion - Descripcion de la accion / consecuencias
+ * @param {string} descripcion - Descripción de la accion / consecuencias
  * @param {function} onConfirm - Callback ejecutado al confirmar
  */
 function confirmarAccion(mensaje, descripcion, onConfirm) {
   var overlay = document.getElementById('modal-confirmar');
   if (!overlay) return;
 
-  document.getElementById('confirmar-titulo').textContent = mensaje || 'Confirmar accion';
+  document.getElementById('confirmar-titulo').textContent = mensaje || 'Confirmar acción';
   document.getElementById('confirmar-descripcion').textContent = descripcion || '';
   document.getElementById('confirmar-descripcion').style.display = descripcion ? 'block' : 'none';
 
@@ -1891,7 +1891,7 @@ function _ejecutarConfirmacion() {
   <div class="modal-overlay" id="modal-confirmar">
     <div class="modal" style="max-width:440px;" onclick="event.stopPropagation()">
       <div class="modal-header">
-        <h3 id="confirmar-titulo" style="color:var(--color-error);">Confirmar accion</h3>
+        <h3 id="confirmar-titulo" style="color:var(--color-error);">Confirmar acción</h3>
         <button class="modal-close" onclick="_cerrarModalConfirmar()">&times;</button>
       </div>
       <div class="modal-body">

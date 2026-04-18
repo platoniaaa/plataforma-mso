@@ -29,7 +29,7 @@
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px;font-size:12px;">
             <div><strong style="color:var(--color-secundario, #F58220);">Nivel 1:</strong> <span style="color:var(--color-texto-sec);">Conoce el concepto pero no lo aplica</span></div>
-            <div><strong style="color:var(--color-secundario, #F58220);">Nivel 2:</strong> <span style="color:var(--color-texto-sec);">Aplica con orientacion o apoyo</span></div>
+            <div><strong style="color:var(--color-secundario, #F58220);">Nivel 2:</strong> <span style="color:var(--color-texto-sec);">Aplica con orientación o apoyo</span></div>
             <div><strong style="color:var(--color-secundario, #F58220);">Nivel 3:</strong> <span style="color:var(--color-texto-sec);">Aplica de forma consistente y autonoma</span></div>
             <div><strong style="color:var(--color-secundario, #F58220);">Nivel 4:</strong> <span style="color:var(--color-texto-sec);">Es referente y modelo para otros</span></div>
           </div>
@@ -95,7 +95,7 @@
     var tipoBadge = e.tipo === 'pre'
       ? '<span class="badge badge-info">PRE</span>'
       : '<span class="badge badge-success">POST</span>';
-    var fechaLimite = e.fecha_cierre ? '<span class="text-xs text-muted">Fecha limite: ' + formatDate(e.fecha_cierre) + '</span>' : '';
+    var fechaLimite = e.fecha_cierre ? '<span class="text-xs text-muted">Fecha límite: ' + formatDate(e.fecha_cierre) + '</span>' : '';
     var liderInfo = e.lider_nombre
       ? '<br><span class="text-sm" style="color:var(--color-primario);font-weight:500;">Evaluando a: ' + escapeHtml(e.lider_nombre) + '</span>'
       : '';
@@ -129,7 +129,7 @@
   function renderCompletadas(encuestas) {
     var div = document.getElementById('encuestas-completadas');
     if (!encuestas || encuestas.length === 0) {
-      div.innerHTML = '<div class="empty-state"><p>Aun no has completado ninguna encuesta.</p></div>';
+      div.innerHTML = '<div class="empty-state"><p>Aún no has completado ninguna encuesta.</p></div>';
       return;
     }
     div.innerHTML = encuestas.map(function(e) { return cardEncuesta(e, true); }).join('');
@@ -149,7 +149,7 @@
       document.getElementById('enc-form-titulo').textContent = enc.nombre;
       var subtexto = 'Programa: ' + enc.programa_nombre;
       if (enc.lider_nombre) {
-        subtexto += '  |  Estas evaluando a: ' + enc.lider_nombre;
+        subtexto += '  |  Estás evaluando a: ' + enc.lider_nombre;
       }
       document.getElementById('enc-form-programa').textContent = subtexto;
     }
