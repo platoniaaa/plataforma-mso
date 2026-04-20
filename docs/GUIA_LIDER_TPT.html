@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Guía del Líder - Plataforma TPT</title>
+<style>
+  @page { size: A4; margin: 20mm; }
+
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    color: #2D3748;
+    line-height: 1.6;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 40px 32px;
+    background: #FAFAFA;
+  }
+
+  .cover {
+    background: linear-gradient(135deg, #3D0C4B 0%, #6B1D7B 60%, #F58220 100%);
+    color: white;
+    padding: 60px 48px;
+    border-radius: 16px;
+    margin-bottom: 40px;
+    page-break-after: always;
+  }
+  .cover h1 { font-size: 44px; margin: 0 0 8px; font-weight: 700; }
+  .cover .subtitle { font-size: 20px; opacity: 0.9; margin-bottom: 32px; }
+  .cover .logo-placeholder {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    font-size: 20px;
+    margin-bottom: 24px;
+  }
+  .cover .logo-placeholder span { color: #F58220; }
+  .cover .version-tag {
+    display: inline-block;
+    background: rgba(0,0,0,0.25);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-top: 16px;
+  }
+
+  h2 {
+    color: #3D0C4B;
+    font-size: 26px;
+    border-bottom: 3px solid #F58220;
+    padding-bottom: 8px;
+    margin-top: 48px;
+    margin-bottom: 20px;
+    page-break-after: avoid;
+  }
+  h3 {
+    color: #6B1D7B;
+    font-size: 19px;
+    margin-top: 28px;
+    margin-bottom: 10px;
+    page-break-after: avoid;
+  }
+  h4 {
+    color: #3D0C4B;
+    font-size: 16px;
+    margin-top: 18px;
+    margin-bottom: 6px;
+  }
+
+  p { margin: 10px 0; }
+
+  .toc {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 24px 32px;
+    margin-bottom: 32px;
+    page-break-after: always;
+  }
+  .toc h2 {
+    margin-top: 0;
+    border: none;
+    padding: 0;
+  }
+  .toc ol {
+    font-size: 15px;
+    line-height: 1.9;
+    padding-left: 20px;
+  }
+  .toc ol a {
+    color: #3D0C4B;
+    text-decoration: none;
+  }
+  .toc ol a:hover { color: #F58220; }
+
+  .step {
+    background: white;
+    border-left: 4px solid #F58220;
+    padding: 16px 20px;
+    margin: 14px 0;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    page-break-inside: avoid;
+  }
+  .step-number {
+    display: inline-block;
+    background: #3D0C4B;
+    color: white;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    text-align: center;
+    line-height: 28px;
+    font-weight: 700;
+    margin-right: 10px;
+    font-size: 14px;
+  }
+
+  .tip, .warning, .success {
+    padding: 14px 20px;
+    border-radius: 8px;
+    margin: 16px 0;
+    page-break-inside: avoid;
+  }
+  .tip {
+    background: #E3F2FD;
+    border-left: 4px solid #1976D2;
+  }
+  .tip::before {
+    content: "💡 ";
+    font-weight: 700;
+  }
+  .warning {
+    background: #FFF3E0;
+    border-left: 4px solid #F57C00;
+  }
+  .warning::before {
+    content: "⚠️ ";
+    font-weight: 700;
+  }
+  .success {
+    background: #E8F5E9;
+    border-left: 4px solid #388E3C;
+  }
+  .success::before {
+    content: "✅ ";
+    font-weight: 700;
+  }
+
+  .code-box {
+    background: #F5F5F5;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    margin: 10px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    page-break-inside: avoid;
+  }
+  th {
+    background: #3D0C4B;
+    color: white;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  td {
+    padding: 10px 16px;
+    border-bottom: 1px solid #E2E8F0;
+    font-size: 14px;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) { background: #FAFAFA; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 2px;
+  }
+  .badge-inicial { background: #E3F2FD; color: #1976D2; }
+  .badge-final { background: #FFF3E0; color: #F57C00; }
+  .badge-pendiente { background: #FFF9C4; color: #F9A825; }
+  .badge-completada { background: #C8E6C9; color: #388E3C; }
+
+  .ui-element {
+    display: inline-block;
+    background: #3D0C4B;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 2px;
+  }
+  .ui-link {
+    color: #F58220;
+    font-weight: 600;
+  }
+
+  .faq-item {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin: 12px 0;
+    page-break-inside: avoid;
+  }
+  .faq-q {
+    font-weight: 700;
+    color: #3D0C4B;
+    margin-bottom: 6px;
+  }
+
+  .footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 2px solid #E2E8F0;
+    text-align: center;
+    color: #718096;
+    font-size: 13px;
+  }
+
+  ul, ol { padding-left: 24px; }
+  ul li, ol li { margin: 4px 0; }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .cover, .toc, .step, .tip, .warning, .success, .faq-item, table {
+      box-shadow: none;
+    }
+    h2 { page-break-before: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PORTADA -->
+<div class="cover">
+  <div class="logo-placeholder">MSO<span>CHILE</span></div>
+  <h1>Guía del Líder</h1>
+  <div class="subtitle">Plataforma de Transferencia al Puesto de Trabajo (TPT)</div>
+  <p style="opacity:0.85;font-size:15px;max-width:560px;line-height:1.7;">
+    Esta guía te acompañará en el uso de la plataforma durante todo el ciclo del programa
+    de desarrollo de competencias. Encontrarás cómo acceder, responder evaluaciones,
+    dar feedback a tu colaborador y seguir el avance del programa.
+  </p>
+  <div class="version-tag">Versión 1.0 &nbsp;·&nbsp; Abril 2026</div>
+</div>
+
+<!-- TABLA DE CONTENIDOS -->
+<div class="toc">
+  <h2>Contenido</h2>
+  <ol>
+    <li><a href="#acceso">Primer acceso a la plataforma</a></li>
+    <li><a href="#recuperar">¿Olvidaste tu contraseña?</a></li>
+    <li><a href="#mi-programa">Tu pantalla principal: Mi Programa</a></li>
+    <li><a href="#evaluaciones">Cómo responder tus evaluaciones</a></li>
+    <li><a href="#tipos-evaluacion">Tipos de evaluación en el programa</a></li>
+    <li><a href="#mi-equipo">Tu equipo y tu colaborador</a></li>
+    <li><a href="#feedback">Cómo dar feedback a tu colaborador</a></li>
+    <li><a href="#recursos">Archivos y recursos del programa</a></li>
+    <li><a href="#cronograma">Carta Gantt y cronograma</a></li>
+    <li><a href="#informes">Informes generados por la plataforma</a></li>
+    <li><a href="#incidencias">Reportar incidencias</a></li>
+    <li><a href="#faq">Preguntas frecuentes</a></li>
+    <li><a href="#soporte">Soporte y contacto</a></li>
+  </ol>
+</div>
+
+<!-- 1. ACCESO -->
+<h2 id="acceso">1. Primer acceso a la plataforma</h2>
+
+<p>Todos los líderes reciben un correo de bienvenida con sus credenciales cuando el
+administrador carga los datos del programa. Si todavía no lo recibiste, revisá tu carpeta
+de spam o contactá al administrador del programa.</p>
+
+<h3>Pasos para ingresar</h3>
+
+<div class="step">
+  <span class="step-number">1</span>
+  Abrí un navegador (Chrome, Edge, Firefox o Safari) e ingresá a:
+  <div class="code-box">https://plataforma.msochile.cl</div>
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  Ingresá tu <strong>email corporativo</strong> en el campo correspondiente.
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  Ingresá tu <strong>contraseña</strong>. Si es tu primer acceso, usá la contraseña que
+  recibiste por correo.
+</div>
+
+<div class="step">
+  <span class="step-number">4</span>
+  Click en <span class="ui-element">Ingresar</span>.
+</div>
+
+<div class="tip">
+  Te recomendamos <strong>cambiar tu contraseña</strong> en tu primer acceso por una
+  que sea segura y fácil de recordar. Puedes hacerlo usando la opción
+  "¿Olvidaste tu contraseña?" del login.
+</div>
+
+<!-- 2. RECUPERAR -->
+<h2 id="recuperar">2. ¿Olvidaste tu contraseña?</h2>
+
+<p>Si no recordás tu contraseña, seguí estos pasos:</p>
+
+<div class="step">
+  <span class="step-number">1</span>
+  En la pantalla de login, click en
+  <span class="ui-link">¿Olvidaste tu contraseña?</span>
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  Ingresá tu email corporativo y click en <span class="ui-element">Enviar instrucciones</span>.
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  Recibirás un correo desde <strong>MSO Plataforma &lt;no_reply@msochile.cl&gt;</strong>
+  con un link para restablecer tu contraseña.
+</div>
+
+<div class="step">
+  <span class="step-number">4</span>
+  El link te lleva a una pantalla donde podés definir tu nueva contraseña. Elegí una
+  combinación segura de al menos 6 caracteres.
+</div>
+
+<div class="warning">
+  El link de recuperación expira en <strong>1 hora</strong> y solo puede usarse una vez
+  por motivos de seguridad. Si no lo usás a tiempo, solicitá otro.
+</div>
+
+<!-- 3. MI PROGRAMA -->
+<h2 id="mi-programa">3. Tu pantalla principal: Mi Programa</h2>
+
+<p>Al iniciar sesión, tu pantalla principal es <strong>Mi Programa</strong>. Desde allí
+tienes una vista clara de todo el ciclo del programa en el que participas.</p>
+
+<h3>¿Qué encuentras en Mi Programa?</h3>
+
+<ul>
+  <li><strong>Datos del programa</strong>: nombre, cliente, fechas de inicio y término.</li>
+  <li><strong>3 fases con pasos (steppers)</strong>:
+    <ul>
+      <li><strong>Medición Inicial</strong>: autoevaluación inicial, coevaluación inicial, informes iniciales.</li>
+      <li><strong>Medición Final</strong>: autoevaluación final, coevaluación final, informes finales.</li>
+      <li><strong>Comparativo</strong>: informe de brechas entre la medición inicial y final.</li>
+    </ul>
+  </li>
+  <li><strong>Estado de cada paso</strong>: completada, en curso, pendiente o bloqueada.</li>
+  <li><strong>Botón "Responder"</strong> cuando una evaluación esté disponible.</li>
+</ul>
+
+<div class="tip">
+  Esta vista es tu centro de control. Si ves un paso en <span class="badge badge-pendiente">Pendiente</span>,
+  significa que debes completarlo. Los pasos <span class="badge badge-completada">Completada</span>
+  ya fueron cerrados.
+</div>
+
+<!-- 4. EVALUACIONES -->
+<h2 id="evaluaciones">4. Cómo responder tus evaluaciones</h2>
+
+<p>Las evaluaciones son el corazón del programa. Permiten medir las competencias y
+comportamientos antes (medición inicial) y después (medición final) de la intervención.</p>
+
+<h3>Responder una evaluación</h3>
+
+<div class="step">
+  <span class="step-number">1</span>
+  En el menú lateral, click en <span class="ui-element">Mis Evaluaciones</span>.
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  Verás dos secciones: <strong>Encuestas Pendientes</strong> y
+  <strong>Encuestas Completadas</strong>.
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  En una encuesta pendiente, click en <span class="ui-element">Responder</span>.
+</div>
+
+<div class="step">
+  <span class="step-number">4</span>
+  Leé las instrucciones y responde cada pregunta. La mayoría son de
+  tipo <strong>escala de niveles (1 a 4)</strong>:
+  <ul style="margin-top:8px;">
+    <li><strong>Nivel 1</strong>: Conoce el concepto pero no lo aplica</li>
+    <li><strong>Nivel 2</strong>: Aplica con orientación o apoyo</li>
+    <li><strong>Nivel 3</strong>: Aplica de forma consistente y autónoma</li>
+    <li><strong>Nivel 4</strong>: Es referente y modelo para otros</li>
+  </ul>
+</div>
+
+<div class="step">
+  <span class="step-number">5</span>
+  Una barra de progreso te indica cuántas preguntas llevás respondidas.
+</div>
+
+<div class="step">
+  <span class="step-number">6</span>
+  Al terminar, click en <span class="ui-element">Enviar Respuestas</span>. Recibirás
+  un correo de confirmación.
+</div>
+
+<h3>¿Te equivocaste al responder?</h3>
+
+<div class="success">
+  Si ya enviaste una evaluación y necesitas corregirla, ve a
+  <strong>Mis Evaluaciones → Encuestas Completadas</strong> y click en
+  <span class="ui-element">Rehacer evaluación</span>. Tus respuestas anteriores serán
+  reemplazadas por las nuevas.
+</div>
+
+<!-- 5. TIPOS DE EVALUACION -->
+<h2 id="tipos-evaluacion">5. Tipos de evaluación en el programa</h2>
+
+<p>Durante el programa vas a responder cuatro tipos de evaluaciones distribuidas en
+dos momentos: <strong>inicial</strong> y <strong>final</strong>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tipo</th>
+      <th>Momento</th>
+      <th>Quién evalúa</th>
+      <th>A quién</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="badge badge-inicial">Autoevaluación Inicial</span></td>
+      <td>Al comenzar el programa</td>
+      <td>Líder (tú)</td>
+      <td>A sí mismo</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-inicial">Coevaluación Inicial</span></td>
+      <td>Al comenzar el programa</td>
+      <td>Colaborador asignado</td>
+      <td>A su líder (tú)</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-final">Autoevaluación Final</span></td>
+      <td>Al cerrar el programa</td>
+      <td>Líder (tú)</td>
+      <td>A sí mismo</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-final">Coevaluación Final</span></td>
+      <td>Al cerrar el programa</td>
+      <td>Colaborador asignado</td>
+      <td>A su líder (tú)</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="tip">
+  La combinación entre tu autoevaluación y la coevaluación de tu colaborador permite
+  identificar <strong>brechas de percepción</strong> y áreas de desarrollo específicas.
+</div>
+
+<!-- 6. MI EQUIPO -->
+<h2 id="mi-equipo">6. Tu equipo y tu colaborador</h2>
+
+<p>Como líder, tenés un <strong>colaborador asignado</strong> que participará contigo
+durante el programa. Es tu "par de desarrollo" para los ejercicios de coevaluación y feedback.</p>
+
+<h3>Ver tu equipo</h3>
+
+<div class="step">
+  <span class="step-number">1</span>
+  En el menú lateral, click en <span class="ui-element">Mi Equipo</span>.
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  Verás una tarjeta con el nombre y cargo de tu colaborador, junto con un contador
+  de feedback registrado.
+</div>
+
+<div class="warning">
+  Si no ves ningún colaborador asignado, contactá al administrador del programa.
+</div>
+
+<!-- 7. FEEDBACK -->
+<h2 id="feedback">7. Cómo dar feedback a tu colaborador</h2>
+
+<p>El feedback estructurado es una herramienta clave del programa. Te permite comunicar
+observaciones concretas a tu colaborador en tres dimensiones: fortalezas, aspectos a
+reforzar y recomendaciones.</p>
+
+<h3>Registrar un feedback</h3>
+
+<div class="step">
+  <span class="step-number">1</span>
+  Ve a <span class="ui-element">Mi Equipo</span>.
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  En la tarjeta de tu colaborador, click en <span class="ui-element">Dar Feedback</span>.
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  Completá los tres campos obligatorios:
+  <ul style="margin-top:6px;">
+    <li><strong>Fortaleza observada</strong>: ¿qué hizo especialmente bien?</li>
+    <li><strong>Aspecto a reforzar</strong>: ¿qué puede mejorar?</li>
+    <li><strong>Recomendación</strong>: ¿qué sugerencia concreta le harías?</li>
+  </ul>
+</div>
+
+<div class="step">
+  <span class="step-number">4</span>
+  Click en <span class="ui-element">Enviar Feedback</span>. Podrás ver el histórico
+  de feedback entregado en la misma vista.
+</div>
+
+<div class="tip">
+  <strong>Recomendaciones para dar un buen feedback:</strong>
+  <ul>
+    <li>Sé específico: menciona una situación concreta, no generalidades.</li>
+    <li>Enfoca en el comportamiento observado, no en la persona.</li>
+    <li>Ofrece recomendaciones accionables.</li>
+    <li>Mantén un tono constructivo y respetuoso.</li>
+  </ul>
+</div>
+
+<!-- 8. RECURSOS -->
+<h2 id="recursos">8. Archivos y recursos del programa</h2>
+
+<p>El administrador del programa puede subir documentos, lecturas, presentaciones y
+otros recursos para complementar tu aprendizaje.</p>
+
+<div class="step">
+  <span class="step-number">1</span>
+  Ve a <span class="ui-element">Archivos y Recursos</span> en el menú lateral.
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  Verás una lista de todos los archivos disponibles. Click en cada uno para
+  descargarlo o visualizarlo.
+</div>
+
+<!-- 9. CRONOGRAMA -->
+<h2 id="cronograma">9. Carta Gantt y cronograma</h2>
+
+<p>La <strong>Carta Gantt</strong> del programa muestra todas las actividades
+planificadas, sus fechas y tu progreso a lo largo del tiempo.</p>
+
+<p>Incluye hitos como:</p>
+
+<ul>
+  <li>Talleres y capacitaciones</li>
+  <li>Aplicación de autoevaluaciones y coevaluaciones</li>
+  <li>Checkpoints de acompañamiento grupal</li>
+  <li>Generación de informes individuales y consolidados</li>
+  <li>Cierre del programa</li>
+</ul>
+
+<p>La Carta Gantt te ayuda a saber <strong>qué viene a continuación</strong> y
+<strong>cuándo deberías completar cada actividad</strong>.</p>
+
+<!-- 10. INFORMES -->
+<h2 id="informes">10. Informes generados por la plataforma</h2>
+
+<p>Una vez completada una medición (inicial o final), el administrador del programa
+genera informes con IA que resumen los resultados.</p>
+
+<h3>Tipos de informes</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Informe</th>
+      <th>Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Informe Individual Inicial</strong></td>
+      <td>Resumen personal al comenzar el programa: niveles en cada competencia, brechas identificadas.</td>
+    </tr>
+    <tr>
+      <td><strong>Informe Consolidado Inicial</strong></td>
+      <td>Vista agregada del grupo de líderes en el programa.</td>
+    </tr>
+    <tr>
+      <td><strong>Informe Individual Final</strong></td>
+      <td>Resumen al cerrar el programa, con cambios respecto a la medición inicial.</td>
+    </tr>
+    <tr>
+      <td><strong>Informe Consolidado Final</strong></td>
+      <td>Vista agregada del grupo al cerrar el programa.</td>
+    </tr>
+    <tr>
+      <td><strong>Informe de Brechas</strong></td>
+      <td>Comparativo entre la medición inicial y final, mostrando avances concretos.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="tip">
+  Estos informes son generados por el administrador. Si querés acceder al tuyo,
+  contactá al administrador del programa.
+</div>
+
+<!-- 11. INCIDENCIAS -->
+<h2 id="incidencias">11. Reportar incidencias</h2>
+
+<p>Si encuentras algún error técnico, tienes una duda o querés sugerir una mejora,
+podés reportarlo directamente desde la plataforma.</p>
+
+<div class="step">
+  <span class="step-number">1</span>
+  En el menú lateral, click en <span class="ui-element">Incidencias</span>.
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  Completá los campos: categoría, título, descripción del problema y, opcionalmente,
+  adjuntá una captura de pantalla.
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  Click en <span class="ui-element">Reportar</span>. El equipo de soporte recibirá
+  tu reporte y te contactará.
+</div>
+
+<!-- 12. FAQ -->
+<h2 id="faq">12. Preguntas frecuentes</h2>
+
+<div class="faq-item">
+  <div class="faq-q">No me llegó el correo de bienvenida, ¿qué hago?</div>
+  <p>Revisá tu carpeta de <strong>spam o correo no deseado</strong>. Si tampoco está ahí,
+  contactá al administrador del programa para que verifique el envío.</p>
+</div>
+
+<div class="faq-item">
+  <div class="faq-q">El link de reset de contraseña dice que expiró</div>
+  <p>Los links de reset son válidos por <strong>1 hora</strong> y solo se pueden usar una vez.
+  Si expiró, solicitá otro desde "¿Olvidaste tu contraseña?" del login.</p>
+</div>
+
+<div class="faq-item">
+  <div class="faq-q">No veo mi evaluación disponible</div>
+  <p>Las evaluaciones se activan según el cronograma del programa. Si la fecha ya pasó
+  y no la ves, contactá al administrador para que verifique el estado de activación.</p>
+</div>
+
+<div class="faq-item">
+  <div class="faq-q">Respondí una evaluación por error, ¿puedo corregirla?</div>
+  <p>Sí. Ve a <strong>Mis Evaluaciones → Encuestas Completadas</strong> y click en
+  <em>Rehacer evaluación</em>. Tus respuestas anteriores serán reemplazadas.</p>
+</div>
+
+<div class="faq-item">
+  <div class="faq-q">No veo a mi colaborador asignado</div>
+  <p>Contactá al administrador del programa. Él puede verificar la asignación y
+  corregirla si es necesario.</p>
+</div>
+
+<div class="faq-item">
+  <div class="faq-q">¿Puedo usar la plataforma desde el celular?</div>
+  <p>Sí, la plataforma es responsive y funciona en celulares y tablets. Para completar
+  evaluaciones largas recomendamos usar computador o tablet para mayor comodidad.</p>
+</div>
+
+<div class="faq-item">
+  <div class="faq-q">¿Mis respuestas son confidenciales?</div>
+  <p>Tus autoevaluaciones y las coevaluaciones de tu colaborador se usan exclusivamente
+  para los informes del programa. El tratamiento es agregado en los informes consolidados
+  y el individual solo lo ven el administrador del programa y tú.</p>
+</div>
+
+<!-- 13. SOPORTE -->
+<h2 id="soporte">13. Soporte y contacto</h2>
+
+<p>Si necesitas ayuda o tienes alguna duda que no aparece en esta guía, contactá a:</p>
+
+<table>
+  <thead>
+    <tr><th>Canal</th><th>Detalle</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Administrador del programa</strong></td>
+      <td>Consultas sobre el contenido, fechas o activación de evaluaciones.</td>
+    </tr>
+    <tr>
+      <td><strong>Soporte técnico MSO</strong></td>
+      <td>Problemas de acceso, errores técnicos o sugerencias sobre la plataforma.</td>
+    </tr>
+    <tr>
+      <td><strong>Módulo de Incidencias</strong></td>
+      <td>Reporta dentro de la plataforma cualquier error técnico.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  <p><strong>MSO Chile</strong> · Modelos y Soluciones Organizacionales</p>
+  <p>Plataforma de Transferencia al Puesto de Trabajo (TPT)</p>
+  <p>https://plataforma.msochile.cl · Abril 2026</p>
+</div>
+
+</body>
+</html>
