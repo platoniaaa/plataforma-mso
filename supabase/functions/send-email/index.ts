@@ -400,6 +400,8 @@ async function handleRecordatorioBatch(db: ReturnType<typeof createClient>): Pro
     for (const e of (encs.data || [])) {
       // Quienes NO respondieron
       const pendientes = await resolverSinResponder(db, e);
+      const resendIds: Array<{ usuario_id: string; email: string; resend_id?: string; error?: string }> = [];
+
       for (const d of pendientes) {
         const rendered = renderTemplate("recordatorio", {
           nombre: d.nombre,
@@ -408,16 +410,30 @@ async function handleRecordatorioBatch(db: ReturnType<typeof createClient>): Pro
           dias: String(t.dias),
         }, URL_LOGIN);
 
-        const r = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ from: `${FROM_NAME} <${FROM_EMAIL}>`, to: [d.email], subject: rendered.asunto, html: rendered.html }),
-        });
-        const rjson = await r.json();
-        if (r.ok && rjson.id) totalEnviados++;
+        try {
+          const r = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ from: `${FROM_NAME} <${FROM_EMAIL}>`, to: [d.email], subject: rendered.asunto, html: rendered.html }),
+          });
+          const rjson = await r.json();
+          if (r.ok && rjson.id) {
+            resendIds.push({ usuario_id: d.usuario_id, email: d.email, resend_id: rjson.id });
+            totalEnviados++;
+          } else {
+            resendIds.push({ usuario_id: d.usuario_id, email: d.email, error: rjson.message || rjson.name || ("HTTP " + r.status) });
+          }
+        } catch (err) {
+          resendIds.push({ usuario_id: d.usuario_id, email: d.email, error: (err as Error).message });
+        }
       }
 
       if (pendientes.length > 0) {
+        const exitosos = resendIds.filter((x) => x.resend_id).length;
+        const fallidos = resendIds.length - exitosos;
+        const estadoFinal = fallidos === 0 ? "enviado" : exitosos === 0 ? "fallido" : "parcial";
+        const errores = resendIds.filter((x) => x.error).map((x) => `${x.email}: ${x.error}`);
+
         // Registrar 1 fila por encuesta/target en historial
         await db.from("correos_enviados").insert({
           programa_id: e.programa_id,
@@ -427,7 +443,9 @@ async function handleRecordatorioBatch(db: ReturnType<typeof createClient>): Pro
           asunto: `Recordatorio ${t.dias}d: ${e.nombre}`,
           cuerpo_html: "(batch)",
           destinatarios: pendientes.map((d) => ({ usuario_id: d.usuario_id, email: d.email, nombre: d.nombre })),
-          estado: "enviado",
+          resend_ids: resendIds,
+          estado: estadoFinal,
+          error: errores.length > 0 ? errores.join(" | ").substring(0, 500) : null,
         });
       }
       resumen.push({ encuesta_id: e.id, dias: t.dias, enviados: pendientes.length });
