@@ -238,33 +238,29 @@
   }
 
   function abrirNuevoPrograma() {
-    // Crear programa con datos minimos y abrir el panel directo
-    var datos = {
-      nombre: 'Nuevo Programa',
-      cliente_id: clientesPrograma.length > 0 ? clientesPrograma.filter(function(c) { return c.estado === 'Activo'; })[0].id : '',
-      fecha_inicio: new Date().toISOString().split('T')[0],
-      fecha_termino: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      tipo: 'programa_completo',
-      objetivo: 'Objetivo por definir'
-    };
+    // Abrir modal para que el usuario complete los datos del programa
+    document.getElementById('modal-programa-titulo').textContent = 'Nuevo Programa';
+    resetForm('form-programa');
+    document.getElementById('programa-edit-id').value = '';
 
-    if (!datos.cliente_id) {
-      showToast('Primero debes crear al menos un cliente.', 'error');
-      return;
-    }
+    // Llenar selector de clientes
+    var sel = document.getElementById('prog-cliente');
+    sel.innerHTML = '<option value="">Selecciona un cliente...</option>';
+    clientesPrograma.filter(function(c) { return c.estado === 'Activo'; }).forEach(function(c) {
+      var opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.nombre;
+      sel.appendChild(opt);
+    });
 
-    showToast('Creando programa...', 'info');
+    // Pre-llenar fechas
+    var form = document.getElementById('form-programa');
+    var hoy = new Date().toISOString().split('T')[0];
+    var en6m = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    if (form.fecha_inicio) form.fecha_inicio.value = hoy;
+    if (form.fecha_termino) form.fecha_termino.value = en6m;
 
-    google.script.run
-      .withSuccessHandler(function(r) {
-        if (r.success) {
-          abrirPanelPrograma(r.data.programaId);
-        } else {
-          showToast(r.error, 'error');
-        }
-      })
-      .withFailureHandler(function() { showToast('Error al crear programa.', 'error'); })
-      .crearPrograma(App.token, datos);
+    openModal('modal-programa');
   }
 
   function abrirModalPrograma() {
@@ -304,7 +300,17 @@
       google.script.run
         .withSuccessHandler(function(r) {
           btnLoading(btn, false);
-          if (r.success) { closeModal('modal-programa'); showToast('Programa creado.', 'success'); cargarProgramas(); }
+          if (r.success) {
+            closeModal('modal-programa');
+            showToast('Programa creado exitosamente.', 'success');
+            // Abrir el panel del programa recién creado
+            var newId = r.data.programaId || r.data.id;
+            if (newId && typeof abrirPanelPrograma === 'function') {
+              abrirPanelPrograma(newId);
+            } else {
+              cargarProgramas();
+            }
+          }
           else showToast(r.error, 'error');
         })
         .withFailureHandler(function() { btnLoading(btn, false); showToast('Error.', 'error'); })
