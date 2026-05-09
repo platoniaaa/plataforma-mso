@@ -925,8 +925,8 @@
 
     var html = '<div class="rpt" id="pdf-page">';
     html += '<div class="rpt-hero" style="background:linear-gradient(135deg, rgba(245,130,32,0.92), rgba(61,12,75,0.85));">';
-    html += '<h1>INFORME DE BRECHAS</h1>';
-    html += '<h2>Comparativo Inicial &rarr; Final &mdash; ' + escapeHtml(prog.nombre) + '</h2>';
+    html += '<h1>INFORME DE BRECHAS &mdash; ' + escapeHtml(prog.nombre) + '</h1>';
+    html += '<h2>Comparativo Inicial &rarr; Final</h2>';
     html += '<div class="rpt-meta">' + escapeHtml(prog.cliente_nombre) + ' | Generado el ' + hoy + '</div>';
     html += '</div>';
     html += '<div class="rpt-body">';
@@ -1016,6 +1016,7 @@
     html += '</div>';
 
     document.getElementById('informe-ia-contenido').innerHTML = html;
+    document.title = 'Informe de Brechas \u2014 ' + (prog.nombre || '') + ' | MSO TPT';
   }
 
   /* ==========================================
@@ -1193,8 +1194,8 @@
 
     /* Hero */
     html += '<div class="rpt-hero">';
-    html += '<h1>INFORME ' + (esPost ? 'EJECUTIVO CONSOLIDADO FINAL' : 'DIAGN\u00d3STICO CONSOLIDADO INICIAL') + '</h1>';
-    html += '<h2>Evaluaci\u00f3n de Liderazgo \u2013 ' + escapeHtml(prog.nombre) + '</h2>';
+    html += '<h1>INFORME ' + (esPost ? 'EJECUTIVO CONSOLIDADO FINAL' : 'DIAGN\u00d3STICO CONSOLIDADO INICIAL') + ' &mdash; ' + escapeHtml(prog.nombre) + '</h1>';
+    html += '<h2>Evaluaci\u00f3n de Liderazgo</h2>';
     html += '<div class="rpt-meta">' + escapeHtml(prog.cliente_nombre) + ' | Generado el ' + hoy + '</div>';
     html += '</div>';
 
@@ -1323,6 +1324,7 @@
     html += '</div>'; /* rpt */
 
     document.getElementById('informe-ia-contenido').innerHTML = html;
+    document.title = 'Informe Consolidado ' + (esPost ? 'Final' : 'Inicial') + ' — ' + (prog.nombre || '') + ' | MSO TPT';
 
     // Seccion de analisis cualitativo (asincronico, no bloquea el render cuantitativo)
     renderAnalisisCualitativoConsolidado(prog.id, momento).catch(function(e) {
@@ -1531,8 +1533,8 @@
 
     /* Hero */
     html += '<div class="rpt-hero">';
-    html += '<h1>' + (esPost ? 'Informe Individual Final' : 'Informe Individual Inicial (L\u00ednea base)') + '</h1>';
-    html += '<h2>Evaluaci\u00f3n de Liderazgo \u2013 ' + escapeHtml(nombre) + '</h2>';
+    html += '<h1>' + (esPost ? 'Informe Individual Final' : 'Informe Individual Inicial (L\u00ednea base)') + ' &mdash; ' + escapeHtml(prog.nombre) + '</h1>';
+    html += '<h2>Evaluaci\u00f3n de Liderazgo &ndash; ' + escapeHtml(nombre) + '</h2>';
     html += '<div class="rpt-meta">' + escapeHtml(prog.nombre) + ' | ' + escapeHtml(prog.cliente_nombre) + ' | ' + hoy + '</div>';
     html += '</div>';
 
@@ -1712,6 +1714,7 @@
     html += '</div>';
 
     document.getElementById('informe-ia-contenido').innerHTML = html;
+    document.title = 'Informe Individual ' + (esPost ? 'Final' : 'Inicial') + ' - ' + (nombre || '') + ' \u2014 ' + (prog.nombre || '') + ' | MSO TPT';
   }
 
   /* ==========================================
@@ -1728,12 +1731,17 @@
       partObj = participantesInforme.find(function(p) { return (p.id || p.user_id) === informeIAPartId; });
     }
 
+    var slug = function(s) { return (s || '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, ''); };
+    var progSlug = slug(progNombre);
+    var momentoLabel = informeIAMomento === 'post' ? 'Final' : 'Inicial';
     var filename;
     if (informeIATipo === 'individual' && partObj) {
       var partName = partObj.nombre_completo || partObj.nombre || 'Participante';
-      filename = 'Informe_Individual_' + partName.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+      filename = 'Informe_Individual_' + momentoLabel + '_' + slug(partName) + '_' + progSlug + '.pdf';
+    } else if (informeIATipo === 'brechas') {
+      filename = 'Informe_Brechas_' + progSlug + '.pdf';
     } else {
-      filename = 'Informe_Consolidado_' + progNombre.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+      filename = 'Informe_Consolidado_' + momentoLabel + '_' + progSlug + '.pdf';
     }
 
     showToast('Generando PDF...', 'success');
