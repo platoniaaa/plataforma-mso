@@ -19,6 +19,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const FROM_EMAIL = Deno.env.get("RESEND_FROM") || "onboarding@resend.dev";
 const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") || "MSO TPT";
 const URL_LOGIN = Deno.env.get("PLATFORM_URL") || "https://platoniaaa.github.io/plataforma-mso/v2/";
+const CONTACT_EMAIL = Deno.env.get("CONTACT_EMAIL") || "carolinamendez@msochile.com";
 
 const RESPONSE_MENSAJE_GENERICO = "Si el email esta registrado, recibiras un link en tu bandeja. Revisa tambien tu carpeta de spam.";
 
@@ -36,11 +37,11 @@ serve(async (req) => {
 
     const db = createClient(SUPABASE_URL, SERVICE_KEY);
 
-    // Buscar usuario (si no existe, retornamos mensaje generico)
+    // Buscar usuario (case-insensitive para emails con mayusculas mixtas)
     const { data: user } = await db
       .from("usuarios")
       .select("id, nombre, email")
-      .eq("email", email)
+      .ilike("email", email)
       .maybeSingle();
 
     if (!user) {
@@ -100,6 +101,7 @@ serve(async (req) => {
         body: JSON.stringify({
           from: `${FROM_NAME} <${FROM_EMAIL}>`,
           to: [user.email],
+          reply_to: CONTACT_EMAIL,
           subject: rendered.asunto,
           html: rendered.html,
         }),

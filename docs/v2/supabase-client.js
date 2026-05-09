@@ -132,8 +132,8 @@ var backendFunctions = {
   // ============================================
   loginUsuario: async function(email, password) {
     try {
-      // Login directo contra tabla usuarios (demo sin RLS)
-      var perfil = await _supabase.from('usuarios').select('*').eq('email', email).eq('password_visible', password).single();
+      // Login directo contra tabla usuarios (case-insensitive en email por si hay mayusculas mixtas)
+      var perfil = await _supabase.from('usuarios').select('*').ilike('email', email).eq('password_visible', password).maybeSingle();
       if (perfil.error || !perfil.data) {
         return { success: false, error: 'Credenciales invalidas. Verifica tu correo y contrasena.' };
       }
@@ -2125,6 +2125,7 @@ var backendFunctions = {
           programa_id: datos.programa_id,
           encuesta_id: datos.encuesta_id || null,
           subset: datos.subset || 'todos',
+          destinatarios_custom: datos.destinatarios_custom || null,
           asunto: datos.asunto,
           cuerpo_html: datos.cuerpo_html,
           adjuntos: datos.adjuntos || []
@@ -2587,7 +2588,8 @@ var backendFunctions = {
     async function upsertUsuario(nombre, email, rol, cargo, password) {
       if (!email) return null;
       var pwd = password || '123456';
-      var existing = await _supabase.from('usuarios').select('*').eq('email', email).maybeSingle();
+      // Match case-insensitive: evita crear duplicados si el Excel trae el email con distinta capitalizacion
+      var existing = await _supabase.from('usuarios').select('*').ilike('email', email).maybeSingle();
       if (existing.data) {
         if (!existing.data.password_visible) {
           await _supabase.from('usuarios').update({ password_visible: pwd }).eq('id', existing.data.id);

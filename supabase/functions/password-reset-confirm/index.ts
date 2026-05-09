@@ -21,6 +21,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const FROM_EMAIL = Deno.env.get("RESEND_FROM") || "onboarding@resend.dev";
 const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") || "MSO TPT";
 const URL_LOGIN = Deno.env.get("PLATFORM_URL") || "https://platoniaaa.github.io/plataforma-mso/v2/";
+const CONTACT_EMAIL = Deno.env.get("CONTACT_EMAIL") || "carolinamendez@msochile.com";
 
 const ERROR_INVALIDO = "Link invalido o expirado. Solicita un nuevo link desde la pantalla de olvide mi contrasena.";
 
@@ -92,6 +93,7 @@ serve(async (req) => {
         body: JSON.stringify({
           from: `${FROM_NAME} <${FROM_EMAIL}>`,
           to: [user.email],
+          reply_to: CONTACT_EMAIL,
           subject: rendered.asunto,
           html: rendered.html,
         }),

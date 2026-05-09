@@ -4,6 +4,7 @@
 
 const BRAND_PURPLE = "#3D0C4B";
 const BRAND_ORANGE = "#F58220";
+const CONTACT_EMAIL = (typeof Deno !== "undefined" && Deno.env.get("CONTACT_EMAIL")) || "carolinamendez@msochile.com";
 
 function baseLayout(opts: { title: string; bodyHtml: string; ctaLabel?: string; ctaUrl?: string }) {
   return `<!DOCTYPE html>
@@ -33,6 +34,9 @@ function baseLayout(opts: { title: string; bodyHtml: string; ctaLabel?: string; 
   }
         </td></tr>
         <tr><td style="background:#F8F9FA;padding:16px 32px;border-top:1px solid #E2E8F0;">
+          <p style="color:#4A5568;font-size:12px;margin:0 0 8px;text-align:center;">
+            ¿Tienes dudas? Escr&iacute;benos a <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND_PURPLE};text-decoration:none;font-weight:600;">${CONTACT_EMAIL}</a>
+          </p>
           <p style="color:#718096;font-size:11px;margin:0;text-align:center;">
             MSO Chile · Modelos y Soluciones Organizacionales<br>
             Este correo fue generado automaticamente por la plataforma TPT.
@@ -106,12 +110,28 @@ export function renderTemplate(tipo: string, vars: TemplateVars, urlLogin: strin
     }
 
     case "recordatorio": {
-      const asunto = replaceTokens("Recordatorio: encuesta pendiente en {{programa}}", v);
+      const diasNum = parseInt(v.dias || "", 10);
+      let asunto: string;
+      let plazoMsg: string;
+      let urgenciaMsg: string;
+      if (!isNaN(diasNum) && diasNum === 0) {
+        asunto = replaceTokens("Cierra hoy: encuesta pendiente en {{programa}}", v);
+        plazoMsg = `La encuesta <strong>cierra hoy</strong> (${v.fecha_cierre || ""}). Esta es tu ultima oportunidad para responder.`;
+        urgenciaMsg = "Ingresa ahora y completa la encuesta antes del cierre.";
+      } else if (!isNaN(diasNum) && diasNum === 1) {
+        asunto = replaceTokens("Recordatorio: encuesta cierra manana en {{programa}}", v);
+        plazoMsg = `Queda <strong>1 dia</strong> para responder. Cierre: <strong>${v.fecha_cierre || ""}</strong>.`;
+        urgenciaMsg = "No la dejes para ultima hora: ingresa hoy y completa la encuesta.";
+      } else {
+        asunto = replaceTokens("Recordatorio: encuesta pendiente en {{programa}}", v);
+        plazoMsg = `Quedan <strong>${v.dias || "pocos"} dias</strong> para responder. Cierre: <strong>${v.fecha_cierre || ""}</strong>.`;
+        urgenciaMsg = "Ingresa cuando puedas y completa tu encuesta dentro del plazo.";
+      }
       const body = `
         <p style="font-size:15px;line-height:1.6;">Hola <strong>${v.nombre || ""}</strong>,</p>
         <p style="font-size:14px;line-height:1.6;color:#4A5568;">Aun no has respondido tu encuesta en el programa <strong>${v.programa || ""}</strong>.</p>
-        <p style="font-size:14px;line-height:1.6;color:#4A5568;">Quedan <strong>${v.dias || "pocos"} dia(s)</strong> para la fecha de cierre (<strong>${v.fecha_cierre || ""}</strong>).</p>
-        <p style="font-size:14px;line-height:1.6;color:#4A5568;">No demores tu participacion: ingresa y completa la encuesta hoy.</p>
+        <p style="font-size:14px;line-height:1.6;color:#4A5568;">${plazoMsg}</p>
+        <p style="font-size:14px;line-height:1.6;color:#4A5568;">${urgenciaMsg}</p>
       `;
       return { asunto, html: baseLayout({ title: "Encuesta pendiente", bodyHtml: body, ctaLabel: "Responder encuesta", ctaUrl: v.url_login }) };
     }

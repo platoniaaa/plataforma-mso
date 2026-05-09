@@ -30,6 +30,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const FROM_EMAIL = Deno.env.get("RESEND_FROM") || "onboarding@resend.dev";
 const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") || "MSO TPT";
 const URL_LOGIN = Deno.env.get("PLATFORM_URL") || "https://platoniaaa.github.io/plataforma-mso/v2/";
+const CONTACT_EMAIL = Deno.env.get("CONTACT_EMAIL") || "carolinamendez@msochile.com";
 
 interface ReqBody {
   evento: string;
@@ -75,6 +76,7 @@ serve(async (req) => {
     let destinatarios: Destinatario[] = [];
     let tipoTemplate = "";
     let extraVars: Partial<TemplateVars> = {};
+    let adminInfo: { nombre: string; email: string } | null = null;
     let encuesta: { id: string; nombre: string; tipo: string; tipo_cuestionario: string; fecha_cierre: string | null; programa_id: string } | null = null;
 
     if (body.evento === "bienvenida") {
@@ -154,7 +156,7 @@ serve(async (req) => {
       return await handleRecordatorioBatch(db);
     } else if (body.evento === "manual") {
       if (!body.userId) return json({ success: false, error: "userId requerido" }, 400);
-      const admin = await db.from("usuarios").select("id, rol").eq("id", body.userId).single();
+      const admin = await db.from("usuarios").select("id, rol, nombre, email").eq("id", body.userId).single();
       if (admin.error || !admin.data || admin.data.rol !== "admin") {
         return json({ success: false, error: "No autorizado" }, 403);
       }
@@ -163,7 +165,19 @@ serve(async (req) => {
       tipoTemplate = "manual";
       extraVars.asunto_manual = body.asunto;
       extraVars.cuerpo_manual_html = body.cuerpo_html;
-      destinatarios = await resolverSubset(db, programa.id, body.subset || "todos", body.encuesta_id);
+      // Personalizar remitente con nombre del admin y reply-to a su correo
+      adminInfo = { nombre: admin.data.nombre || "", email: admin.data.email || "" };
+      if (Array.isArray(body.destinatarios_custom) && body.destinatarios_custom.length > 0) {
+        destinatarios = (body.destinatarios_custom as Array<Partial<Destinatario>>)
+          .filter((d) => !!(d && d.email))
+          .map((d) => ({
+            usuario_id: d.usuario_id || "",
+            email: String(d.email),
+            nombre: d.nombre || String(d.email),
+          }));
+      } else {
+        destinatarios = await resolverSubset(db, programa.id, body.subset || "todos", body.encuesta_id);
+      }
     } else {
       return json({ success: false, error: "Evento desconocido" }, 400);
     }
@@ -212,12 +226,24 @@ serve(async (req) => {
       const rendered = renderTemplate(tipoTemplate, vars, URL_LOGIN);
       if (!primerAsunto) { primerAsunto = rendered.asunto; primerHtml = rendered.html; }
 
+      // Para correos manuales: nombre del admin + Reply-To a su correo personal.
+      // Para automaticos: nombre institucional + Reply-To al contacto de soporte.
+      const fromName = adminInfo && adminInfo.nombre ? `${adminInfo.nombre} (MSO)` : FROM_NAME;
+      const replyTo = adminInfo && adminInfo.email ? adminInfo.email : CONTACT_EMAIL;
+
       const payload: Record<string, unknown> = {
-        from: `${FROM_NAME} <${FROM_EMAIL}>`,
+        from: `${fromName} <${FROM_EMAIL}>`,
         to: [d.email],
+        reply_to: replyTo,
         subject: rendered.asunto,
         html: rendered.html,
       };
+
+      // Manuales: CC al contacto MSO (Carolina) para que tenga registro de cada envio.
+      // Se omite el CC si el propio destinatario es el contacto, para evitar duplicado.
+      if (tipoTemplate === "manual" && d.email.toLowerCase() !== CONTACT_EMAIL.toLowerCase()) {
+        payload.cc = [CONTACT_EMAIL];
+      }
 
       if (body.adjuntos && body.adjuntos.length) {
         payload.attachments = body.adjuntos.map((a) => ({
@@ -385,71 +411,81 @@ async function resolverSubset(
 // ============================================
 
 async function handleRecordatorioBatch(db: ReturnType<typeof createClient>): Promise<Response> {
-  // Encuestas activas con cierre en 1 o 3 dias desde hoy
-  const hoy = new Date();
-  const target1 = new Date(hoy); target1.setDate(hoy.getDate() + 1);
-  const target3 = new Date(hoy); target3.setDate(hoy.getDate() + 3);
-  const fmt = (d: Date) => d.toISOString().substring(0, 10);
-  const targets = [{ dias: 1, fecha: fmt(target1) }, { dias: 3, fecha: fmt(target3) }];
+  // Politica: recordatorios diarios de lunes a viernes (zona horaria de Chile).
+  // Para cada encuesta activa con fecha_cierre >= hoy se envia recordatorio a quienes no han respondido,
+  // indicando los dias restantes hasta la fecha de cierre.
+  const ahoraChile = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
+  const dow = ahoraChile.getDay(); // 0=Dom, 1=Lun, ..., 6=Sab
+  if (dow === 0 || dow === 6) {
+    return json({ success: true, enviados: 0, mensaje: "Fin de semana: no se envian recordatorios" });
+  }
+  const hoyStr = `${ahoraChile.getFullYear()}-${String(ahoraChile.getMonth() + 1).padStart(2, "0")}-${String(ahoraChile.getDate()).padStart(2, "0")}`;
 
   let totalEnviados = 0;
   const resumen: Array<{ encuesta_id: string; dias: number; enviados: number }> = [];
 
-  for (const t of targets) {
-    const encs = await db.from("encuestas").select("*, programas(id, nombre)").eq("estado", "activa").eq("fecha_cierre", t.fecha);
-    for (const e of (encs.data || [])) {
-      // Quienes NO respondieron
-      const pendientes = await resolverSinResponder(db, e);
-      const resendIds: Array<{ usuario_id: string; email: string; resend_id?: string; error?: string }> = [];
+  // Encuestas activas con fecha_cierre >= hoy (Chile)
+  const encs = await db
+    .from("encuestas")
+    .select("*, programas(id, nombre)")
+    .eq("estado", "activa")
+    .gte("fecha_cierre", hoyStr);
 
-      for (const d of pendientes) {
-        const rendered = renderTemplate("recordatorio", {
-          nombre: d.nombre,
-          programa: (e as { programas: { nombre: string } }).programas.nombre,
-          fecha_cierre: e.fecha_cierre,
-          dias: String(t.dias),
-        }, URL_LOGIN);
+  for (const e of (encs.data || [])) {
+    // Calcular dias restantes (cuenta calendario, sin restar fines de semana)
+    const cierre = new Date(e.fecha_cierre + "T00:00:00");
+    const hoyDate = new Date(hoyStr + "T00:00:00");
+    const diasRestantes = Math.max(0, Math.round((cierre.getTime() - hoyDate.getTime()) / (1000 * 60 * 60 * 24)));
 
-        try {
-          const r = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ from: `${FROM_NAME} <${FROM_EMAIL}>`, to: [d.email], subject: rendered.asunto, html: rendered.html }),
-          });
-          const rjson = await r.json();
-          if (r.ok && rjson.id) {
-            resendIds.push({ usuario_id: d.usuario_id, email: d.email, resend_id: rjson.id });
-            totalEnviados++;
-          } else {
-            resendIds.push({ usuario_id: d.usuario_id, email: d.email, error: rjson.message || rjson.name || ("HTTP " + r.status) });
-          }
-        } catch (err) {
-          resendIds.push({ usuario_id: d.usuario_id, email: d.email, error: (err as Error).message });
-        }
-      }
+    const pendientes = await resolverSinResponder(db, e);
+    const resendIds: Array<{ usuario_id: string; email: string; resend_id?: string; error?: string }> = [];
 
-      if (pendientes.length > 0) {
-        const exitosos = resendIds.filter((x) => x.resend_id).length;
-        const fallidos = resendIds.length - exitosos;
-        const estadoFinal = fallidos === 0 ? "enviado" : exitosos === 0 ? "fallido" : "parcial";
-        const errores = resendIds.filter((x) => x.error).map((x) => `${x.email}: ${x.error}`);
+    for (const d of pendientes) {
+      const rendered = renderTemplate("recordatorio", {
+        nombre: d.nombre,
+        programa: (e as { programas: { nombre: string } }).programas.nombre,
+        fecha_cierre: e.fecha_cierre,
+        dias: String(diasRestantes),
+      }, URL_LOGIN);
 
-        // Registrar 1 fila por encuesta/target en historial
-        await db.from("correos_enviados").insert({
-          programa_id: e.programa_id,
-          evento: "recordatorio",
-          tipo_template: "recordatorio",
-          encuesta_id: e.id,
-          asunto: `Recordatorio ${t.dias}d: ${e.nombre}`,
-          cuerpo_html: "(batch)",
-          destinatarios: pendientes.map((d) => ({ usuario_id: d.usuario_id, email: d.email, nombre: d.nombre })),
-          resend_ids: resendIds,
-          estado: estadoFinal,
-          error: errores.length > 0 ? errores.join(" | ").substring(0, 500) : null,
+      try {
+        const r = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ from: `${FROM_NAME} <${FROM_EMAIL}>`, to: [d.email], reply_to: CONTACT_EMAIL, subject: rendered.asunto, html: rendered.html }),
         });
+        const rjson = await r.json();
+        if (r.ok && rjson.id) {
+          resendIds.push({ usuario_id: d.usuario_id, email: d.email, resend_id: rjson.id });
+          totalEnviados++;
+        } else {
+          resendIds.push({ usuario_id: d.usuario_id, email: d.email, error: rjson.message || rjson.name || ("HTTP " + r.status) });
+        }
+      } catch (err) {
+        resendIds.push({ usuario_id: d.usuario_id, email: d.email, error: (err as Error).message });
       }
-      resumen.push({ encuesta_id: e.id, dias: t.dias, enviados: pendientes.length });
     }
+
+    if (pendientes.length > 0) {
+      const exitosos = resendIds.filter((x) => x.resend_id).length;
+      const fallidos = resendIds.length - exitosos;
+      const estadoFinal = fallidos === 0 ? "enviado" : exitosos === 0 ? "fallido" : "parcial";
+      const errores = resendIds.filter((x) => x.error).map((x) => `${x.email}: ${x.error}`);
+
+      await db.from("correos_enviados").insert({
+        programa_id: e.programa_id,
+        evento: "recordatorio",
+        tipo_template: "recordatorio",
+        encuesta_id: e.id,
+        asunto: `Recordatorio (${diasRestantes}d): ${e.nombre}`,
+        cuerpo_html: "(batch)",
+        destinatarios: pendientes.map((d) => ({ usuario_id: d.usuario_id, email: d.email, nombre: d.nombre })),
+        resend_ids: resendIds,
+        estado: estadoFinal,
+        error: errores.length > 0 ? errores.join(" | ").substring(0, 500) : null,
+      });
+    }
+    resumen.push({ encuesta_id: e.id, dias: diasRestantes, enviados: pendientes.length });
   }
 
   return json({ success: true, enviados: totalEnviados, detalle: resumen });
