@@ -194,7 +194,7 @@ doc.add_paragraph()
 
 p = doc.add_paragraph()
 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-run = p.add_run('Versión 1.0  ·  Abril 2026')
+run = p.add_run('Versión 1.1  ·  Mayo 2026')
 run.font.size = Pt(11)
 run.font.color.rgb = TEXTO_SEC
 
@@ -217,7 +217,7 @@ toc_items = [
     '10. Feedback entre líder y colaborador',
     '11. Recursos y archivos del programa',
     '12. Informes con inteligencia artificial',
-    '13. Gestión de correos enviados',
+    '13. Gestión de correos',
     '14. Atención de incidencias reportadas',
     '15. Notificaciones y recordatorios',
     '16. Buenas prácticas y recomendaciones',
@@ -387,7 +387,13 @@ add_heading('Carga masiva por Excel', level=2, color=MORADO_CLARO)
 add_step(1, 'Abre la pestaña "Participantes" del programa.')
 add_step(2, 'Descarga la plantilla de carga (encuentras un enlace en la misma pestaña).')
 add_step(3, 'Completa una fila por persona: nombre, correo, rol (líder o colaborador), cargo y líder asociado cuando corresponda.')
-add_step(4, 'Sube el archivo. La plataforma crea los usuarios, genera contraseñas aleatorias y envía el correo de bienvenida.')
+add_step(4, 'Sube el archivo. La plataforma crea los usuarios y envía automáticamente el correo de bienvenida a cada persona nueva.')
+
+add_callout('success',
+    'El correo de bienvenida ahora incluye las credenciales de acceso (correo y '
+    'contraseña) y la instrucción de NO usar la opción "Crear cuenta": el usuario '
+    'debe ingresar directamente con el botón del correo. Esto se dispara solo, '
+    'tanto al cargar por Excel como al asignar un colaborador individualmente.')
 
 add_heading('Tabla de participantes', level=2, color=MORADO_CLARO)
 add_para('La tabla de participantes ofrece las siguientes herramientas:')
@@ -395,6 +401,20 @@ add_bullet('Ícono de ojo para visualizar la contraseña asignada a cada usuario
 add_bullet('Botón para eliminar participantes de forma individual.')
 add_bullet('Botón "Eliminar todos" para vaciar el programa cuando necesitas rehacer la carga.')
 add_bullet('Columna de contraseña visible tanto para líderes como para colaboradores.')
+
+add_heading('Recordatorios manuales desde la tabla', level=2, color=MORADO_CLARO)
+add_para(
+    'En la parte superior de la tabla hay dos botones para enviar recordatorios a '
+    'quienes aún no responden, sin depender del envío automático diario:'
+)
+add_bullet('"Recordar líderes pendientes (N)": envía a los líderes que no han respondido la autoevaluación. El número (N) se calcula en vivo.')
+add_bullet('"Recordar colaboradores pendientes (N)": envía a los colaboradores que no han respondido la coevaluación.')
+add_bullet('Cada fila también tiene un ícono de campana para enviar un recordatorio individual a esa persona puntual.')
+
+add_callout('tip',
+    'Los botones de recordatorio manual funcionan incluso si la encuesta tiene la '
+    'fecha de cierre vencida (a diferencia del envío automático, que solo corre '
+    'mientras la fecha sigue vigente). Útil cuando necesitas insistir tras la fecha original.')
 
 add_callout('warning',
     'El botón "Eliminar todos" borra participantes del programa y sus cuentas '
@@ -435,12 +455,14 @@ add_para(
 )
 add_bullet('Barra de progreso por encuesta con el porcentaje de avance.')
 add_bullet('Listado de participantes pendientes para seguimiento manual.')
-add_bullet('Posibilidad de enviar un recordatorio puntual.')
+add_bullet('Botones de recordatorio manual en la pestaña Participantes (ver sección 7).')
 
 add_callout('tip',
-    'La plataforma también envía recordatorios automáticos a los pendientes cada '
-    'día a las 12:00 UTC. No necesitas gatillar el envío manualmente salvo casos '
-    'excepcionales.')
+    'La plataforma envía recordatorios automáticos a los pendientes cada día hábil '
+    '(lunes a viernes) a las 9:00 de la mañana (hora de Chile). Los fines de semana '
+    'no se envían. Cada recordatorio indica cuántos días quedan para el cierre. No '
+    'necesitas gatillar el envío manualmente salvo cuando la fecha ya venció o '
+    'quieres insistir puntualmente.')
 
 # ==========================
 # 10. FEEDBACK
@@ -500,19 +522,64 @@ add_heading('Generar un informe', level=2, color=MORADO_CLARO)
 add_step(1, 'Abre la pestaña "Informes" del programa.')
 add_step(2, 'Selecciona el tipo de informe y el participante (o el grupo completo si es consolidado).')
 add_step(3, 'Haz click en "Generar". El asistente procesa las respuestas y devuelve un borrador.')
-add_step(4, 'Revisa el contenido, ajusta si corresponde y descarga en el formato final.')
+add_step(4, 'Revisa el contenido, ajusta si corresponde y descarga el PDF.')
+
+add_heading('Qué incluye cada informe', level=2, color=MORADO_CLARO)
+add_bullet('Título con el nombre del programa (ej: "Informe Individual Inicial — GROW 2").')
+add_bullet('Resultados cuantitativos: autoevaluación, coevaluación y brecha por competencia.')
+add_bullet('Análisis narrativo generado por IA (lectura global, recomendaciones, compromiso).')
+add_bullet('Sección "Reflexiones del Líder": las respuestas textuales del líder a las preguntas abiertas.')
+add_bullet('En el Consolidado: un "Análisis Cualitativo" que agrupa las respuestas abiertas de todo el grupo.')
+
+add_callout('tip',
+    'El nombre del archivo PDF descargado incluye tipo, momento, persona y programa '
+    '(ej: "Informe_Individual_Inicial_Maria_Calleja_GROW_2.pdf"), para que sea fácil '
+    'de archivar cuando manejas varios programas.')
+
+add_heading('Cada líder puede ver su propio informe', level=2, color=MORADO_CLARO)
+add_para(
+    'Los líderes ahora tienen una opción "Mi Informe" en su menú. Pueden ver su '
+    'informe individual directamente, sin que tú tengas que enviárselo. El informe '
+    'se les habilita solo cuando:'
+)
+add_bullet('El líder ya respondió su autoevaluación, Y')
+add_bullet('Su colaborador asignado ya respondió la coevaluación (o el líder no tiene colaborador asignado).')
+add_para(
+    'Si falta alguna de esas condiciones, el líder ve un mensaje que le indica qué '
+    'falta (responder su encuesta, o esperar a que su colaborador responda).'
+)
 
 add_callout('warning',
-    'Siempre revisa el informe antes de entregarlo al cliente. La IA es un apoyo '
-    'para acelerar la redacción, no un reemplazo del juicio profesional.')
+    'Siempre revisa el informe antes de entregarlo formalmente al cliente. La IA es '
+    'un apoyo para acelerar la redacción, no un reemplazo del juicio profesional.')
 
 # ==========================
 # 13. CORREOS
 # ==========================
-add_heading('13. Gestión de correos enviados', level=1)
+add_heading('13. Gestión de correos', level=1)
 add_para(
-    'Toda comunicación que envía la plataforma queda registrada en la sección '
-    '"Correos". Desde allí puedes auditar qué se envió, a quién y con qué estado.'
+    'Desde la sección "Correos" puedes redactar correos manuales a los participantes '
+    'de un programa y auditar todo lo que la plataforma ha enviado.'
+)
+
+add_heading('Redactar un correo manual', level=2, color=MORADO_CLARO)
+add_step(1, 'Selecciona el programa en el menú desplegable.')
+add_step(2, 'Elige una plantilla o redacta libremente el asunto y el cuerpo.')
+add_step(3, 'Agrega destinatarios: la plataforma muestra los participantes del programa como chips clickeables, separados por líderes y colaboradores.')
+add_step(4, 'Usa los botones rápidos ("Todos los líderes", "Todos los colaboradores", "Contacto cliente") o agrega correos manuales.')
+add_step(5, 'Previsualiza y envía.')
+
+add_callout('tip',
+    'Cuando un administrador envía un correo manual, este sale a nombre del propio '
+    'administrador (ej: "Carolina Mendez (MSO)") y las respuestas le llegan a su '
+    'correo. Además, recibe copia visible (CC) de cada correo manual que envía, '
+    'como registro. Los correos automáticos siguen saliendo a nombre de '
+    '"MSO Plataforma".')
+
+add_heading('Auditoría de correos enviados', level=2, color=MORADO_CLARO)
+add_para(
+    'Toda comunicación que envía la plataforma queda registrada. Desde allí puedes '
+    'auditar qué se envió, a quién y con qué estado.'
 )
 
 add_heading('¿Qué correos se registran?', level=2, color=MORADO_CLARO)
@@ -558,15 +625,22 @@ add_step(4, 'Marca la incidencia como resuelta una vez cerrada.')
 # ==========================
 add_heading('15. Notificaciones y recordatorios', level=1)
 add_para(
-    'El sistema envía recordatorios automáticos todos los días a las 12:00 UTC '
-    'a los participantes con encuestas pendientes. Además, cada acción clave '
-    'genera una notificación interna.'
+    'El sistema envía recordatorios automáticos a los participantes con encuestas '
+    'pendientes cada día hábil (lunes a viernes) a las 9:00 de la mañana, hora de '
+    'Chile. Los fines de semana no se envían. Cada recordatorio indica los días '
+    'restantes hasta el cierre. Además, cada acción clave genera una notificación interna.'
 )
+
+add_callout('warning',
+    'El recordatorio automático solo alcanza a las encuestas cuya fecha de cierre '
+    'aún no ha pasado. Si una encuesta tiene la fecha vencida, debes extenderla '
+    'desde el editor de encuesta o usar los botones de recordatorio manual de la '
+    'pestaña Participantes (ver sección 7).')
 
 add_heading('Buenas prácticas para no saturar usuarios', level=2, color=MORADO_CLARO)
 add_bullet('Evita activar varias encuestas el mismo día si no es necesario.')
 add_bullet('Coordina con el cliente la ventana de respuesta (mínimo una semana).')
-add_bullet('Si ves muchos pendientes, prefiere recordatorios puntuales antes que reenvíos masivos.')
+add_bullet('Si ves muchos pendientes, usa los botones de recordatorio manual de forma puntual antes que reenvíos masivos.')
 
 # ==========================
 # 16. BUENAS PRACTICAS
@@ -593,6 +667,12 @@ faqs = [
      'Abre el editor de la encuesta y modifica el campo "Fecha de cierre". También se actualiza automáticamente cuando cambias la Carta Gantt del programa.'),
     ('Un usuario reclama que no puede responder su encuesta',
      'Verifica que la encuesta esté activa y que la fecha de cierre no haya pasado. Si todo está correcto, pídele que limpie la caché del navegador o que use otro navegador.'),
+    ('Un líder o colaborador dice que intenta "crear cuenta" y no puede entrar',
+     'No debe crear cuenta: ya tiene una. Reenvíale el correo de bienvenida (se puede regenerar) que ahora incluye su correo y contraseña, e indícale que ingrese con el botón del correo, no con "Crear cuenta". Si olvidó su contraseña, puede usar "¿Olvidaste tu contraseña?" del login.'),
+    ('¿Cómo le insisto a los que no han respondido?',
+     'En la pestaña Participantes del programa hay dos botones: "Recordar líderes pendientes" y "Recordar colaboradores pendientes". También puedes enviar un recordatorio individual con el ícono de campana de cada fila. Funcionan aunque la fecha de cierre haya vencido.'),
+    ('¿Los líderes pueden ver su propio informe?',
+     'Sí. Cada líder tiene la opción "Mi Informe" en su menú. Se le habilita cuando él respondió su autoevaluación y su colaborador respondió la coevaluación (o si no tiene colaborador asignado). No necesitas enviárselo manualmente.'),
     ('¿Qué pasa si elimino un cliente por error?',
      'Contacta a soporte técnico de inmediato. Los clientes tienen sus programas asociados, por lo que una eliminación puede arrastrar datos sensibles.'),
     ('¿Cuántos administradores puede haber?',

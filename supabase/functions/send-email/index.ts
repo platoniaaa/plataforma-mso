@@ -50,6 +50,7 @@ interface Destinatario {
   email: string;
   nombre: string;
   lider_nombre?: string;
+  password?: string;
 }
 
 serve(async (req) => {
@@ -178,6 +179,55 @@ serve(async (req) => {
       } else {
         destinatarios = await resolverSubset(db, programa.id, body.subset || "todos", body.encuesta_id);
       }
+    } else if (body.evento === "recordatorio_manual") {
+      // Recordatorio gatillado manualmente por el admin desde la UI.
+      // A diferencia del cron, ignora fecha_cierre (envia aunque la encuesta este vencida)
+      // pero respeta estado: si la encuesta esta 'cerrada', no envia.
+      if (!body.userId) return json({ success: false, error: "userId requerido" }, 400);
+      const admin = await db.from("usuarios").select("id, rol").eq("id", body.userId).single();
+      if (admin.error || !admin.data || admin.data.rol !== "admin") {
+        return json({ success: false, error: "No autorizado" }, 403);
+      }
+      if (!body.encuesta_id) return json({ success: false, error: "encuesta_id requerido" }, 400);
+
+      const encR = await db.from("encuestas").select("*, programas(id, nombre)").eq("id", body.encuesta_id).single();
+      if (encR.error || !encR.data) return json({ success: false, error: "Encuesta no encontrada" }, 404);
+      encuesta = encR.data as typeof encuesta;
+      if (encuesta!.estado !== "activa") {
+        return json({ success: false, error: "La encuesta no esta activa" }, 400);
+      }
+      if (!programa) programa = { id: encuesta!.programa_id, nombre: (encR.data as { programas: { nombre: string } }).programas.nombre };
+
+      tipoTemplate = "recordatorio";
+
+      // Calcular dias restantes (clamped a 0 si esta vencida)
+      const ahoraChile = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santiago" }));
+      const hoyStr = `${ahoraChile.getFullYear()}-${String(ahoraChile.getMonth() + 1).padStart(2, "0")}-${String(ahoraChile.getDate()).padStart(2, "0")}`;
+      let diasRestantes = 0;
+      if (encuesta!.fecha_cierre) {
+        const cierre = new Date(encuesta!.fecha_cierre + "T00:00:00");
+        const hoyDate = new Date(hoyStr + "T00:00:00");
+        diasRestantes = Math.max(0, Math.round((cierre.getTime() - hoyDate.getTime()) / (1000 * 60 * 60 * 24)));
+      }
+      extraVars.fecha_cierre = encuesta!.fecha_cierre || "";
+      extraVars.dias = String(diasRestantes);
+
+      // Resolver destinatarios: si vienen usuario_ids explicitos, filtrar a los que no han respondido.
+      // Si no, todos los pendientes del rol correspondiente (lider o colaborador).
+      if (Array.isArray(body.usuario_ids) && body.usuario_ids.length > 0) {
+        const todos = await db.from("usuarios").select("id, nombre, email").in("id", body.usuario_ids);
+        const resp = await db.from("respuestas").select("evaluador_id").eq("encuesta_id", body.encuesta_id);
+        const responded = new Set((resp.data || []).map((r: { evaluador_id: string }) => r.evaluador_id));
+        destinatarios = (todos.data || [])
+          .filter((u: { id: string; email: string }) => !responded.has(u.id) && u.email)
+          .map((u: { id: string; email: string; nombre: string }) => ({
+            usuario_id: u.id,
+            email: u.email,
+            nombre: u.nombre || "",
+          }));
+      } else {
+        destinatarios = await resolverSinResponder(db, encuesta!);
+      }
     } else {
       return json({ success: false, error: "Evento desconocido" }, 400);
     }
@@ -222,6 +272,8 @@ serve(async (req) => {
         colaborador_nombre: (extraVars as TemplateVars).colaborador_nombre || "",
         asunto_manual: extraVars.asunto_manual,
         cuerpo_manual_html: extraVars.cuerpo_manual_html,
+        email: d.email,
+        password: d.password || "",
       };
       const rendered = renderTemplate(tipoTemplate, vars, URL_LOGIN);
       if (!primerAsunto) { primerAsunto = rendered.asunto; primerHtml = rendered.html; }
@@ -326,7 +378,7 @@ async function resolverBienvenida(
 ): Promise<Destinatario[]> {
   let query = db
     .from("participantes_programa")
-    .select("usuario_id, rol_programa, lider_id, usuarios!participantes_programa_usuario_id_fkey(id, nombre, email)")
+    .select("usuario_id, rol_programa, lider_id, usuarios!participantes_programa_usuario_id_fkey(id, nombre, email, password_visible)")
     .eq("programa_id", programaId);
   if (usuarioIds && usuarioIds.length > 0) query = query.in("usuario_id", usuarioIds);
   const r = await query;
@@ -334,7 +386,7 @@ async function resolverBienvenida(
     .map((row) => {
       const u = Array.isArray(row.usuarios) ? row.usuarios[0] : row.usuarios;
       if (!u || !u.email) return null;
-      return { usuario_id: u.id, email: u.email, nombre: u.nombre || "" };
+      return { usuario_id: u.id, email: u.email, nombre: u.nombre || "", password: u.password_visible || "" };
     })
     .filter((x): x is Destinatario => x !== null);
 }

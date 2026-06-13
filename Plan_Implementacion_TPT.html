@@ -1,0 +1,2729 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Implementacion - Plataforma TPT - MSO Chile</title>
+<style>
+  /* ================================================
+     ESTILOS BASE
+     ================================================ */
+  :root {
+    --primary: #1A3C6E;
+    --secondary: #F58220;
+    --accent: #5DADE2;
+    --dark: #1a1a2e;
+    --light-bg: #f4f7fb;
+    --white: #ffffff;
+    --gray-100: #f8f9fa;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-500: #6c757d;
+    --gray-700: #495057;
+    --gray-900: #212529;
+    --success: #27ae60;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: var(--gray-900);
+    background: var(--gray-100);
+  }
+
+  .document {
+    max-width: 210mm;
+    margin: 0 auto;
+    background: var(--white);
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  }
+
+  .page-content {
+    padding: 30px 40px;
+  }
+
+  /* ================================================
+     HEADER / PORTADA
+     ================================================ */
+  .doc-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #0d2240 100%);
+    color: white;
+    padding: 60px 40px 50px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .doc-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: rgba(245, 130, 32, 0.12);
+    border-radius: 50%;
+  }
+
+  .doc-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -5%;
+    width: 300px;
+    height: 300px;
+    background: rgba(93, 173, 226, 0.1);
+    border-radius: 50%;
+  }
+
+  .doc-header .logo-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .doc-header .company-name {
+    font-size: 14pt;
+    font-weight: 300;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--secondary);
+  }
+
+  .doc-header .doc-type {
+    font-size: 10pt;
+    background: rgba(255,255,255,0.15);
+    padding: 6px 16px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+
+  .doc-header h1 {
+    font-size: 28pt;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .doc-header .subtitle {
+    font-size: 16pt;
+    font-weight: 300;
+    color: var(--accent);
+    margin-bottom: 30px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .doc-header .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    padding-top: 20px;
+  }
+
+  .doc-header .meta-item label {
+    display: block;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 4px;
+  }
+
+  .doc-header .meta-item span {
+    font-size: 11pt;
+    font-weight: 500;
+  }
+
+  /* ================================================
+     SECCIONES
+     ================================================ */
+  .section {
+    margin-bottom: 30px;
+  }
+
+  .section-title {
+    font-size: 16pt;
+    font-weight: 700;
+    color: var(--primary);
+    border-bottom: 3px solid var(--secondary);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-number {
+    background: var(--primary);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14pt;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 13pt;
+    color: var(--primary);
+    margin: 20px 0 10px;
+    font-weight: 600;
+  }
+
+  h4 {
+    font-size: 11pt;
+    color: var(--gray-700);
+    margin: 14px 0 8px;
+    font-weight: 600;
+  }
+
+  p { margin-bottom: 10px; }
+
+  /* ================================================
+     TABLAS
+     ================================================ */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 20px;
+    font-size: 9.5pt;
+  }
+
+  thead th {
+    background: var(--primary);
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  thead th.accent-header {
+    background: var(--accent);
+  }
+
+  tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--gray-200);
+    vertical-align: top;
+  }
+
+  tbody tr:nth-child(even) {
+    background: var(--gray-100);
+  }
+
+  tbody tr:hover {
+    background: #eaf2fb;
+  }
+
+  table.compact td, table.compact th {
+    padding: 5px 8px;
+    font-size: 9pt;
+  }
+
+  /* ================================================
+     CARDS / BOXES
+     ================================================ */
+  .highlight-box {
+    background: linear-gradient(135deg, #eaf2fb 0%, #f0f7ff 100%);
+    border-left: 4px solid var(--primary);
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .highlight-box.orange {
+    background: linear-gradient(135deg, #fef5ec 0%, #fff8f0 100%);
+    border-left-color: var(--secondary);
+  }
+
+  .highlight-box.success {
+    background: linear-gradient(135deg, #eafaf1 0%, #f0fdf4 100%);
+    border-left-color: var(--success);
+  }
+
+  .highlight-box.danger {
+    background: linear-gradient(135deg, #fdedec 0%, #fef2f1 100%);
+    border-left-color: var(--danger);
+  }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 16px 0;
+  }
+
+  .kpi-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+
+  .kpi-card .kpi-value {
+    font-size: 22pt;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .kpi-card .kpi-label {
+    font-size: 9pt;
+    color: var(--gray-500);
+    margin-top: 4px;
+  }
+
+  .card-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+
+  .info-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+
+  .info-card h4 {
+    margin-top: 0;
+    color: var(--primary);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+  }
+
+  /* ================================================
+     LISTAS
+     ================================================ */
+  ul, ol {
+    padding-left: 24px;
+    margin-bottom: 12px;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+
+  ul.check-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  ul.check-list li::before {
+    content: '\2713';
+    color: var(--success);
+    font-weight: bold;
+    margin-right: 8px;
+  }
+
+  /* ================================================
+     DIAGRAMA DE ARQUITECTURA (ASCII/TEXT)
+     ================================================ */
+  .architecture-diagram {
+    background: var(--dark);
+    color: #d4edda;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 9pt;
+    line-height: 1.4;
+    padding: 24px;
+    border-radius: 8px;
+    overflow-x: auto;
+    white-space: pre;
+    margin: 16px 0;
+  }
+
+  /* ================================================
+     GANTT CHART
+     ================================================ */
+  .gantt-container {
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+
+  .gantt-row {
+    display: grid;
+    grid-template-columns: 180px repeat(20, 1fr);
+    gap: 0;
+    margin-bottom: 3px;
+    align-items: center;
+    min-height: 32px;
+  }
+
+  .gantt-label {
+    font-size: 9pt;
+    font-weight: 600;
+    color: var(--gray-700);
+    padding-right: 12px;
+    text-align: right;
+  }
+
+  .gantt-bar {
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 7.5pt;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .gantt-header {
+    font-size: 7.5pt;
+    text-align: center;
+    color: var(--gray-500);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .phase-1 { background: var(--primary); }
+  .phase-2 { background: var(--accent); }
+  .phase-3 { background: var(--secondary); }
+  .phase-4 { background: #8e44ad; }
+  .phase-5 { background: var(--success); }
+
+  /* ================================================
+     BADGES
+     ================================================ */
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 8pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-high { background: #fdedec; color: var(--danger); }
+  .badge-medium { background: #fef9e7; color: var(--warning); }
+  .badge-low { background: #eafaf1; color: var(--success); }
+
+  /* ================================================
+     CODE / ENDPOINT
+     ================================================ */
+  code {
+    background: var(--gray-100);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', monospace;
+    font-size: 9pt;
+    color: var(--primary);
+  }
+
+  .endpoint-group {
+    margin-bottom: 16px;
+  }
+
+  .endpoint-group h4 {
+    background: var(--light-bg);
+    padding: 6px 12px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+
+  .method {
+    display: inline-block;
+    width: 54px;
+    text-align: center;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 8pt;
+    font-weight: 700;
+    font-family: 'Consolas', monospace;
+    margin-right: 6px;
+  }
+
+  .method-get { background: #eafaf1; color: var(--success); }
+  .method-post { background: #eaf2fb; color: var(--primary); }
+  .method-put { background: #fef9e7; color: var(--warning); }
+  .method-delete { background: #fdedec; color: var(--danger); }
+
+  /* ================================================
+     FOOTER
+     ================================================ */
+  .doc-footer {
+    background: var(--primary);
+    color: rgba(255,255,255,0.7);
+    padding: 20px 40px;
+    font-size: 8.5pt;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .doc-footer strong {
+    color: white;
+  }
+
+  /* ================================================
+     TOC (Tabla de Contenidos)
+     ================================================ */
+  .toc {
+    background: var(--light-bg);
+    border-radius: 8px;
+    padding: 24px 30px;
+    margin: 20px 0;
+  }
+
+  .toc h2 {
+    font-size: 14pt;
+    color: var(--primary);
+    margin-bottom: 14px;
+    border-bottom: 2px solid var(--secondary);
+    padding-bottom: 8px;
+  }
+
+  .toc ol {
+    counter-reset: toc-counter;
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .toc ol li {
+    counter-increment: toc-counter;
+    padding: 5px 0;
+    border-bottom: 1px dotted var(--gray-300);
+    font-size: 10.5pt;
+  }
+
+  .toc ol li::before {
+    content: counter(toc-counter) ".";
+    color: var(--primary);
+    font-weight: 700;
+    margin-right: 8px;
+  }
+
+  /* ================================================
+     PRINT STYLES
+     ================================================ */
+  @media print {
+    body {
+      background: white;
+      font-size: 10pt;
+    }
+
+    .document {
+      box-shadow: none;
+      max-width: 100%;
+    }
+
+    .page-content {
+      padding: 20px 25mm;
+    }
+
+    .doc-header {
+      padding: 40px 25mm 35px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .doc-footer {
+      padding: 15px 25mm;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    thead th {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .section-number {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .gantt-bar, .badge, .method, .highlight-box, .kpi-card {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    .no-break {
+      page-break-inside: avoid;
+    }
+
+    table { page-break-inside: auto; }
+    tr { page-break-inside: avoid; }
+    thead { display: table-header-group; }
+
+    @page {
+      size: A4;
+      margin: 15mm 0;
+    }
+  }
+
+  /* ================================================
+     RESPONSIVE (pantalla)
+     ================================================ */
+  @media screen and (max-width: 800px) {
+    .page-content { padding: 20px; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .card-row { grid-template-columns: 1fr; }
+    .doc-header .meta-grid { grid-template-columns: 1fr; }
+    .gantt-row { grid-template-columns: 140px repeat(20, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="document">
+
+  <!-- ========================================
+       PORTADA / HEADER
+       ======================================== -->
+  <div class="doc-header">
+    <div class="logo-area">
+      <div class="company-name">MSO Chile</div>
+      <div class="doc-type">Documento Confidencial</div>
+    </div>
+    <h1>Plan de Implementacion</h1>
+    <div class="subtitle">Plataforma TPT &mdash; Transferencia al Puesto de Trabajo</div>
+    <p style="font-size:10pt; color: rgba(255,255,255,0.8); margin-bottom: 30px; position:relative; z-index:1;">
+      Migracion de maqueta estatica a aplicacion productiva en arquitectura cloud moderna
+    </p>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <label>Fecha</label>
+        <span>Abril 2026</span>
+      </div>
+      <div class="meta-item">
+        <label>Version</label>
+        <span>1.0</span>
+      </div>
+      <div class="meta-item">
+        <label>Clasificacion</label>
+        <span>Confidencial</span>
+      </div>
+      <div class="meta-item">
+        <label>Preparado por</label>
+        <span>Equipo de Tecnologia MSO Chile</span>
+      </div>
+      <div class="meta-item">
+        <label>Alcance</label>
+        <span>50 - 500 usuarios concurrentes</span>
+      </div>
+      <div class="meta-item">
+        <label>Duracion estimada</label>
+        <span>20 semanas (5 meses)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       TABLA DE CONTENIDOS
+       ======================================== -->
+  <div class="page-content">
+    <div class="toc">
+      <h2>Tabla de Contenidos</h2>
+      <ol>
+        <li>Resumen Ejecutivo</li>
+        <li>Analisis de la Maqueta Actual</li>
+        <li>Arquitectura Propuesta</li>
+        <li>Modelo de Base de Datos</li>
+        <li>Plan de Implementacion por Fases</li>
+        <li>API REST &mdash; Endpoints Principales</li>
+        <li>Seguridad</li>
+        <li>Infraestructura y Deploy</li>
+        <li>Integraciones</li>
+        <li>Estimacion de Costos</li>
+        <li>Riesgos y Mitigaciones</li>
+        <li>Equipo Requerido</li>
+        <li>Cronograma Visual</li>
+        <li>Proximos Pasos</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ========================================
+       1. RESUMEN EJECUTIVO
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">1</span>
+        Resumen Ejecutivo
+      </div>
+
+      <p>La <strong>Plataforma TPT (Transferencia al Puesto de Trabajo)</strong> de MSO Chile es una herramienta integral que soporta el ciclo completo de gestion de programas de desarrollo organizacional: desde la definicion de competencias y conductas criticas, pasando por mediciones pre/post mediante encuestas y observaciones de jefatura, hasta la generacion de reportes con inteligencia artificial.</p>
+
+      <p>Actualmente, la plataforma opera como una <strong>maqueta funcional desplegada en GitHub Pages</strong>, cuyo backend se sustenta en Google Apps Script con Google Sheets como base de datos. Si bien este enfoque permitio validar rapidamente la propuesta de valor y la experiencia de usuario, presenta limitaciones severas para un despliegue productivo con multiples clientes simultaneos.</p>
+
+      <div class="highlight-box">
+        <strong>Objetivo de este plan:</strong> Detallar la ruta tecnica para migrar la plataforma desde su estado actual de maqueta a una aplicacion productiva en un stack cloud moderno (Next.js + Node.js + PostgreSQL), capaz de soportar de 50 a 500 usuarios concurrentes, multiples organizaciones cliente y operacion 24/7.
+      </div>
+
+      <h3>Objetivos Estrategicos</h3>
+      <ol>
+        <li><strong>Escalabilidad:</strong> Pasar de un unico spreadsheet a una base de datos relacional que soporte cientos de organizaciones y miles de registros sin degradacion.</li>
+        <li><strong>Seguridad:</strong> Implementar autenticacion robusta con JWT, control de acceso basado en roles (RBAC) y cifrado en transito y en reposo.</li>
+        <li><strong>Multi-tenancy:</strong> Permitir que multiples clientes operen de forma aislada en la misma instancia de la aplicacion.</li>
+        <li><strong>Disponibilidad:</strong> Garantizar un SLA del 99.5% con infraestructura cloud gestionada, backups automaticos y monitoreo proactivo.</li>
+        <li><strong>Preservar la UX validada:</strong> Mantener el diseno visual y los flujos de usuario ya probados en la maqueta, que reflejan meses de iteracion con usuarios reales.</li>
+      </ol>
+
+      <h3>Timeline de Alto Nivel</h3>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-value" style="font-size:16pt;">Sem 1-4</div>
+          <div class="kpi-label">Fundamentos e Infraestructura</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" style="font-size:16pt;">Sem 5-12</div>
+          <div class="kpi-label">Core de Negocio + Avanzado</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" style="font-size:16pt;">Sem 13-16</div>
+          <div class="kpi-label">IA, Reporteria, Correos</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" style="font-size:16pt;">Sem 17-20</div>
+          <div class="kpi-label">Testing, Migracion, Go-Live</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================
+       2. ANALISIS DE LA MAQUETA ACTUAL
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">2</span>
+        Analisis de la Maqueta Actual
+      </div>
+
+      <p>La maqueta actual consta de <strong>21 archivos Google Apps Script (.gs)</strong> que implementan la logica de negocio, y <strong>38 archivos HTML</strong> que componen las vistas de la aplicacion, incluyendo un sistema de ruteo por pestanas y carga dinamica de vistas parciales mediante la funcion <code>getVistaHTML()</code>.</p>
+
+      <h3>2.1 Inventario de Modulos</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Modulo</th>
+            <th>Archivos</th>
+            <th>Capacidad Actual</th>
+            <th>Rol(es)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Dashboard</strong></td>
+            <td>dashboard.html, DashboardService.gs</td>
+            <td>KPIs por programa: participantes, observaciones, tasa respuesta, nivel aplicacion. Graficos PRE vs POST por conducta, mapa de calor adopcion, resumen por equipo/area.</td>
+            <td>Admin, Jefatura</td>
+          </tr>
+          <tr>
+            <td><strong>Clientes</strong></td>
+            <td>clientes.html, ClientesDB.gs</td>
+            <td>CRUD de organizaciones cliente con razon social, rubro, pais, contacto. Filtrado y estados activo/inactivo.</td>
+            <td>Admin</td>
+          </tr>
+          <tr>
+            <td><strong>Programas</strong></td>
+            <td>programas.html, panel-programa.html, ProgramasDB.gs + 7 tabs</td>
+            <td>CRUD completo. Panel con pestanas: Resumen, Participantes, Competencias, Encuestas, Cronograma, Informes, Seguimiento. Tipos: piloto, programa_completo, intervencion. Estados: diseno, activo, finalizado, suspendido.</td>
+            <td>Admin</td>
+          </tr>
+          <tr>
+            <td><strong>Competencias</strong></td>
+            <td>tab-competencias.html, CompetenciasDB.gs</td>
+            <td>Definicion de competencias por programa con 4 niveles de texto e interpretacion. Foco de desarrollo, prioridad y orden.</td>
+            <td>Admin</td>
+          </tr>
+          <tr>
+            <td><strong>Conductas Criticas</strong></td>
+            <td>conductas.html, ConductasDB.gs</td>
+            <td>Definicion de conductas observables con criterios de observacion, definicion observable, indicador, conducta no deseada, objetivo de negocio.</td>
+            <td>Admin</td>
+          </tr>
+          <tr>
+            <td><strong>Encuestas</strong></td>
+            <td>encuestas.html, tab-encuesta-editor.html, mis-encuestas.html, EncuestasDB.gs</td>
+            <td>Constructor de encuestas con tipos pre/post y autoevaluacion/coevaluacion. Preguntas con escala 1-5, si/no, niveles competencia. Vista respondente con progreso.</td>
+            <td>Admin (builder), Participante (respondente)</td>
+          </tr>
+          <tr>
+            <td><strong>Actividades</strong></td>
+            <td>actividades.html, distribucion-actividades.html, mis-actividades.html, ActividadesDB.gs</td>
+            <td>Creacion y asignacion de actividades por programa. Distribucion a participantes. Vista participante con completado individual.</td>
+            <td>Admin, Participante</td>
+          </tr>
+          <tr>
+            <td><strong>Observaciones</strong></td>
+            <td>gestion-observaciones.html, ObservacionesDB.gs, GestionObservacionesDB.gs</td>
+            <td>Observaciones de jefatura a participantes por conducta/checklist. Detalle con criterios, medicion pre/post/seguimiento.</td>
+            <td>Jefatura, Admin</td>
+          </tr>
+          <tr>
+            <td><strong>Checklists</strong></td>
+            <td>checklists.html, ChecklistsDB.gs</td>
+            <td>Definicion de checklists por conducta critica. Tipos respuesta configurables.</td>
+            <td>Admin</td>
+          </tr>
+          <tr>
+            <td><strong>Feedback</strong></td>
+            <td>feedback-jefatura.html, feedback-recibido.html, FeedbackDB.gs</td>
+            <td>Feedback de jefatura a participante: fortalezas, aspectos a reforzar, recomendaciones. Vista recepcion participante.</td>
+            <td>Jefatura, Participante</td>
+          </tr>
+          <tr>
+            <td><strong>Hallazgos</strong></td>
+            <td>hallazgos.html, HallazgosDB.gs</td>
+            <td>Registro de hallazgos por conducta con criticidad, interpretacion, segmento afectado. Recomendaciones asociadas con prioridad y responsable.</td>
+            <td>Admin</td>
+          </tr>
+          <tr>
+            <td><strong>Reportes</strong></td>
+            <td>reportes.html, ReportesService.gs</td>
+            <td>Informes individuales y consolidados. Calculo brechas auto/co PRE/POST por competencia. Generacion Google Docs. Integracion IA (Groq) para analisis narrativo.</td>
+            <td>Admin</td>
+          </tr>
+          <tr>
+            <td><strong>Usuarios</strong></td>
+            <td>usuarios.html, UsuariosDB.gs, Auth.gs</td>
+            <td>CRUD usuarios con roles (admin, jefatura, participante, colaborador). Registro con aprobacion. Asignacion a cliente, area, equipo, jefatura.</td>
+            <td>Admin</td>
+          </tr>
+          <tr>
+            <td><strong>Correos</strong></td>
+            <td>correos.html, NotificacionesService.gs</td>
+            <td>Plantillas de correo transaccional. Envio de notificaciones via MailApp de Google.</td>
+            <td>Admin</td>
+          </tr>
+          <tr>
+            <td><strong>Mi Progreso</strong></td>
+            <td>mi-progreso.html</td>
+            <td>Vista personal del participante con resumen de avance en actividades, encuestas y feedback recibido.</td>
+            <td>Participante</td>
+          </tr>
+          <tr>
+            <td><strong>Mi Equipo</strong></td>
+            <td>mi-equipo.html</td>
+            <td>Vista jefatura para monitorear el progreso de los miembros de su equipo.</td>
+            <td>Jefatura</td>
+          </tr>
+          <tr>
+            <td><strong>Reportar Incidencia</strong></td>
+            <td>reportar.html</td>
+            <td>Formulario para reportar observaciones y problemas sobre el programa.</td>
+            <td>Todos</td>
+          </tr>
+          <tr>
+            <td><strong>Asistente IA</strong></td>
+            <td>asistente-ia.html</td>
+            <td>Interfaz conversacional con Groq API para generar analisis de datos del programa.</td>
+            <td>Admin</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>2.2 Arquitectura Tecnica Actual</h3>
+      <div class="card-row">
+        <div class="info-card">
+          <h4>Frontend</h4>
+          <ul>
+            <li>HTML/CSS (Tailwind-like clases utilitarias personalizadas)</li>
+            <li>JavaScript vanilla con carga dinamica de vistas via <code>google.script.run</code></li>
+            <li>Chart.js para graficos del dashboard</li>
+            <li>SPA simulada: un <code>index.html</code> que carga vistas parciales segun el menu lateral</li>
+            <li>Sin bundler, sin framework reactivo</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>Backend</h4>
+          <ul>
+            <li>Google Apps Script (GAS) como servidor</li>
+            <li>Google Sheets como base de datos (26 hojas/tablas)</li>
+            <li>Google Drive para almacenamiento de archivos</li>
+            <li>Sesiones manuales con token en PropertiesService</li>
+            <li>Hash de passwords con Utilities.computeDigest (SHA-256)</li>
+            <li>Audit log integrado en hoja separada</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>2.3 Limitaciones Identificadas</h3>
+      <div class="highlight-box danger">
+        <strong>Limitaciones criticas que impiden el uso productivo:</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>Rendimiento:</strong> Google Sheets tiene un limite de 10 millones de celdas y las lecturas completas de hoja se degradan con volumen. La funcion <code>getSheetData()</code> lee TODA la hoja cada vez.</li>
+          <li><strong>Concurrencia:</strong> GAS tiene limite de 30 usuarios simultaneos y 6 min/ejecucion. LockService es fragil bajo carga.</li>
+          <li><strong>Seguridad:</strong> Tokens de sesion almacenados en PropertiesService sin rotacion. SHA-256 sin salt para passwords. CORS no configurable en GAS.</li>
+          <li><strong>Escalabilidad:</strong> No hay indices, no hay queries SQL, no hay relaciones con integridad referencial. Toda busqueda es lineal (filter sobre arrays).</li>
+          <li><strong>Multi-tenancy:</strong> Un solo spreadsheet para todos los clientes. Sin aislamiento de datos real.</li>
+          <li><strong>Mantenibilidad:</strong> Sin tipado, sin tests, sin CI/CD. Deployments manuales via clasp.</li>
+          <li><strong>Disponibilidad:</strong> Sujeto a cuotas de Google (quotas diarias de ejecucion, emailApp, etc.).</li>
+        </ul>
+      </div>
+
+      <h3>2.4 Elementos a Preservar</h3>
+      <div class="highlight-box success">
+        <strong>Activos valiosos de la maqueta que deben mantenerse:</strong>
+        <ul style="margin-top:8px;">
+          <li>Modelo de datos bien estructurado (26 tablas con relaciones claras) &mdash; se migra directamente a PostgreSQL</li>
+          <li>Flujos de usuario validados: login/registro, navegacion por programa, builder de encuestas, observaciones</li>
+          <li>Logica de calculo de brechas auto/co PRE/POST por competencia (ReportesService.gs)</li>
+          <li>Interfaz visual limpia con sistema de diseno coherente (colores MSO, layout sidebar)</li>
+          <li>Roles y permisos ya definidos: admin, jefatura, participante, colaborador</li>
+          <li>Integracion con Groq API para reportes con IA ya probada</li>
+          <li>Estructura de estados de ciclo de vida (programa, encuesta, observacion, usuario)</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================
+       3. ARQUITECTURA PROPUESTA
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">3</span>
+        Arquitectura Propuesta
+      </div>
+
+      <p>Se propone una arquitectura de tres capas (frontend SPA, API REST, base de datos relacional) desplegada en servicios cloud gestionados, con separacion clara de responsabilidades y capacidad de escalar horizontalmente.</p>
+
+      <h3>3.1 Diagrama de Arquitectura</h3>
+      <div class="architecture-diagram">
+  +--------------------------------------------------+
+  |                   CLIENTES                        |
+  |  [Navegador Web]   [Movil PWA]                   |
+  +--------+-------------------+----------------------+
+           |                   |
+           v                   v
+  +--------------------------------------------------+
+  |              CDN / VERCEL EDGE                    |
+  |          (Next.js 14 - SSR + Static)              |
+  |  +--------------------------------------------+  |
+  |  |  Frontend SPA (React 18 + TypeScript)      |  |
+  |  |  - Pages: Login, Dashboard, Programas...   |  |
+  |  |  - Components: DataTable, ChartJS, Forms   |  |
+  |  |  - State: Zustand + React Query            |  |
+  |  |  - UI: Tailwind CSS + Headless UI          |  |
+  |  +--------------------------------------------+  |
+  +------------------------+--------------------------+
+                           |  HTTPS / JWT Bearer
+                           v
+  +--------------------------------------------------+
+  |              API REST (Node.js 20 LTS)            |
+  |              Express.js + TypeScript              |
+  |  +--------------------------------------------+  |
+  |  | Middleware: Auth, RBAC, RateLimit, CORS     |  |
+  |  | Controllers: Programas, Encuestas, Users.. |  |
+  |  | Services: Business Logic Layer              |  |
+  |  | Validators: Zod Schemas                     |  |
+  |  +--------------------------------------------+  |
+  |  +------------+  +-----------+  +-------------+  |
+  |  | Bull MQ    |  | node-cron |  | multer/S3   |  |
+  |  | (colas)    |  | (tareas)  |  | (archivos)  |  |
+  |  +------------+  +-----------+  +-------------+  |
+  +-----+----------+----------+----------+-----------+
+        |          |          |          |
+        v          v          v          v
+  +---------+ +--------+ +--------+ +----------+
+  |PostgreSQL| | Redis  | |  S3 /  | | Groq API |
+  | (Supa-  | | (Upstash| | R2     | | (IA)     |
+  |  base)  | |  /Redis)| | (files)| |          |
+  +---------+ +--------+ +--------+ +----------+
+        |
+        v
+  +-----------+
+  | SendGrid  |
+  | / Resend  |
+  | (correos) |
+  +-----------+</div>
+
+      <h3>3.2 Stack Tecnologico Detallado</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Capa</th>
+            <th>Tecnologia</th>
+            <th>Justificacion</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Frontend</strong></td>
+            <td>Next.js 14 (App Router) + React 18 + TypeScript</td>
+            <td>SSR para SEO, RSC para rendimiento, TypeScript para mantenibilidad. Ecosistema maduro con soporte de Vercel.</td>
+          </tr>
+          <tr>
+            <td><strong>UI Framework</strong></td>
+            <td>Tailwind CSS 3 + Headless UI + Recharts</td>
+            <td>Tailwind ya se usa en estilo de la maqueta. Recharts reemplaza Chart.js con mejor integracion React.</td>
+          </tr>
+          <tr>
+            <td><strong>Estado Frontend</strong></td>
+            <td>Zustand (global) + TanStack Query (servidor)</td>
+            <td>Zustand liviano para UI state. TanStack Query para cache, refetch y sincronizacion con API.</td>
+          </tr>
+          <tr>
+            <td><strong>API</strong></td>
+            <td>Node.js 20 LTS + Express.js + TypeScript</td>
+            <td>Madurez, pool de talento en Chile, excelente rendimiento I/O. Express por simplicidad y middleware ecosystem.</td>
+          </tr>
+          <tr>
+            <td><strong>Validacion</strong></td>
+            <td>Zod (schemas compartidos front/back)</td>
+            <td>Inferencia de tipos TypeScript, validacion runtime en API, reutilizable en formularios frontend.</td>
+          </tr>
+          <tr>
+            <td><strong>ORM</strong></td>
+            <td>Prisma 5</td>
+            <td>Migraciones versionadas, tipado auto-generado, excelente DX. Alternativa: Drizzle ORM si se prefiere SQL puro.</td>
+          </tr>
+          <tr>
+            <td><strong>Base de Datos</strong></td>
+            <td>PostgreSQL 16 (Supabase o Railway)</td>
+            <td>Relacional, ACID, indices, JSON columns, full-text search. Supabase agrega auth, realtime y dashboard admin gratis.</td>
+          </tr>
+          <tr>
+            <td><strong>Cache / Sesiones</strong></td>
+            <td>Redis (Upstash serverless)</td>
+            <td>Cache de consultas frecuentes (dashboard KPIs), rate limiting, sesiones de refresh token. Upstash con plan gratuito generoso.</td>
+          </tr>
+          <tr>
+            <td><strong>Almacenamiento</strong></td>
+            <td>AWS S3 o Cloudflare R2</td>
+            <td>R2 preferido: sin costos de egress, compatible S3, $0.015/GB. Para archivos de programa, informes PDF, recursos.</td>
+          </tr>
+          <tr>
+            <td><strong>IA / Reportes</strong></td>
+            <td>Groq API (LLaMA 3 / Mixtral)</td>
+            <td>Ya integrado en la maqueta. Latencia ultra-baja, costo competitivo. Para analisis narrativo de brechas y recomendaciones.</td>
+          </tr>
+          <tr>
+            <td><strong>Correo</strong></td>
+            <td>Resend (o SendGrid)</td>
+            <td>Resend: API moderna, React Email para templates, 3000 emails/mes gratis. Reemplaza MailApp de GAS.</td>
+          </tr>
+          <tr>
+            <td><strong>PDF</strong></td>
+            <td>@react-pdf/renderer o Puppeteer</td>
+            <td>Generacion de informes PDF profesionales server-side. React-pdf para templates tipados.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>3.3 Autenticacion y Autorizacion</h3>
+      <p>Se implementara un sistema de autenticacion propio basado en JWT con refresh tokens, reemplazando el sistema actual de sesiones en PropertiesService:</p>
+      <ul>
+        <li><strong>Access Token (JWT):</strong> Firmado con RS256, expira en 15 minutos. Contiene userId, rol, clienteId. Enviado en header <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+        <li><strong>Refresh Token:</strong> Opaco (UUID v4), almacenado en Redis con TTL de 7 dias. Rotacion en cada uso (sliding window). Enviado como httpOnly secure cookie.</li>
+        <li><strong>Password Hashing:</strong> bcrypt con salt rounds = 12. Reemplaza SHA-256 sin salt actual.</li>
+        <li><strong>RBAC Middleware:</strong> Decoradores en cada ruta que verifican rol del usuario contra permisos requeridos. Roles: admin, jefatura, participante, colaborador.</li>
+      </ul>
+
+    </div>
+  </div>
+
+  <!-- ========================================
+       4. MODELO DE BASE DE DATOS
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">4</span>
+        Modelo de Base de Datos
+      </div>
+
+      <p>El modelo relacional se deriva directamente de las 26 hojas definidas en <code>Config.gs (HOJAS, ENCABEZADOS)</code>, normalizando relaciones y agregando integridad referencial con foreign keys, indices y constraints. Se utiliza nomenclatura snake_case y UUIDs como primary keys.</p>
+
+      <h3>4.1 Tablas Principales</h3>
+
+      <table class="compact">
+        <thead>
+          <tr>
+            <th>Tabla</th>
+            <th>Columnas Principales</th>
+            <th>FK / Relaciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>organizaciones</strong></td>
+            <td>id (UUID PK), nombre, razon_social, rubro, pais, contacto_nombre, contacto_email, estado (enum: activo/inactivo), created_at, created_by, activo</td>
+            <td>created_by &rarr; usuarios.id</td>
+          </tr>
+          <tr>
+            <td><strong>usuarios</strong></td>
+            <td>id (UUID PK), nombre_completo, email (UNIQUE), password_hash (bcrypt), cargo, organizacion_id, rol (enum), area, equipo, jefatura_id, estado (enum: activo/inactivo/pendiente), created_at, ultimo_acceso, activo</td>
+            <td>organizacion_id &rarr; organizaciones.id, jefatura_id &rarr; usuarios.id (self-ref)</td>
+          </tr>
+          <tr>
+            <td><strong>programas</strong></td>
+            <td>id (UUID PK), nombre, organizacion_id, fecha_inicio (DATE), fecha_termino (DATE), tipo (enum: piloto/programa_completo/intervencion), objetivo (TEXT), estado (enum: diseno/activo/finalizado/suspendido), fecha_medicion_pre, fecha_medicion_post, created_by, created_at, activo</td>
+            <td>organizacion_id &rarr; organizaciones.id, created_by &rarr; usuarios.id</td>
+          </tr>
+          <tr>
+            <td><strong>participantes_programa</strong></td>
+            <td>id (UUID PK), programa_id, usuario_id, rol_programa (enum: lider/colaborador/jefatura), lider_id, fecha_inicio, fecha_termino, activo</td>
+            <td>programa_id &rarr; programas.id, usuario_id &rarr; usuarios.id, lider_id &rarr; usuarios.id. UNIQUE(programa_id, usuario_id)</td>
+          </tr>
+          <tr>
+            <td><strong>competencias</strong></td>
+            <td>id (UUID PK), programa_id, nombre, descripcion, foco_desarrollo, nivel_1_texto, nivel_2_texto, nivel_3_texto, nivel_4_texto, interpretacion_nivel_1..4, prioridad (INT), orden (INT), activo</td>
+            <td>programa_id &rarr; programas.id</td>
+          </tr>
+          <tr>
+            <td><strong>conductas_criticas</strong></td>
+            <td>id (UUID PK), programa_id, nombre, descripcion, definicion_observable, objetivo_negocio, indicador_observable, conducta_no_deseada, prioridad, orden, activo</td>
+            <td>programa_id &rarr; programas.id</td>
+          </tr>
+          <tr>
+            <td><strong>criterios_observacion</strong></td>
+            <td>id (UUID PK), conducta_id, descripcion, obligatorio (BOOL), orden, activo</td>
+            <td>conducta_id &rarr; conductas_criticas.id (CASCADE)</td>
+          </tr>
+          <tr>
+            <td><strong>encuestas</strong></td>
+            <td>id (UUID PK), programa_id, nombre, tipo (enum: pre/post), tipo_cuestionario (enum: autoevaluacion/coevaluacion), instrucciones (TEXT), estado (enum: borrador/activa/cerrada), fecha_activacion, fecha_cierre, fecha_limite, created_by, created_at, activo</td>
+            <td>programa_id &rarr; programas.id</td>
+          </tr>
+          <tr>
+            <td><strong>preguntas</strong></td>
+            <td>id (UUID PK), encuesta_id, conducta_id (nullable), competencia_id (nullable), texto_pregunta, foco_desarrollo, opcion_nivel_1..4, tipo_respuesta (enum: escala_1_5/si_no/logrado_parcial_no/texto_breve/niveles_competencia), obligatoria (BOOL), orden, activo</td>
+            <td>encuesta_id &rarr; encuestas.id (CASCADE), conducta_id &rarr; conductas_criticas.id, competencia_id &rarr; competencias.id</td>
+          </tr>
+          <tr>
+            <td><strong>respuestas</strong></td>
+            <td>id (UUID PK), encuesta_id, pregunta_id, usuario_id, programa_id, valor_respuesta (TEXT), valor_numerico (DECIMAL), fecha_respuesta (TIMESTAMP), estado, activo</td>
+            <td>encuesta_id &rarr; encuestas.id, pregunta_id &rarr; preguntas.id, usuario_id &rarr; usuarios.id. UNIQUE(pregunta_id, usuario_id, encuesta_id)</td>
+          </tr>
+          <tr>
+            <td><strong>actividades</strong></td>
+            <td>id (UUID PK), programa_id, nombre, tipo, enlace (URL), descripcion (TEXT), fecha_limite (DATE), estado, asignacion_tipo, created_by, created_at, activo</td>
+            <td>programa_id &rarr; programas.id</td>
+          </tr>
+          <tr>
+            <td><strong>asignaciones_actividad</strong></td>
+            <td>id (UUID PK), actividad_id, participante_id, completada (BOOL), fecha_completada (TIMESTAMP), activo</td>
+            <td>actividad_id &rarr; actividades.id (CASCADE), participante_id &rarr; usuarios.id</td>
+          </tr>
+          <tr>
+            <td><strong>checklists</strong></td>
+            <td>id (UUID PK), programa_id, nombre, conducta_id, tipo_respuesta, estado, created_by, created_at, activo</td>
+            <td>programa_id &rarr; programas.id, conducta_id &rarr; conductas_criticas.id</td>
+          </tr>
+          <tr>
+            <td><strong>observaciones</strong></td>
+            <td>id (UUID PK), checklist_id, programa_id, conducta_id, observador_id, participante_id, tipo_medicion (enum: pre/post/seguimiento), fecha_observacion (DATE), comentario (TEXT), estado (enum: borrador/completada), created_at, activo</td>
+            <td>checklist_id &rarr; checklists.id, programa_id &rarr; programas.id, observador_id &rarr; usuarios.id, participante_id &rarr; usuarios.id</td>
+          </tr>
+          <tr>
+            <td><strong>observacion_detalles</strong></td>
+            <td>id (UUID PK), observacion_id, criterio_id, valor_respuesta, valor_numerico (DECIMAL), activo</td>
+            <td>observacion_id &rarr; observaciones.id (CASCADE), criterio_id &rarr; criterios_observacion.id</td>
+          </tr>
+          <tr>
+            <td><strong>feedback</strong></td>
+            <td>id (UUID PK), programa_id, observacion_id (nullable), jefatura_id, participante_id, fortaleza (TEXT), aspecto_reforzar (TEXT), recomendacion (TEXT), fecha_feedback (TIMESTAMP), activo</td>
+            <td>programa_id &rarr; programas.id, jefatura_id &rarr; usuarios.id, participante_id &rarr; usuarios.id</td>
+          </tr>
+          <tr>
+            <td><strong>hallazgos</strong></td>
+            <td>id (UUID PK), programa_id, conducta_id, hallazgo (TEXT), segmento_afectado, criticidad (enum: alta/media/baja), interpretacion (TEXT), estado_decision, created_by, created_at, activo</td>
+            <td>programa_id &rarr; programas.id, conducta_id &rarr; conductas_criticas.id</td>
+          </tr>
+          <tr>
+            <td><strong>recomendaciones</strong></td>
+            <td>id (UUID PK), hallazgo_id, recomendacion (TEXT), conducta_id, prioridad (enum), responsable_sugerido, created_at, activo</td>
+            <td>hallazgo_id &rarr; hallazgos.id (CASCADE)</td>
+          </tr>
+          <tr>
+            <td><strong>archivos</strong></td>
+            <td>id (UUID PK), programa_id, nombre_archivo, tipo (enum: cronograma/material/instructivo/presentacion/informe/otro), mensaje, storage_key (S3), url, mime_type, tamano (BIGINT), subido_por, fecha_subida, visible_participantes (BOOL), activo</td>
+            <td>programa_id &rarr; programas.id, subido_por &rarr; usuarios.id</td>
+          </tr>
+          <tr>
+            <td><strong>informes_generados</strong></td>
+            <td>id (UUID PK), programa_id, usuario_id, tipo_informe (enum: individual/consolidado/datos_brutos), nombre, storage_key, url, generado_por, fecha_generacion, activo</td>
+            <td>programa_id &rarr; programas.id, usuario_id &rarr; usuarios.id</td>
+          </tr>
+          <tr>
+            <td><strong>notificaciones</strong></td>
+            <td>id (UUID PK), usuario_id, tipo, titulo, mensaje (TEXT), leida (BOOL DEFAULT false), email_enviado (BOOL), created_at</td>
+            <td>usuario_id &rarr; usuarios.id</td>
+          </tr>
+          <tr>
+            <td><strong>correos_enviados</strong></td>
+            <td>id (UUID PK), destinatario_id, destinatario_email, asunto, cuerpo_html (TEXT), plantilla, estado (enum: enviado/fallido/pendiente), proveedor_id (VARCHAR), created_at</td>
+            <td>destinatario_id &rarr; usuarios.id</td>
+          </tr>
+          <tr>
+            <td><strong>reportes_observacion</strong></td>
+            <td>id (UUID PK), programa_id, categoria, tipo, titulo, comentario (TEXT), autor_id, autor_nombre, estado_gestion, elemento_id, fecha, activo</td>
+            <td>programa_id &rarr; programas.id, autor_id &rarr; usuarios.id</td>
+          </tr>
+          <tr>
+            <td><strong>reporte_historial</strong></td>
+            <td>id (UUID PK), reporte_id, estado_nuevo, admin_id, admin_nombre, comentario, fecha</td>
+            <td>reporte_id &rarr; reportes_observacion.id</td>
+          </tr>
+          <tr>
+            <td><strong>cronograma_programa</strong></td>
+            <td>id (UUID PK), programa_id, fase, nombre_hito, fecha_inicio (DATE), fecha_fin (DATE), responsable, estado (enum: pendiente/en_curso/completado), orden, activo</td>
+            <td>programa_id &rarr; programas.id</td>
+          </tr>
+          <tr>
+            <td><strong>audit_log</strong></td>
+            <td>id (UUID PK), usuario_id, accion, entidad, entidad_id, detalle (JSONB), ip_address, user_agent, created_at</td>
+            <td>usuario_id &rarr; usuarios.id. INDEX(entidad, entidad_id), INDEX(created_at)</td>
+          </tr>
+          <tr>
+            <td><strong>sesiones</strong></td>
+            <td>id (UUID PK), usuario_id, refresh_token_hash, ip_address, user_agent, expires_at, created_at, revoked (BOOL)</td>
+            <td>usuario_id &rarr; usuarios.id. INDEX(refresh_token_hash)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>4.2 Indices Recomendados</h3>
+      <ul>
+        <li><code>usuarios(email)</code> &mdash; UNIQUE, para login</li>
+        <li><code>usuarios(organizacion_id, activo)</code> &mdash; para listar usuarios por organizacion</li>
+        <li><code>programas(organizacion_id, estado)</code> &mdash; para filtrar programas por cliente</li>
+        <li><code>participantes_programa(programa_id, usuario_id)</code> &mdash; UNIQUE, para junction table</li>
+        <li><code>respuestas(encuesta_id, usuario_id)</code> &mdash; para verificar si un usuario ya respondio</li>
+        <li><code>observaciones(programa_id, participante_id, tipo_medicion)</code> &mdash; para consultas de dashboard</li>
+        <li><code>notificaciones(usuario_id, leida)</code> &mdash; para badge de notificaciones no leidas</li>
+        <li><code>audit_log(created_at DESC)</code> &mdash; para consultas recientes</li>
+      </ul>
+
+    </div>
+  </div>
+
+  <!-- ========================================
+       5. PLAN DE IMPLEMENTACION POR FASES
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">5</span>
+        Plan de Implementacion por Fases
+      </div>
+
+      <!-- FASE 1 -->
+      <h3 style="background: var(--primary); color:white; padding:10px 16px; border-radius:6px; margin-top:0;">Fase 1: Fundamentos (Semanas 1-4)</h3>
+      <p>Establecer la base tecnica sobre la cual se construira todo el sistema. Al final de esta fase, se debe tener un esqueleto funcional desplegado en staging con autenticacion completa.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Entregable</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>S1</strong></td>
+            <td>Setup del Proyecto</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>Inicializar monorepo con Turborepo: <code>/apps/web</code> (Next.js), <code>/apps/api</code> (Express), <code>/packages/shared</code> (tipos Zod)</li>
+                <li>Configurar TypeScript strict, ESLint, Prettier en ambos proyectos</li>
+                <li>Configurar base de datos PostgreSQL en Supabase (proyecto staging)</li>
+                <li>Crear schema Prisma inicial con todas las tablas de seccion 4</li>
+                <li>Ejecutar primera migracion (<code>prisma migrate dev</code>)</li>
+                <li>Configurar GitHub Actions: lint + typecheck en cada PR</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S2</strong></td>
+            <td>Sistema de Autenticacion</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: POST <code>/auth/register</code> (registro con estado pendiente, bcrypt)</li>
+                <li>API: POST <code>/auth/login</code> (verificacion credentials, emision JWT + refresh token)</li>
+                <li>API: POST <code>/auth/refresh</code> (rotacion de refresh token)</li>
+                <li>API: POST <code>/auth/logout</code> (revocacion de refresh token en Redis)</li>
+                <li>Middleware <code>requireAuth</code> con verificacion JWT RS256</li>
+                <li>Middleware <code>requireRole(['admin'])</code> para RBAC</li>
+                <li>Frontend: Paginas login y registro replicando diseno actual</li>
+                <li>Frontend: Interceptor Axios con auto-refresh de token expirado</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S3</strong></td>
+            <td>CRUD Organizaciones + Usuarios</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: CRUD completo <code>/api/organizaciones</code> (solo admin)</li>
+                <li>API: CRUD <code>/api/usuarios</code> con filtros por organizacion, rol, estado</li>
+                <li>API: PATCH <code>/api/usuarios/:id/aprobar</code> (admin aprueba registro pendiente)</li>
+                <li>API: PATCH <code>/api/usuarios/:id/rol</code> (cambio de rol)</li>
+                <li>Frontend: Vista clientes.html migrada a React component</li>
+                <li>Frontend: Vista usuarios.html migrada con tabla paginada, filtros</li>
+                <li>Frontend: Layout principal (sidebar + header + content area) replicando index.html</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S4</strong></td>
+            <td>Deploy Staging + CI/CD</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>Deploy frontend en Vercel (branch staging)</li>
+                <li>Deploy API en Railway (o Render) conectado a Supabase</li>
+                <li>Configurar variables de entorno en ambas plataformas</li>
+                <li>GitHub Actions: deploy automatico staging en merge a <code>develop</code></li>
+                <li>GitHub Actions: build + test en cada PR</li>
+                <li>Seed de datos de prueba (organizacion demo, usuarios admin/jefatura/participante)</li>
+                <li>Documentacion de API con Swagger/OpenAPI auto-generado</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box">
+        <strong>Criterios de Aceptacion Fase 1:</strong>
+        <ul style="margin-top:6px;">
+          <li>Un usuario puede registrarse, ser aprobado por admin, hacer login y navegar el dashboard vacio</li>
+          <li>Admin puede crear organizaciones y gestionar usuarios</li>
+          <li>El deploy en staging funciona con HTTPS y variables seguras</li>
+          <li>CI/CD pasa lint, typecheck y tests basicos</li>
+        </ul>
+      </div>
+
+      <!-- FASE 2 -->
+      <div class="page-break"></div>
+      <h3 style="background: var(--accent); color:white; padding:10px 16px; border-radius:6px;">Fase 2: Core del Negocio (Semanas 5-8)</h3>
+      <p>Implementar el nucleo funcional de la plataforma: programas, competencias, participantes y encuestas. Esta fase replica la funcionalidad mas utilizada de la maqueta.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Entregable</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>S5</strong></td>
+            <td>Programas CRUD + Panel</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: CRUD <code>/api/programas</code> con validacion de nombre unico por organizacion</li>
+                <li>API: GET <code>/api/programas/:id/resumen</code> (datos consolidados para panel)</li>
+                <li>Frontend: Lista de programas (programas.html &rarr; React)</li>
+                <li>Frontend: Panel de programa con sistema de tabs (tab-resumen, tab-competencias, tab-participantes, tab-encuestas, tab-cronograma, tab-informes, tab-seguimiento)</li>
+                <li>Implementar estados de programa con transiciones validas (diseno &rarr; activo &rarr; finalizado)</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S6</strong></td>
+            <td>Competencias + Conductas Criticas</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: CRUD <code>/api/programas/:id/competencias</code> con 4 niveles y interpretaciones</li>
+                <li>API: CRUD <code>/api/programas/:id/conductas</code> con criterios de observacion anidados</li>
+                <li>Frontend: Tab competencias con editor inline de niveles</li>
+                <li>Frontend: Vista conductas con drag-and-drop para reordenar</li>
+                <li>Validaciones: al menos 1 competencia y 1 conducta para activar programa</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S7</strong></td>
+            <td>Participantes + Importacion</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: CRUD <code>/api/programas/:id/participantes</code> (junction table)</li>
+                <li>API: POST <code>/api/programas/:id/participantes/importar</code> (Excel upload con xlsx)</li>
+                <li>API: Asignacion de roles programa (lider &harr; colaborador, jefatura)</li>
+                <li>Frontend: Tab participantes con tabla, busqueda, asignacion de lider</li>
+                <li>Frontend: Modal de importacion Excel con preview y validacion</li>
+                <li>Crear usuarios automaticamente si no existen (con password temporal)</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S8</strong></td>
+            <td>Encuestas (Builder + Respondente)</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: CRUD <code>/api/encuestas</code> con preguntas anidadas</li>
+                <li>API: POST <code>/api/encuestas/:id/activar</code>, <code>/cerrar</code></li>
+                <li>API: POST <code>/api/encuestas/:id/responder</code> (bulk upsert respuestas)</li>
+                <li>API: GET <code>/api/encuestas/:id/resultados</code> (agregados por competencia/conducta)</li>
+                <li>Frontend: Editor de encuestas (tab-encuesta-editor) con tipos de pregunta</li>
+                <li>Frontend: Vista respondente (mis-encuestas) con progreso y validacion</li>
+                <li>Soporte para tipos: escala_1_5, si_no, logrado_parcial_no, texto_breve, niveles_competencia</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box orange">
+        <strong>Criterios de Aceptacion Fase 2:</strong>
+        <ul style="margin-top:6px;">
+          <li>Admin puede crear un programa completo con competencias, conductas y participantes</li>
+          <li>Admin puede disenar una encuesta PRE con preguntas por competencia y activarla</li>
+          <li>Participante puede responder la encuesta y ver su progreso</li>
+          <li>Se puede importar una lista de 50 participantes desde Excel sin errores</li>
+        </ul>
+      </div>
+
+      <!-- FASE 3 -->
+      <h3 style="background: var(--secondary); color:white; padding:10px 16px; border-radius:6px;">Fase 3: Funcionalidades Avanzadas (Semanas 9-12)</h3>
+      <p>Completar las funcionalidades de seguimiento, feedback y observaciones que diferencian la plataforma de un simple sistema de encuestas.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Entregable</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>S9</strong></td>
+            <td>Actividades + Distribucion</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: CRUD <code>/api/actividades</code> con asignacion masiva</li>
+                <li>API: POST <code>/api/actividades/:id/distribuir</code> (asignacion a participantes seleccionados o todos)</li>
+                <li>API: PATCH <code>/api/asignaciones/:id/completar</code></li>
+                <li>Frontend: Vista actividades.html y distribucion-actividades.html migradas</li>
+                <li>Frontend: Vista participante mis-actividades con toggle completado</li>
+                <li>Calculo automatico de % avance por participante</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S10</strong></td>
+            <td>Feedback Jefatura + Observaciones</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: CRUD <code>/api/feedback</code> (jefatura crea, participante lee)</li>
+                <li>API: CRUD <code>/api/observaciones</code> con detalles por criterio anidados</li>
+                <li>API: CRUD <code>/api/checklists</code> vinculados a conductas</li>
+                <li>Frontend: feedback-jefatura (formulario fortalezas/aspectos/recomendaciones)</li>
+                <li>Frontend: feedback-recibido (vista participante)</li>
+                <li>Frontend: gestion-observaciones (tabla + formulario por checklist)</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S11</strong></td>
+            <td>Hallazgos + Reportar + Cronograma</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: CRUD <code>/api/hallazgos</code> con recomendaciones anidadas</li>
+                <li>API: CRUD <code>/api/reportes-observacion</code> (incidencias de programa)</li>
+                <li>API: CRUD <code>/api/programas/:id/cronograma</code> (hitos con estados)</li>
+                <li>Frontend: hallazgos.html migrado con criticidad visual</li>
+                <li>Frontend: reportar.html migrado</li>
+                <li>Frontend: tab-cronograma con timeline visual</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S12</strong></td>
+            <td>Archivos + Mi Progreso + Mi Equipo</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: POST <code>/api/archivos/upload</code> con Multer + S3/R2 upload</li>
+                <li>API: GET <code>/api/archivos/:id/download</code> con presigned URL</li>
+                <li>API: GET <code>/api/mi-progreso</code> (datos consolidados del participante logueado)</li>
+                <li>API: GET <code>/api/mi-equipo</code> (datos del equipo para jefatura logueada)</li>
+                <li>Frontend: mis-recursos.html migrado con upload drag-and-drop</li>
+                <li>Frontend: mi-progreso.html y mi-equipo.html migrados</li>
+                <li>Limite de archivo: 25 MB, tipos permitidos: PDF, DOCX, XLSX, PPTX, JPG, PNG</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box orange">
+        <strong>Criterios de Aceptacion Fase 3:</strong>
+        <ul style="margin-top:6px;">
+          <li>Jefatura puede realizar observaciones con checklist, dar feedback y ver su equipo</li>
+          <li>Participante puede ver su progreso consolidado, actividades y feedback recibido</li>
+          <li>Admin puede gestionar hallazgos con recomendaciones y subir archivos al programa</li>
+          <li>Funciona la carga de archivos a S3/R2 con preview y descarga</li>
+        </ul>
+      </div>
+
+      <!-- FASE 4 -->
+      <div class="page-break"></div>
+      <h3 style="background: #8e44ad; color:white; padding:10px 16px; border-radius:6px;">Fase 4: Inteligencia y Reporteria (Semanas 13-16)</h3>
+      <p>Integrar las funcionalidades de alto valor: dashboard con datos reales, reportes PDF con IA, correos transaccionales y el asistente inteligente.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Entregable</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>S13</strong></td>
+            <td>Dashboard con KPIs Reales</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: GET <code>/api/dashboard/:programaId</code> con queries PostgreSQL optimizados</li>
+                <li>KPIs: total participantes, observaciones realizadas, tasa respuesta encuestas, nivel de aplicacion</li>
+                <li>Comparacion PRE vs POST por conducta (query agregado)</li>
+                <li>Mapa de calor de adopcion por participante/conducta</li>
+                <li>Resumen por equipo/area con promedios</li>
+                <li>Cache Redis con TTL 5 min para queries pesados de dashboard</li>
+                <li>Frontend: dashboard.html migrado con Recharts (reemplaza Chart.js)</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S14</strong></td>
+            <td>Reportes PDF con IA (Groq)</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: POST <code>/api/informes/individual/:programaId/:usuarioId</code></li>
+                <li>API: POST <code>/api/informes/consolidado/:programaId</code></li>
+                <li>Servicio de calculo de brechas auto/co PRE/POST (portar logica de ReportesService.gs)</li>
+                <li>Integracion Groq API: prompt con datos de brechas &rarr; analisis narrativo profesional</li>
+                <li>Generacion PDF con @react-pdf/renderer (template con colores MSO, graficos)</li>
+                <li>Almacenamiento PDF en S3/R2 + registro en tabla informes_generados</li>
+                <li>Frontend: reportes.html migrado con seleccion tipo informe y descarga</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S15</strong></td>
+            <td>Correos Transaccionales</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>Integracion Resend API con React Email para templates HTML</li>
+                <li>Templates: bienvenida, aprobacion cuenta, encuesta disponible, feedback recibido, recordatorio actividad, informe disponible</li>
+                <li>Cola de correos con BullMQ + Redis (retry con backoff exponencial)</li>
+                <li>Tabla correos_enviados con tracking de estado</li>
+                <li>Frontend: correos.html migrado (admin ve historial y puede reenviar)</li>
+                <li>Notificaciones in-app: badge en header, dropdown con listado</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S16</strong></td>
+            <td>Asistente IA + Notificaciones</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>API: POST <code>/api/asistente/consultar</code> (streaming con SSE)</li>
+                <li>Context injection: datos del programa actual, competencias, resultados agregados</li>
+                <li>Frontend: asistente-ia.html migrado con chat interface streaming</li>
+                <li>Sistema de notificaciones en tiempo real (polling cada 30s o SSE)</li>
+                <li>Frontend: notificaciones.html migrado con marcar como leido</li>
+                <li>Tareas cron: recordatorios de encuestas proximas a vencer, actividades pendientes</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box" style="border-left-color:#8e44ad; background: linear-gradient(135deg, #f5eef8 0%, #faf5ff 100%);">
+        <strong>Criterios de Aceptacion Fase 4:</strong>
+        <ul style="margin-top:6px;">
+          <li>Dashboard muestra KPIs reales calculados desde PostgreSQL con graficos interactivos</li>
+          <li>Se puede generar un informe individual PDF con analisis narrativo de Groq</li>
+          <li>Los correos transaccionales se envian y registran correctamente</li>
+          <li>El asistente IA responde con contexto del programa seleccionado</li>
+        </ul>
+      </div>
+
+      <!-- FASE 5 -->
+      <h3 style="background: var(--success); color:white; padding:10px 16px; border-radius:6px;">Fase 5: Produccion (Semanas 17-20)</h3>
+      <p>Estabilizacion, testing exhaustivo, migracion de datos reales, capacitacion de usuarios y lanzamiento productivo.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Entregable</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>S17</strong></td>
+            <td>Testing E2E + Carga</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>Tests E2E con Playwright: flujos criticos (registro &rarr; login &rarr; programa &rarr; encuesta &rarr; reporte)</li>
+                <li>Tests unitarios servicios criticos (calculo brechas, asignacion participantes)</li>
+                <li>Tests de carga con k6: simular 100 usuarios concurrentes</li>
+                <li>Revision de seguridad: OWASP Top 10 checklist</li>
+                <li>Fix de bugs encontrados en testing</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S18</strong></td>
+            <td>Migracion de Datos</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>Script de migracion: leer Google Sheets via API &rarr; transformar &rarr; insertar en PostgreSQL</li>
+                <li>Mapeo de IDs legacy (string) a UUIDs con tabla de mapeo temporal</li>
+                <li>Migracion de archivos: Drive &rarr; S3/R2</li>
+                <li>Validacion de integridad post-migracion (conteos, sumas, relaciones)</li>
+                <li>Dry-run con datos de prueba, luego migracion de datos reales</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S19</strong></td>
+            <td>Capacitacion + Infraestructura Produccion</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>Setup entorno produccion (Vercel Pro + Railway Pro + Supabase Pro)</li>
+                <li>Dominio personalizado con SSL (ej: app.msochile.cl)</li>
+                <li>Configurar Sentry para error tracking (frontend + backend)</li>
+                <li>Configurar backups automaticos PostgreSQL (diario, retencion 30 dias)</li>
+                <li>Sesiones de capacitacion: Admins (2h), Jefaturas (1.5h), Participantes (1h)</li>
+                <li>Documentacion usuario final (guias rapidas por rol)</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>S20</strong></td>
+            <td>Go-Live + Soporte Post-Lanzamiento</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>Deploy produccion con migracion final de datos</li>
+                <li>Periodo de operacion paralela (1 semana): maqueta + produccion</li>
+                <li>Monitoreo intensivo: dashboards Sentry, logs Railway, metricas Supabase</li>
+                <li>Canal Slack/Teams de soporte para incidencias rapidas</li>
+                <li>Hotfixes prioritarios si surgen issues criticos</li>
+                <li>Retrospectiva de proyecto y planificacion fase 2 (mejoras)</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box success">
+        <strong>Criterios de Aceptacion Fase 5 (Go/No-Go):</strong>
+        <ul style="margin-top:6px;">
+          <li>100% de tests E2E pasando en entorno produccion</li>
+          <li>Datos migrados validados por el equipo MSO (conteos coinciden con Sheets)</li>
+          <li>Latencia P95 menor a 500ms en endpoints criticos</li>
+          <li>Al menos 3 usuarios por rol han completado capacitacion y validan la experiencia</li>
+          <li>Backups y monitoreo funcionando correctamente</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================
+       6. API REST - ENDPOINTS PRINCIPALES
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">6</span>
+        API REST &mdash; Endpoints Principales
+      </div>
+
+      <p>La API sigue convenciones RESTful con versionado en URL (<code>/api/v1/</code>), respuestas JSON estandarizadas con formato <code>{success, data, message, pagination}</code>, y codigos HTTP semanticos.</p>
+
+      <div class="endpoint-group">
+        <h4>Autenticacion (<code>/api/v1/auth</code>)</h4>
+        <table class="compact">
+          <tbody>
+            <tr><td><span class="method method-post">POST</span><code>/auth/register</code></td><td>Registro de usuario (estado pendiente)</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/auth/login</code></td><td>Login con email + password, retorna JWT + refresh</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/auth/refresh</code></td><td>Renovar access token con refresh token</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/auth/logout</code></td><td>Revocar refresh token</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/auth/forgot-password</code></td><td>Enviar email de recuperacion</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/auth/reset-password</code></td><td>Resetear password con token</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="endpoint-group">
+        <h4>Organizaciones (<code>/api/v1/organizaciones</code>)</h4>
+        <table class="compact">
+          <tbody>
+            <tr><td><span class="method method-get">GET</span><code>/organizaciones</code></td><td>Listar organizaciones (admin), filtros: estado, busqueda</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/organizaciones</code></td><td>Crear organizacion</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/organizaciones/:id</code></td><td>Detalle de organizacion</td></tr>
+            <tr><td><span class="method method-put">PUT</span><code>/organizaciones/:id</code></td><td>Actualizar organizacion</td></tr>
+            <tr><td><span class="method method-delete">DELETE</span><code>/organizaciones/:id</code></td><td>Desactivar organizacion (soft delete)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="endpoint-group">
+        <h4>Usuarios (<code>/api/v1/usuarios</code>)</h4>
+        <table class="compact">
+          <tbody>
+            <tr><td><span class="method method-get">GET</span><code>/usuarios</code></td><td>Listar con filtros: organizacion, rol, estado, busqueda. Paginacion.</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/usuarios/:id</code></td><td>Perfil de usuario</td></tr>
+            <tr><td><span class="method method-put">PUT</span><code>/usuarios/:id</code></td><td>Actualizar datos de usuario</td></tr>
+            <tr><td><span class="method method-put">PATCH</span><code>/usuarios/:id/aprobar</code></td><td>Aprobar registro pendiente</td></tr>
+            <tr><td><span class="method method-put">PATCH</span><code>/usuarios/:id/rol</code></td><td>Cambiar rol del usuario</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/usuarios/me</code></td><td>Perfil del usuario autenticado</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="endpoint-group">
+        <h4>Programas (<code>/api/v1/programas</code>)</h4>
+        <table class="compact">
+          <tbody>
+            <tr><td><span class="method method-get">GET</span><code>/programas</code></td><td>Listar programas del usuario (filtrado por rol y organizacion)</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/programas</code></td><td>Crear programa (admin)</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/programas/:id</code></td><td>Detalle + resumen del programa</td></tr>
+            <tr><td><span class="method method-put">PUT</span><code>/programas/:id</code></td><td>Actualizar programa</td></tr>
+            <tr><td><span class="method method-put">PATCH</span><code>/programas/:id/estado</code></td><td>Cambiar estado (diseno &rarr; activo &rarr; finalizado)</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/programas/:id/participantes</code></td><td>Listar participantes del programa</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/programas/:id/participantes</code></td><td>Agregar participante</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/programas/:id/participantes/importar</code></td><td>Importacion masiva desde Excel</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/programas/:id/competencias</code></td><td>Listar competencias</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/programas/:id/competencias</code></td><td>Crear competencia con niveles</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/programas/:id/conductas</code></td><td>Listar conductas criticas</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/programas/:id/conductas</code></td><td>Crear conducta con criterios</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/programas/:id/cronograma</code></td><td>Listar hitos del cronograma</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/programas/:id/archivos</code></td><td>Listar archivos del programa</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="endpoint-group">
+        <h4>Encuestas (<code>/api/v1/encuestas</code>)</h4>
+        <table class="compact">
+          <tbody>
+            <tr><td><span class="method method-get">GET</span><code>/encuestas?programa_id=X</code></td><td>Listar encuestas del programa</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/encuestas</code></td><td>Crear encuesta (borrador)</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/encuestas/:id</code></td><td>Detalle con preguntas</td></tr>
+            <tr><td><span class="method method-put">PATCH</span><code>/encuestas/:id/activar</code></td><td>Activar encuesta (cambiar estado)</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/encuestas/:id/preguntas</code></td><td>Agregar pregunta</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/encuestas/:id/responder</code></td><td>Enviar respuestas (participante)</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/encuestas/:id/resultados</code></td><td>Resultados agregados</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/encuestas/mis-pendientes</code></td><td>Encuestas pendientes del usuario logueado</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="endpoint-group">
+        <h4>Actividades, Observaciones, Feedback, Hallazgos, Reportes, Dashboard</h4>
+        <table class="compact">
+          <tbody>
+            <tr><td><span class="method method-get">GET</span><code>/actividades?programa_id=X</code></td><td>Listar actividades</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/actividades/:id/distribuir</code></td><td>Asignar a participantes</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/actividades/mis-actividades</code></td><td>Actividades del usuario logueado</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/observaciones</code></td><td>Crear observacion con detalles</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/feedback</code></td><td>Crear feedback (jefatura)</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/feedback/recibido</code></td><td>Feedback del usuario logueado</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/hallazgos?programa_id=X</code></td><td>Listar hallazgos con recomendaciones</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/informes/individual</code></td><td>Generar informe individual PDF + IA</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/informes/consolidado</code></td><td>Generar informe consolidado PDF + IA</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/dashboard/:programaId</code></td><td>KPIs y datos del dashboard</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/mi-progreso</code></td><td>Progreso consolidado del participante</td></tr>
+            <tr><td><span class="method method-get">GET</span><code>/mi-equipo</code></td><td>Vista equipo para jefatura</td></tr>
+            <tr><td><span class="method method-post">POST</span><code>/asistente/consultar</code></td><td>Chat IA con contexto del programa (SSE)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       7. SEGURIDAD
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">7</span>
+        Seguridad
+      </div>
+
+      <h3>7.1 Flujo de Autenticacion</h3>
+      <div class="highlight-box">
+        <ol>
+          <li><strong>Registro:</strong> Usuario envia nombre, email, password, organizacion &rarr; API crea usuario con estado <code>pendiente</code> y password hasheado con bcrypt (12 rounds). Admin recibe notificacion.</li>
+          <li><strong>Aprobacion:</strong> Admin revisa y aprueba usuario &rarr; estado cambia a <code>activo</code>. Se envia email de bienvenida con Resend.</li>
+          <li><strong>Login:</strong> Usuario envia email + password &rarr; API verifica bcrypt, genera Access Token (JWT RS256, 15 min) y Refresh Token (UUID, 7 dias en Redis) &rarr; JWT en response body, Refresh en httpOnly cookie.</li>
+          <li><strong>Requests autenticados:</strong> Frontend envia JWT en header <code>Authorization: Bearer</code>. Middleware valida firma, expiracion y extrae userId + rol.</li>
+          <li><strong>Token Refresh:</strong> Cuando JWT expira (401), frontend automaticamente llama a <code>/auth/refresh</code> con cookie. API rota refresh token y emite nuevo JWT.</li>
+          <li><strong>Logout:</strong> Se revoca refresh token en Redis. Frontend limpia estado local.</li>
+        </ol>
+      </div>
+
+      <h3>7.2 Control de Acceso Basado en Roles (RBAC)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Recurso</th>
+            <th>Admin</th>
+            <th>Jefatura</th>
+            <th>Participante</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Organizaciones (CRUD)</td><td>Total</td><td>--</td><td>--</td></tr>
+          <tr><td>Usuarios (gestion)</td><td>Total</td><td>Solo su equipo (lectura)</td><td>Solo su perfil</td></tr>
+          <tr><td>Programas (CRUD)</td><td>Total</td><td>Lectura de sus programas</td><td>Lectura de sus programas</td></tr>
+          <tr><td>Competencias / Conductas</td><td>Total</td><td>Lectura</td><td>Lectura</td></tr>
+          <tr><td>Encuestas (builder)</td><td>Total</td><td>--</td><td>--</td></tr>
+          <tr><td>Encuestas (responder)</td><td>--</td><td>Coevaluacion</td><td>Autoevaluacion</td></tr>
+          <tr><td>Actividades (CRUD)</td><td>Total</td><td>Lectura equipo</td><td>Completar propias</td></tr>
+          <tr><td>Observaciones</td><td>Lectura total</td><td>CRUD de su equipo</td><td>--</td></tr>
+          <tr><td>Feedback</td><td>Lectura total</td><td>Crear para su equipo</td><td>Leer propio</td></tr>
+          <tr><td>Hallazgos</td><td>Total</td><td>Lectura</td><td>--</td></tr>
+          <tr><td>Reportes PDF</td><td>Generar todos</td><td>Generar de su equipo</td><td>Descargar propio</td></tr>
+          <tr><td>Dashboard</td><td>Total</td><td>Sus programas</td><td>--</td></tr>
+          <tr><td>Mi Progreso</td><td>--</td><td>--</td><td>Solo propio</td></tr>
+          <tr><td>Mi Equipo</td><td>--</td><td>Solo su equipo</td><td>--</td></tr>
+          <tr><td>Asistente IA</td><td>Total</td><td>--</td><td>--</td></tr>
+        </tbody>
+      </table>
+
+      <h3>7.3 Medidas de Seguridad Adicionales</h3>
+      <div class="card-row">
+        <div class="info-card">
+          <h4>Proteccion de Datos</h4>
+          <ul>
+            <li><strong>En transito:</strong> HTTPS obligatorio (TLS 1.3). HSTS header.</li>
+            <li><strong>En reposo:</strong> PostgreSQL con cifrado de disco (Supabase lo incluye). Backups cifrados.</li>
+            <li><strong>Passwords:</strong> bcrypt con cost factor 12. Nunca se almacena en texto plano.</li>
+            <li><strong>Datos sensibles:</strong> Refresh tokens hasheados en DB. API keys en variables de entorno.</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>Proteccion de Aplicacion</h4>
+          <ul>
+            <li><strong>CORS:</strong> Whitelist explicita de origenes permitidos.</li>
+            <li><strong>Rate Limiting:</strong> 100 req/min general, 5 req/min en /auth/login (prevenir brute force).</li>
+            <li><strong>Input Validation:</strong> Zod schemas en cada endpoint. Sanitizacion de HTML.</li>
+            <li><strong>SQL Injection:</strong> Prisma ORM con queries parametrizados.</li>
+            <li><strong>XSS:</strong> React escapa por defecto. CSP headers.</li>
+            <li><strong>CSRF:</strong> SameSite cookies + validacion de origin.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>7.4 Consideraciones OWASP Top 10</h3>
+      <table class="compact">
+        <thead>
+          <tr><th>Riesgo OWASP</th><th>Mitigacion Implementada</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>A01: Broken Access Control</td><td>RBAC middleware en cada ruta. Verificacion de pertenencia a organizacion (multi-tenant isolation).</td></tr>
+          <tr><td>A02: Cryptographic Failures</td><td>bcrypt para passwords, RS256 para JWT, TLS 1.3, cifrado en reposo.</td></tr>
+          <tr><td>A03: Injection</td><td>Prisma ORM (parametrizado), Zod validation, sanitize-html para texto rico.</td></tr>
+          <tr><td>A04: Insecure Design</td><td>Principio de menor privilegio. Roles con acceso minimo necesario.</td></tr>
+          <tr><td>A05: Security Misconfiguration</td><td>Helmet.js para headers de seguridad. Variables de entorno, no hardcoded.</td></tr>
+          <tr><td>A07: Auth Failures</td><td>Rate limiting en login, refresh token rotation, session expiry.</td></tr>
+          <tr><td>A09: Logging & Monitoring</td><td>Audit log en base de datos + Sentry para errores en tiempo real.</td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- ========================================
+       8. INFRAESTRUCTURA Y DEPLOY
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">8</span>
+        Infraestructura y Deploy
+      </div>
+
+      <h3>8.1 Entornos</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Entorno</th>
+            <th>Proposito</th>
+            <th>URL</th>
+            <th>Deploy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Development</strong></td>
+            <td>Desarrollo local. DB Supabase local o Docker PostgreSQL.</td>
+            <td><code>localhost:3000</code> / <code>localhost:4000</code></td>
+            <td>Manual</td>
+          </tr>
+          <tr>
+            <td><strong>Staging</strong></td>
+            <td>Testing, QA, demostraciones al cliente. Datos de prueba.</td>
+            <td><code>staging.tpt.msochile.cl</code></td>
+            <td>Auto en merge a <code>develop</code></td>
+          </tr>
+          <tr>
+            <td><strong>Production</strong></td>
+            <td>Ambiente productivo con datos reales. Acceso clientes.</td>
+            <td><code>app.tpt.msochile.cl</code></td>
+            <td>Manual con aprobacion (tag release)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>8.2 Hosting Recomendado</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Componente</th>
+            <th>Servicio Recomendado</th>
+            <th>Alternativa</th>
+            <th>Plan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Frontend (Next.js)</td>
+            <td>Vercel</td>
+            <td>Cloudflare Pages</td>
+            <td>Pro ($20/mes)</td>
+          </tr>
+          <tr>
+            <td>API (Node.js)</td>
+            <td>Railway</td>
+            <td>Render, Fly.io</td>
+            <td>Pro ($20/mes + uso)</td>
+          </tr>
+          <tr>
+            <td>Base de Datos</td>
+            <td>Supabase (PostgreSQL)</td>
+            <td>Railway PostgreSQL, Neon</td>
+            <td>Pro ($25/mes)</td>
+          </tr>
+          <tr>
+            <td>Cache / Colas</td>
+            <td>Upstash Redis</td>
+            <td>Railway Redis</td>
+            <td>Pay-as-you-go (~$5/mes)</td>
+          </tr>
+          <tr>
+            <td>Almacenamiento</td>
+            <td>Cloudflare R2</td>
+            <td>AWS S3</td>
+            <td>$0.015/GB (~$3/mes)</td>
+          </tr>
+          <tr>
+            <td>Correos</td>
+            <td>Resend</td>
+            <td>SendGrid</td>
+            <td>Gratis hasta 3K/mes</td>
+          </tr>
+          <tr>
+            <td>Dominio + DNS</td>
+            <td>Cloudflare</td>
+            <td>NIC Chile</td>
+            <td>~$10/anio</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>8.3 Pipeline CI/CD (GitHub Actions)</h3>
+      <div class="highlight-box">
+        <strong>Workflow por Pull Request:</strong>
+        <ol>
+          <li><code>checkout</code> &rarr; <code>setup-node 20</code> &rarr; <code>pnpm install --frozen-lockfile</code></li>
+          <li><code>pnpm lint</code> (ESLint) + <code>pnpm typecheck</code> (tsc --noEmit) en paralelo</li>
+          <li><code>pnpm test</code> (Vitest unit tests) + <code>prisma migrate deploy</code> en DB de test</li>
+          <li>Build check: <code>pnpm build</code> (Next.js + API)</li>
+        </ol>
+        <br>
+        <strong>Workflow de Deploy (Staging):</strong>
+        <ol>
+          <li>Trigger: merge a branch <code>develop</code></li>
+          <li>Build + test (mismo que PR)</li>
+          <li>Deploy frontend: Vercel CLI deploy --prod (staging project)</li>
+          <li>Deploy API: Railway deploy via GitHub integration</li>
+          <li>Run <code>prisma migrate deploy</code> en Supabase staging</li>
+          <li>Health check: curl endpoint /api/health</li>
+        </ol>
+        <br>
+        <strong>Workflow de Deploy (Produccion):</strong>
+        <ol>
+          <li>Trigger: tag <code>v*</code> (ej: v1.0.0)</li>
+          <li>Requiere aprobacion manual en GitHub (environment protection rules)</li>
+          <li>Mismo pipeline + <code>prisma migrate deploy</code> en Supabase produccion</li>
+          <li>Notificacion Slack/Teams post-deploy</li>
+        </ol>
+      </div>
+
+      <h3>8.4 Monitoreo y Observabilidad</h3>
+      <table class="compact">
+        <thead>
+          <tr><th>Herramienta</th><th>Funcion</th><th>Costo</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Sentry</strong></td><td>Error tracking frontend + backend. Alertas por Slack.</td><td>Gratis (5K eventos/mes)</td></tr>
+          <tr><td><strong>Better Uptime</strong></td><td>Monitoreo de disponibilidad. Alertas por caida.</td><td>Gratis (10 monitores)</td></tr>
+          <tr><td><strong>Railway Metrics</strong></td><td>CPU, RAM, network de la API.</td><td>Incluido en plan</td></tr>
+          <tr><td><strong>Supabase Dashboard</strong></td><td>Queries lentas, uso de DB, conexiones activas.</td><td>Incluido en plan</td></tr>
+          <tr><td><strong>Vercel Analytics</strong></td><td>Web Vitals, performance frontend, uso.</td><td>Incluido en Pro</td></tr>
+        </tbody>
+      </table>
+
+      <h3>8.5 Estrategia de Backups</h3>
+      <ul>
+        <li><strong>Base de datos:</strong> Backup automatico diario via Supabase (retencion 30 dias en Pro). Point-in-time recovery disponible.</li>
+        <li><strong>Archivos S3/R2:</strong> Versionamiento de objetos habilitado. Lifecycle rule: mover a cold storage despues de 90 dias.</li>
+        <li><strong>Codigo:</strong> Git como fuente de verdad. Tags para cada release de produccion.</li>
+        <li><strong>Variables de entorno:</strong> Documentadas en 1Password (o Vault equivalente). Nunca en Git.</li>
+        <li><strong>Plan de recuperacion (RTO):</strong> Objetivo de 2 horas para restauracion completa.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ========================================
+       9. INTEGRACIONES
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">9</span>
+        Integraciones
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Integracion</th>
+            <th>Proposito</th>
+            <th>Implementacion</th>
+            <th>Fase</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Groq API</strong></td>
+            <td>Generacion de analisis narrativo para informes individuales y consolidados. Calculo de brechas auto/co y recomendaciones con IA.</td>
+            <td>SDK oficial <code>groq-sdk</code>. Modelo: llama-3.1-70b-versatile. Prompt engineering con datos de competencias, puntajes y brechas. Streaming SSE para asistente conversacional. Fallback a llama-3.1-8b si 70b falla.</td>
+            <td>Fase 4 (S14)</td>
+          </tr>
+          <tr>
+            <td><strong>Resend (correos)</strong></td>
+            <td>Reemplazar MailApp de GAS. Correos transaccionales: bienvenida, activacion encuesta, recordatorios, informes listos.</td>
+            <td>SDK <code>resend</code> + <code>@react-email/components</code> para templates tipados en JSX. Cola BullMQ para envio asincrono con retry. Webhook de delivery status.</td>
+            <td>Fase 4 (S15)</td>
+          </tr>
+          <tr>
+            <td><strong>Cloudflare R2 / AWS S3</strong></td>
+            <td>Almacenamiento de archivos del programa (materiales, presentaciones, instructivos) y PDFs generados. Reemplaza Google Drive.</td>
+            <td>SDK <code>@aws-sdk/client-s3</code> (compatible R2). Presigned URLs para upload/download directo. Multer middleware para upload via API. Limite 25 MB/archivo.</td>
+            <td>Fase 3 (S12)</td>
+          </tr>
+          <tr>
+            <td><strong>Excel Import/Export</strong></td>
+            <td>Importacion masiva de participantes desde Excel. Exportacion de datos brutos para analisis externo.</td>
+            <td>Libreria <code>xlsx</code> (SheetJS). Validacion de columnas requeridas, preview antes de confirmar. Export: generacion server-side de .xlsx con formato.</td>
+            <td>Fase 2 (S7)</td>
+          </tr>
+          <tr>
+            <td><strong>Microsoft Forms (enlaces)</strong></td>
+            <td>Permitir vincular encuestas externas de MS Forms como actividades del programa.</td>
+            <td>Almacenamiento de URL del formulario en campo <code>enlace</code> de actividades. Iframe o enlace externo. Sin integracion API directa (solo link).</td>
+            <td>Fase 3 (S9)</td>
+          </tr>
+          <tr>
+            <td><strong>PDF Generation</strong></td>
+            <td>Generacion de informes profesionales en PDF con graficos, tablas y analisis IA.</td>
+            <td><code>@react-pdf/renderer</code> para templates con componentes React. Graficos renderizados como imagenes SVG. Colores y logo MSO Chile integrados.</td>
+            <td>Fase 4 (S14)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>9.1 Diagrama de Flujo: Generacion de Informe con IA</h3>
+      <div class="highlight-box">
+        <ol>
+          <li>Admin selecciona programa + participante y solicita informe individual</li>
+          <li>API calcula brechas auto/co PRE/POST por competencia (query PostgreSQL)</li>
+          <li>API construye prompt con datos estructurados y envia a Groq API</li>
+          <li>Groq retorna analisis narrativo: fortalezas, areas de mejora, recomendaciones</li>
+          <li>API combina datos cuantitativos + narrativo IA en template @react-pdf</li>
+          <li>PDF generado se sube a R2 y se registra en <code>informes_generados</code></li>
+          <li>Admin puede descargar PDF y se notifica al participante</li>
+        </ol>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================
+       10. ESTIMACION DE COSTOS
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">10</span>
+        Estimacion de Costos
+      </div>
+
+      <h3>10.1 Costos Mensuales de Infraestructura (Produccion)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Servicio</th>
+            <th>Plan</th>
+            <th>Costo USD/mes</th>
+            <th>Notas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Vercel (Frontend)</td>
+            <td>Pro</td>
+            <td>$20</td>
+            <td>Incluye SSL, CDN global, analytics</td>
+          </tr>
+          <tr>
+            <td>Railway (API Node.js)</td>
+            <td>Pro</td>
+            <td>$20-40</td>
+            <td>Basado en uso. ~$20 para 50 users, ~$40 para 500</td>
+          </tr>
+          <tr>
+            <td>Supabase (PostgreSQL)</td>
+            <td>Pro</td>
+            <td>$25</td>
+            <td>8 GB DB, 250K auth, backups diarios</td>
+          </tr>
+          <tr>
+            <td>Upstash Redis</td>
+            <td>Pay-as-you-go</td>
+            <td>$5-10</td>
+            <td>Cache dashboard + sesiones + colas</td>
+          </tr>
+          <tr>
+            <td>Cloudflare R2</td>
+            <td>Standard</td>
+            <td>$3-5</td>
+            <td>~20 GB archivos. Sin costo de egress</td>
+          </tr>
+          <tr>
+            <td>Resend (correos)</td>
+            <td>Free / Pro</td>
+            <td>$0-20</td>
+            <td>Gratis hasta 3K emails/mes. Pro si supera</td>
+          </tr>
+          <tr>
+            <td>Groq API (IA)</td>
+            <td>Pay-as-you-go</td>
+            <td>$5-15</td>
+            <td>~$0.27/M tokens (70b). ~50-200 informes/mes</td>
+          </tr>
+          <tr>
+            <td>Sentry</td>
+            <td>Free</td>
+            <td>$0</td>
+            <td>5K eventos/mes suficiente para inicio</td>
+          </tr>
+          <tr>
+            <td>Dominio .cl</td>
+            <td>Anual</td>
+            <td>~$1</td>
+            <td>~$12/anio prorrateado</td>
+          </tr>
+          <tr style="background: var(--light-bg); font-weight:600;">
+            <td colspan="2"><strong>TOTAL MENSUAL ESTIMADO</strong></td>
+            <td><strong>$79 - $131</strong></td>
+            <td>CLP ~$75.000 - $125.000/mes</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box success">
+        <strong>Comparacion con alternativas:</strong> Un servidor VPS dedicado (DigitalOcean/Hetzner) costaria ~$50/mes pero requiere administracion de servidor (actualizaciones, seguridad, backups manuales). La opcion de servicios gestionados (Vercel + Railway + Supabase) elimina ese overhead a un costo razonable.
+      </div>
+
+      <h3>10.2 Costo de Desarrollo</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Recurso</th>
+            <th>Dedicacion</th>
+            <th>Semanas</th>
+            <th>Tarifa Referencial CLP/mes</th>
+            <th>Costo Total CLP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Desarrollador Fullstack Senior</td>
+            <td>100%</td>
+            <td>20</td>
+            <td>$3.500.000 - $4.500.000</td>
+            <td>$17.500.000 - $22.500.000</td>
+          </tr>
+          <tr>
+            <td>Desarrollador Frontend (apoyo)</td>
+            <td>50%</td>
+            <td>12 (S5-S16)</td>
+            <td>$2.500.000 - $3.000.000</td>
+            <td>$3.750.000 - $4.500.000</td>
+          </tr>
+          <tr>
+            <td>Project Manager / QA</td>
+            <td>25%</td>
+            <td>20</td>
+            <td>$2.000.000 - $2.500.000</td>
+            <td>$2.500.000 - $3.125.000</td>
+          </tr>
+          <tr style="background: var(--light-bg); font-weight:600;">
+            <td colspan="4"><strong>TOTAL INVERSION DESARROLLO</strong></td>
+            <td><strong>$23.750.000 - $30.125.000</strong></td>
+          </tr>
+          <tr style="background: var(--light-bg);">
+            <td colspan="4"><em>Equivalente aproximado USD</em></td>
+            <td><em>$25.000 - $32.000</em></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>10.3 Costo Total Primer Ano (TCO)</h3>
+      <div class="kpi-grid" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="kpi-card">
+          <div class="kpi-value" style="font-size:16pt;">$25-32K USD</div>
+          <div class="kpi-label">Desarrollo (una vez)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" style="font-size:16pt;">$950-1.6K USD</div>
+          <div class="kpi-label">Infraestructura (anual)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" style="font-size:16pt;">$26-34K USD</div>
+          <div class="kpi-label">Total Primer Ano</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================
+       11. RIESGOS Y MITIGACIONES
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">11</span>
+        Riesgos y Mitigaciones
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:25%;">Riesgo</th>
+            <th style="width:10%;">Prob.</th>
+            <th style="width:10%;">Impacto</th>
+            <th style="width:55%;">Mitigacion</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Subestimacion del esfuerzo de migracion de datos</strong></td>
+            <td><span class="badge badge-high">Alta</span></td>
+            <td><span class="badge badge-high">Alto</span></td>
+            <td>Comenzar script de migracion en Fase 2 como tarea paralela. Ejecutar dry-runs semanales con datos reales. Mantener tabla de mapeo de IDs.</td>
+          </tr>
+          <tr>
+            <td><strong>Diferencias UX entre maqueta y produccion</strong></td>
+            <td><span class="badge badge-medium">Media</span></td>
+            <td><span class="badge badge-medium">Medio</span></td>
+            <td>Usar la maqueta como referencia pixel-perfect para cada vista. Revisiones semanales con stakeholders comparando maqueta vs produccion.</td>
+          </tr>
+          <tr>
+            <td><strong>Cambios de requerimientos durante desarrollo</strong></td>
+            <td><span class="badge badge-high">Alta</span></td>
+            <td><span class="badge badge-medium">Medio</span></td>
+            <td>Scope freeze por fase. Cambios se agregan al backlog para fases futuras. Sprint reviews cada 2 semanas con producto.</td>
+          </tr>
+          <tr>
+            <td><strong>Rendimiento de Groq API insuficiente o cambio de pricing</strong></td>
+            <td><span class="badge badge-low">Baja</span></td>
+            <td><span class="badge badge-medium">Medio</span></td>
+            <td>Abstraer la integracion IA detras de una interfaz. Tener fallback configurado a OpenAI o Anthropic. Cache de respuestas frecuentes.</td>
+          </tr>
+          <tr>
+            <td><strong>Disponibilidad del desarrollador principal</strong></td>
+            <td><span class="badge badge-medium">Media</span></td>
+            <td><span class="badge badge-high">Alto</span></td>
+            <td>Documentacion de arquitectura y decisiones en el repo. Code reviews para que desarrollador secundario conozca el codigo. Monorepo facilita onboarding.</td>
+          </tr>
+          <tr>
+            <td><strong>Costos de infraestructura superan lo estimado</strong></td>
+            <td><span class="badge badge-low">Baja</span></td>
+            <td><span class="badge badge-low">Bajo</span></td>
+            <td>Alertas de billing en cada servicio. Plan de optimizacion: cache agresivo, lazy loading, compresion. Posibilidad de migrar a VPS si es necesario.</td>
+          </tr>
+          <tr>
+            <td><strong>Resistencia al cambio de usuarios finales</strong></td>
+            <td><span class="badge badge-medium">Media</span></td>
+            <td><span class="badge badge-medium">Medio</span></td>
+            <td>Mantener UX casi identica a la maqueta validada. Capacitacion por roles. Periodo de operacion paralela de 1 semana. Canal de soporte dedicado.</td>
+          </tr>
+          <tr>
+            <td><strong>Vulnerabilidad de seguridad en produccion</strong></td>
+            <td><span class="badge badge-low">Baja</span></td>
+            <td><span class="badge badge-high">Alto</span></td>
+            <td>Checklist OWASP Top 10 pre-launch. Dependabot para actualizaciones de seguridad automaticas. Sentry para deteccion rapida. Plan de incident response.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========================================
+       12. EQUIPO REQUERIDO
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">12</span>
+        Equipo Requerido
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Rol</th>
+            <th>Dedicacion</th>
+            <th>Fases</th>
+            <th>Responsabilidades Clave</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Desarrollador Fullstack Senior</strong></td>
+            <td>100% dedicado</td>
+            <td>1 - 5 (20 sem)</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>Arquitectura del sistema y decisiones tecnicas</li>
+                <li>Setup monorepo, CI/CD, base de datos</li>
+                <li>API REST completa (Express + Prisma)</li>
+                <li>Integraciones (Groq, Resend, S3)</li>
+                <li>Seguridad y autenticacion</li>
+                <li>Code reviews del desarrollador de apoyo</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Desarrollador Frontend</strong></td>
+            <td>50% (medio tiempo)</td>
+            <td>2 - 4 (12 sem)</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>Migracion de vistas HTML a componentes React/Next.js</li>
+                <li>Implementacion de formularios con Zod + React Hook Form</li>
+                <li>Dashboard con Recharts</li>
+                <li>Responsive design y accesibilidad</li>
+                <li>Tests de componentes con Vitest + Testing Library</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Project Manager / QA</strong></td>
+            <td>25% (fraccional)</td>
+            <td>1 - 5 (20 sem)</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>Planificacion de sprints y seguimiento</li>
+                <li>Testing funcional de cada entregable</li>
+                <li>Coordinacion con stakeholders MSO</li>
+                <li>Gestion de backlog y priorizacion</li>
+                <li>Documentacion de aceptacion</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Stakeholder MSO (Product Owner)</strong></td>
+            <td>10% (revisiones)</td>
+            <td>1 - 5</td>
+            <td>
+              <ul style="margin:0;padding-left:16px;">
+                <li>Validacion de requerimientos y prioridades</li>
+                <li>Revision de entregables por fase</li>
+                <li>Definicion de criterios de aceptacion de negocio</li>
+                <li>Capacitacion a usuarios finales</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box">
+        <strong>Nota sobre la estructura del equipo:</strong> Dado el tamano del proyecto y el hecho de que la logica de negocio ya esta definida en la maqueta, un equipo compacto de 2 desarrolladores + PM fraccional es suficiente. El desarrollador senior actua como tech lead y es el recurso critico del proyecto. El frontend de apoyo se incorpora en Fase 2 cuando ya existe la base tecnica.
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       13. CRONOGRAMA VISUAL
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">13</span>
+        Cronograma Visual
+      </div>
+
+      <p>Diagrama Gantt simplificado del proyecto completo (20 semanas).</p>
+
+      <div class="gantt-container">
+        <!-- Header con semanas -->
+        <div class="gantt-row">
+          <div class="gantt-label" style="font-weight:700; color: var(--primary);">Tarea</div>
+          <div class="gantt-header">S1</div>
+          <div class="gantt-header">S2</div>
+          <div class="gantt-header">S3</div>
+          <div class="gantt-header">S4</div>
+          <div class="gantt-header">S5</div>
+          <div class="gantt-header">S6</div>
+          <div class="gantt-header">S7</div>
+          <div class="gantt-header">S8</div>
+          <div class="gantt-header">S9</div>
+          <div class="gantt-header">S10</div>
+          <div class="gantt-header">S11</div>
+          <div class="gantt-header">S12</div>
+          <div class="gantt-header">S13</div>
+          <div class="gantt-header">S14</div>
+          <div class="gantt-header">S15</div>
+          <div class="gantt-header">S16</div>
+          <div class="gantt-header">S17</div>
+          <div class="gantt-header">S18</div>
+          <div class="gantt-header">S19</div>
+          <div class="gantt-header">S20</div>
+        </div>
+
+        <!-- Fase 1 -->
+        <div class="gantt-row">
+          <div class="gantt-label">Setup Proyecto</div>
+          <div class="gantt-bar phase-1" style="grid-column: 2 / 3;">S1</div>
+          <div style="grid-column: 3 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Autenticacion</div>
+          <div style="grid-column: 2 / 3;"></div>
+          <div class="gantt-bar phase-1" style="grid-column: 3 / 4;">S2</div>
+          <div style="grid-column: 4 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">CRUD Org + Usuarios</div>
+          <div style="grid-column: 2 / 4;"></div>
+          <div class="gantt-bar phase-1" style="grid-column: 4 / 5;">S3</div>
+          <div style="grid-column: 5 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Deploy Staging</div>
+          <div style="grid-column: 2 / 5;"></div>
+          <div class="gantt-bar phase-1" style="grid-column: 5 / 6;">S4</div>
+          <div style="grid-column: 6 / 21;"></div>
+        </div>
+
+        <!-- Fase 2 -->
+        <div class="gantt-row">
+          <div class="gantt-label">Programas + Panel</div>
+          <div style="grid-column: 2 / 6;"></div>
+          <div class="gantt-bar phase-2" style="grid-column: 6 / 7;">S5</div>
+          <div style="grid-column: 7 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Competencias + Conductas</div>
+          <div style="grid-column: 2 / 7;"></div>
+          <div class="gantt-bar phase-2" style="grid-column: 7 / 8;">S6</div>
+          <div style="grid-column: 8 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Participantes + Excel</div>
+          <div style="grid-column: 2 / 8;"></div>
+          <div class="gantt-bar phase-2" style="grid-column: 8 / 9;">S7</div>
+          <div style="grid-column: 9 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Encuestas Builder</div>
+          <div style="grid-column: 2 / 9;"></div>
+          <div class="gantt-bar phase-2" style="grid-column: 9 / 10;">S8</div>
+          <div style="grid-column: 10 / 21;"></div>
+        </div>
+
+        <!-- Fase 3 -->
+        <div class="gantt-row">
+          <div class="gantt-label">Actividades</div>
+          <div style="grid-column: 2 / 10;"></div>
+          <div class="gantt-bar phase-3" style="grid-column: 10 / 11;">S9</div>
+          <div style="grid-column: 11 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Feedback + Observaciones</div>
+          <div style="grid-column: 2 / 11;"></div>
+          <div class="gantt-bar phase-3" style="grid-column: 11 / 12;">S10</div>
+          <div style="grid-column: 12 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Hallazgos + Cronograma</div>
+          <div style="grid-column: 2 / 12;"></div>
+          <div class="gantt-bar phase-3" style="grid-column: 12 / 13;">S11</div>
+          <div style="grid-column: 13 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Archivos + Mi Progreso</div>
+          <div style="grid-column: 2 / 13;"></div>
+          <div class="gantt-bar phase-3" style="grid-column: 13 / 14;">S12</div>
+          <div style="grid-column: 14 / 21;"></div>
+        </div>
+
+        <!-- Fase 4 -->
+        <div class="gantt-row">
+          <div class="gantt-label">Dashboard KPIs</div>
+          <div style="grid-column: 2 / 14;"></div>
+          <div class="gantt-bar phase-4" style="grid-column: 14 / 15;">S13</div>
+          <div style="grid-column: 15 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Reportes PDF + IA</div>
+          <div style="grid-column: 2 / 15;"></div>
+          <div class="gantt-bar phase-4" style="grid-column: 15 / 16;">S14</div>
+          <div style="grid-column: 16 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Correos + Notificaciones</div>
+          <div style="grid-column: 2 / 16;"></div>
+          <div class="gantt-bar phase-4" style="grid-column: 16 / 17;">S15</div>
+          <div style="grid-column: 17 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Asistente IA</div>
+          <div style="grid-column: 2 / 17;"></div>
+          <div class="gantt-bar phase-4" style="grid-column: 17 / 18;">S16</div>
+          <div style="grid-column: 18 / 21;"></div>
+        </div>
+
+        <!-- Fase 5 -->
+        <div class="gantt-row">
+          <div class="gantt-label">Testing E2E</div>
+          <div style="grid-column: 2 / 18;"></div>
+          <div class="gantt-bar phase-5" style="grid-column: 18 / 19;">S17</div>
+          <div style="grid-column: 19 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Migracion Datos</div>
+          <div style="grid-column: 2 / 19;"></div>
+          <div class="gantt-bar phase-5" style="grid-column: 19 / 20;">S18</div>
+          <div style="grid-column: 20 / 21;"></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Capacitacion + Infra Prod</div>
+          <div style="grid-column: 2 / 20;"></div>
+          <div class="gantt-bar phase-5" style="grid-column: 20 / 21;">S19</div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Go-Live + Soporte</div>
+          <div style="grid-column: 2 / 21;"></div>
+          <div class="gantt-bar phase-5" style="grid-column: 21 / 22;">S20</div>
+        </div>
+
+        <!-- Leyenda -->
+        <div style="display:flex; gap:20px; margin-top:16px; flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:16px;height:16px;border-radius:3px;" class="phase-1"></div><span style="font-size:9pt;">Fase 1: Fundamentos</span></div>
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:16px;height:16px;border-radius:3px;" class="phase-2"></div><span style="font-size:9pt;">Fase 2: Core Negocio</span></div>
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:16px;height:16px;border-radius:3px;" class="phase-3"></div><span style="font-size:9pt;">Fase 3: Avanzado</span></div>
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:16px;height:16px;border-radius:3px;" class="phase-4"></div><span style="font-size:9pt;">Fase 4: IA + Reporteria</span></div>
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:16px;height:16px;border-radius:3px;" class="phase-5"></div><span style="font-size:9pt;">Fase 5: Produccion</span></div>
+        </div>
+      </div>
+
+      <h3>Hitos Clave</h3>
+      <table class="compact">
+        <thead>
+          <tr><th>Semana</th><th>Hito</th><th>Criterio de Exito</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>S4</strong></td><td>MVP en Staging</td><td>Login funcional + CRUD basico desplegado en URL publica</td></tr>
+          <tr><td><strong>S8</strong></td><td>Core Completo</td><td>Programa completo con competencias, participantes y encuestas funcionando</td></tr>
+          <tr><td><strong>S12</strong></td><td>Feature Complete</td><td>Todas las vistas de la maqueta migradas y funcionales</td></tr>
+          <tr><td><strong>S16</strong></td><td>IA + Reporteria Ready</td><td>Informes PDF con IA generandose correctamente</td></tr>
+          <tr><td><strong>S20</strong></td><td>Go-Live Produccion</td><td>Plataforma en produccion con datos reales y usuarios capacitados</td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- ========================================
+       14. PROXIMOS PASOS
+       ======================================== -->
+  <div class="page-break"></div>
+  <div class="page-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">14</span>
+        Proximos Pasos
+      </div>
+
+      <p>Acciones inmediatas para iniciar la ejecucion de este plan:</p>
+
+      <div class="highlight-box orange">
+        <h3 style="margin-top:0; color: var(--secondary);">Semana 0 &mdash; Pre-Inicio (5 dias habiles)</h3>
+        <ol>
+          <li><strong>Aprobacion del plan:</strong> Revision y validacion de este documento por parte de la gerencia de MSO Chile. Confirmar presupuesto y timeline.</li>
+          <li><strong>Contratacion / asignacion de equipo:</strong> Confirmar desarrollador fullstack senior (dedicado). Identificar desarrollador frontend de apoyo para Fase 2+.</li>
+          <li><strong>Creacion de cuentas de servicio:</strong>
+            <ul>
+              <li>Supabase: crear proyecto staging (gratis para empezar)</li>
+              <li>Vercel: crear equipo y proyecto</li>
+              <li>Railway: crear proyecto</li>
+              <li>Cloudflare: crear cuenta R2</li>
+              <li>Groq: obtener API key de produccion</li>
+              <li>Resend: crear cuenta y verificar dominio</li>
+            </ul>
+          </li>
+          <li><strong>Setup del repositorio:</strong> Crear repo privado en GitHub (organizacion MSO). Configurar branch protection rules. Invitar al equipo.</li>
+          <li><strong>Kickoff meeting:</strong> Reunion de inicio con equipo completo. Revisar plan, asignar responsabilidades de Fase 1, establecer cadencia de reuniones (daily standup 15 min, sprint review quincenal).</li>
+        </ol>
+      </div>
+
+      <h3>Criterios de Decision Pendientes</h3>
+      <table>
+        <thead>
+          <tr><th>Decision</th><th>Opciones</th><th>Recomendacion</th><th>Decidir antes de</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hosting de API</td>
+            <td>Railway vs Render vs Fly.io</td>
+            <td>Railway (mejor DX, escala simple)</td>
+            <td>Inicio S1</td>
+          </tr>
+          <tr>
+            <td>Base de datos</td>
+            <td>Supabase vs Neon vs Railway PG</td>
+            <td>Supabase (dashboard, auth gratis, backups)</td>
+            <td>Inicio S1</td>
+          </tr>
+          <tr>
+            <td>Almacenamiento archivos</td>
+            <td>Cloudflare R2 vs AWS S3</td>
+            <td>R2 (sin costo egress)</td>
+            <td>Inicio S12</td>
+          </tr>
+          <tr>
+            <td>Dominio definitivo</td>
+            <td>tpt.msochile.cl / app.msochile.cl / plataforma.msochile.cl</td>
+            <td>app.tpt.msochile.cl</td>
+            <td>Inicio S4</td>
+          </tr>
+          <tr>
+            <td>Modelo IA principal</td>
+            <td>Groq LLaMA 3.1 70B vs Mixtral 8x7B</td>
+            <td>LLaMA 3.1 70B (mejor calidad narrativa)</td>
+            <td>Inicio S14</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Entregables Inmediatos del Desarrollador (Dia 1-5)</h3>
+      <div class="card-row">
+        <div class="info-card">
+          <h4>Dia 1-2</h4>
+          <ul>
+            <li>Inicializar monorepo con Turborepo</li>
+            <li>Configurar <code>/apps/web</code> (Next.js 14 + TS)</li>
+            <li>Configurar <code>/apps/api</code> (Express + TS)</li>
+            <li>Configurar <code>/packages/shared</code> (Zod schemas)</li>
+            <li>ESLint + Prettier + Husky pre-commit</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>Dia 3-5</h4>
+          <ul>
+            <li>Definir schema Prisma completo (27 tablas)</li>
+            <li>Conectar a Supabase staging</li>
+            <li>Ejecutar primera migracion</li>
+            <li>GitHub Actions: lint + typecheck</li>
+            <li>Deploy inicial "Hello World" en Vercel + Railway</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="highlight-box success" style="margin-top:30px;">
+        <h3 style="margin-top:0; color:var(--success);">Conclusion</h3>
+        <p>La Plataforma TPT cuenta con una base solida: un modelo de datos bien estructurado, flujos de usuario validados y logica de negocio probada en la maqueta actual. La migracion a un stack moderno (Next.js + Node.js + PostgreSQL) es un paso natural que permitira a MSO Chile escalar su operacion a multiples clientes simultaneos con la confiabilidad, seguridad y rendimiento que un producto SaaS requiere.</p>
+        <p>Con un equipo compacto de 2-3 personas y una inversion de USD $26-34K en el primer ano (incluyendo desarrollo e infraestructura), la plataforma puede estar en produccion en <strong>20 semanas</strong>, atendiendo de 50 a 500 usuarios concurrentes.</p>
+        <p><strong>El momento de comenzar es ahora.</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       FOOTER
+       ======================================== -->
+  <div class="doc-footer">
+    <div>
+      <strong>MSO Chile</strong> &mdash; Plataforma TPT &mdash; Plan de Implementacion v1.0
+    </div>
+    <div>
+      Abril 2026 &bull; Documento Confidencial
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

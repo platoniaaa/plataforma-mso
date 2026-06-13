@@ -254,9 +254,16 @@
     var en6m = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     var primerCliente = clientesPrograma.find(function(c) { return c.estado === 'Activo'; });
 
+    // Validacion: debe existir al menos un cliente activo para asociar el programa.
+    // Sin esto, el programa queda con cliente_id NULL y desaparece de la vista de Clientes.
+    if (!primerCliente) {
+      showToast('Primero debes crear al menos un cliente activo en la pestaña Clientes.', 'error');
+      return;
+    }
+
     var datos = {
       nombre: 'Nuevo Programa',
-      cliente_id: '',
+      cliente_id: primerCliente.id,
       tipo: 'piloto',
       estado: 'diseno',
       objetivo: '',
@@ -270,7 +277,7 @@
       .withSuccessHandler(function(r) {
         if (r.success) {
           var newId = r.data.programaId || r.data.id;
-          showToast('Programa creado. Completa los datos en el panel.', 'success');
+          showToast('Programa creado y asociado a "' + primerCliente.nombre + '". Cambia el cliente desde el panel si corresponde.', 'success');
           abrirPanelPrograma(newId);
         } else {
           showToast(r.error || 'Error al crear programa.', 'error');

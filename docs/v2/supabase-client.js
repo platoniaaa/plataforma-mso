@@ -830,6 +830,22 @@ var backendFunctions = {
     };
   },
 
+  listarRespuestasEncuesta: async function(token, encuestaId) {
+    // Helper: lista los evaluador_id distintos que han respondido una encuesta.
+    // Usado por el panel de participantes para calcular conteo de pendientes.
+    if (!encuestaId) return { success: true, data: [] };
+    var r = await _supabase.from('respuestas')
+      .select('evaluador_id')
+      .eq('encuesta_id', encuestaId);
+    if (r.error) {
+      console.error('[listarRespuestasEncuesta]', r.error);
+      return { success: false, error: r.error.message };
+    }
+    // Devolver ids unicos
+    var ids = Array.from(new Set((r.data || []).map(function(x) { return x.evaluador_id; })));
+    return { success: true, data: ids };
+  },
+
   obtenerEncuestaPendiente: async function(token) {
     var userId = null;
     try {
@@ -1541,7 +1557,7 @@ var backendFunctions = {
     var encIds = Object.keys(encMap);
 
     var pregsData = encIds.length > 0
-      ? await _supabase.from('preguntas').select('id, competencia_id, encuesta_id').in('encuesta_id', encIds)
+      ? await _supabase.from('preguntas').select('id, competencia_id, encuesta_id, texto_pregunta, tipo_respuesta, orden').in('encuesta_id', encIds)
       : { data: [] };
     var pregMap = {};
     (pregsData.data || []).forEach(function(p) { pregMap[p.id] = p; });
@@ -1552,6 +1568,14 @@ var backendFunctions = {
           .in('pregunta_id', pregIds).eq('evaluado_id', userId)
       : { data: [] };
     var respuestas = respsData.data || [];
+
+    // Respuestas abiertas (texto): donde el usuario es EVALUADOR (autoeval del lider o coeval del colab).
+    // Para el lider: las abiertas son sus propias reflexiones, no las de quienes lo evaluan.
+    var respsAbiertasData = pregIds.length > 0
+      ? await _supabase.from('respuestas').select('pregunta_id, valor, evaluador_id, evaluado_id')
+          .in('pregunta_id', pregIds).eq('evaluador_id', userId)
+      : { data: [] };
+    var respuestasAbiertasRaw = respsAbiertasData.data || [];
 
     var agregado = {};
     competencias.forEach(function(c) {
@@ -1619,6 +1643,25 @@ var backendFunctions = {
       return base;
     });
 
+    // Procesar respuestas abiertas del lider (texto_breve | parrafo) para mostrar en el informe
+    var respuestasAbiertas = respuestasAbiertasRaw
+      .map(function(r) {
+        var p = pregMap[r.pregunta_id];
+        if (!p) return null;
+        if (p.tipo_respuesta !== 'texto_breve' && p.tipo_respuesta !== 'parrafo') return null;
+        var enc = encMap[p.encuesta_id];
+        if (!enc) return null;
+        var texto = (r.valor || '').toString().trim();
+        if (!texto) return null;
+        return {
+          pregunta: p.texto_pregunta || '',
+          respuesta: texto,
+          encuesta_tipo: enc.tipo || 'pre',
+          encuesta_cuestionario: enc.tipo_cuestionario || 'autoevaluacion'
+        };
+      })
+      .filter(Boolean);
+
     return {
       success: true,
       data: {
@@ -1637,7 +1680,8 @@ var backendFunctions = {
         tieneRespuestasPre: tieneRespuestasPre,
         tieneRespuestasPost: tieneRespuestasPost,
         sinPreHistorico: sinPreHistorico,
-        competencias: analisisCompetencias
+        competencias: analisisCompetencias,
+        respuestas_abiertas: respuestasAbiertas
       }
     };
   },
@@ -2137,6 +2181,33 @@ var backendFunctions = {
     }
   },
 
+  enviarRecordatorioManual: async function(token, datos) {
+    // datos: { encuesta_id, usuario_ids? (opcional, si no se pasa: todos los pendientes del rol) }
+    var u = null; try { u = JSON.parse(sessionStorage.getItem('tpt_usuario') || 'null'); } catch(e) {}
+    if (!u || !u.id) return { success: false, error: 'No autenticado' };
+    datos = datos || {};
+    if (!datos.encuesta_id) return { success: false, error: 'encuesta_id requerido' };
+    try {
+      var r = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'apikey': SUPABASE_KEY
+        },
+        body: JSON.stringify({
+          evento: 'recordatorio_manual',
+          userId: u.id,
+          encuesta_id: datos.encuesta_id,
+          usuario_ids: datos.usuario_ids || null
+        })
+      });
+      return await r.json();
+    } catch (e) {
+      return { success: false, error: 'Error de conexion: ' + (e.message || e) };
+    }
+  },
+
   listarCorreosEnviados: async function(token, progId) {
     var query = _supabase.from('correos_enviados')
       .select('*, programas(nombre), enviado_por_usuario:usuarios!correos_enviados_enviado_por_fkey(nombre)')
@@ -2584,6 +2655,7 @@ var backendFunctions = {
   importarParticipantesExcel: async function(token, progId, participantes) {
     var count = 0;
     var errores = [];
+    var nuevosUsuarioIds = []; // ids de usuarios recien creados (para disparar bienvenida al final)
 
     async function upsertUsuario(nombre, email, rol, cargo, password) {
       if (!email) return null;
@@ -2608,6 +2680,8 @@ var backendFunctions = {
         errores.push(email + ': ' + ins.error.message);
         return null;
       }
+      // Usuario realmente nuevo: marcar para enviar bienvenida al final del lote
+      nuevosUsuarioIds.push(ins.data.id);
       return ins.data;
     }
 
@@ -2644,6 +2718,17 @@ var backendFunctions = {
     }
 
     if (errores.length) console.warn('[importarParticipantesExcel] errores:', errores);
+
+    // Disparar correo de bienvenida (fire-and-forget) a los usuarios recien creados.
+    // Asi cuando Carolina carga el Excel los participantes reciben sus credenciales automaticamente.
+    if (nuevosUsuarioIds.length > 0) {
+      _fireEmail({
+        evento: 'bienvenida',
+        programa_id: progId,
+        usuario_ids: nuevosUsuarioIds
+      });
+    }
+
     return {
       success: true,
       data: {
@@ -2662,6 +2747,12 @@ var backendFunctions = {
       await _supabase.from('participantes_programa').insert({
         programa_id: progId, usuario_id: colabR.data.id,
         rol_programa: 'colaborador', lider_id: datos.lider_id || null
+      });
+      // Disparar bienvenida al nuevo colaborador (fire-and-forget)
+      _fireEmail({
+        evento: 'bienvenida',
+        programa_id: progId,
+        usuario_ids: [colabR.data.id]
       });
     }
     return { success: true };

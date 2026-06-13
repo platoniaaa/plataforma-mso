@@ -1,0 +1,62 @@
+[
+  {
+    "label": "admin: abrir programa Grow 2.0",
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  {
+    "label": "admin: panel Encuestas -> Ver respuestas modal",
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  {
+    "label": "admin: panel Encuestas -> Editar encuesta",
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  {
+    "label": "admin: panel Participantes -> modal Agregar Lider",
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  {
+    "label": "admin: panel Informes load (ya no descargarPDF)",
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  {
+    "label": "admin: click en primer cliente",
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  {
+    "label": "lider: Mi Equipo cargado + click en card si existe",
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  {
+    "label": "lider: Mis Evaluaciones -> click Responder",
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  {
+    "label": "lider: Incidencias -> abrir modal Nueva",
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  {
+    "label": "participante: Mi Progreso cargado",
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  {
+    "label": "participante: Mis Actividades -> click en card",
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  {
+    "label": "participante: Feedback Recibido",
+    "consoleErrors": [],
+    "pageErrors": []
+  }
+]

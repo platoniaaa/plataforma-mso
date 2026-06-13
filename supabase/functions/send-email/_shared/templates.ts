@@ -65,6 +65,8 @@ export interface TemplateVars {
   cuerpo_manual_html?: string;
   reset_url?: string;
   fecha_cambio?: string;
+  email?: string;
+  password?: string;
 }
 
 export interface RenderedTemplate {
@@ -78,11 +80,24 @@ export function renderTemplate(tipo: string, vars: TemplateVars, urlLogin: strin
   switch (tipo) {
     case "bienvenida": {
       const asunto = replaceTokens("Bienvenido/a al programa {{programa}}", v);
+      const credsBox = (v.email && v.password)
+        ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0;">
+             <tr><td style="background:#F8F4FB;border:1px solid #E2D4EC;border-radius:8px;padding:16px 20px;">
+               <p style="font-size:12px;color:${BRAND_PURPLE};margin:0 0 10px;font-weight:700;letter-spacing:0.5px;">TUS CREDENCIALES DE ACCESO</p>
+               <p style="font-size:14px;line-height:1.9;color:#2D3748;margin:0;">
+                 <strong>Correo:</strong> ${v.email}<br>
+                 <strong>Contrase&ntilde;a:</strong> ${v.password}
+               </p>
+             </td></tr>
+           </table>`
+        : "";
       const body = `
         <p style="font-size:15px;line-height:1.6;">Hola <strong>${v.nombre || "participante"}</strong>,</p>
         <p style="font-size:14px;line-height:1.6;color:#4A5568;">Has sido agregado al programa de desarrollo de liderazgo <strong>${v.programa || ""}</strong> en la plataforma MSO TPT.</p>
-        <p style="font-size:14px;line-height:1.6;color:#4A5568;">Durante el programa responderas encuestas de evaluacion y podras revisar tu progreso y feedback. Ingresa a la plataforma cuando recibas las notificaciones correspondientes.</p>
-        <p style="font-size:13px;line-height:1.6;color:#718096;margin-top:20px;">Si tienes dudas, contacta al equipo MSO.</p>
+        ${credsBox}
+        <p style="font-size:14px;line-height:1.6;color:#4A5568;"><strong>Importante:</strong> tu cuenta ya est&aacute; creada. <strong>No uses la opci&oacute;n "Crear cuenta"</strong>: ingresa directamente con el bot&oacute;n de abajo usando el correo y la contrase&ntilde;a indicados.</p>
+        <p style="font-size:13px;line-height:1.6;color:#718096;">Te recomendamos cambiar tu contrase&ntilde;a en tu primer acceso, desde la opci&oacute;n "&iquest;Olvidaste tu contrase&ntilde;a?" del login.</p>
+        <p style="font-size:13px;line-height:1.6;color:#718096;margin-top:16px;">Si tienes dudas, contacta al equipo MSO.</p>
       `;
       return { asunto, html: baseLayout({ title: "Te damos la bienvenida", bodyHtml: body, ctaLabel: "Ingresar a la plataforma", ctaUrl: v.url_login }) };
     }

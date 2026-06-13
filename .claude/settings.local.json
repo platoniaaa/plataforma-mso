@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -roh '\\\\.\\\\\\([a-zA-Z]*\\\\\\)\\(App\\\\.token' \"c:/Users/the_r/Documents/GitHub/plataforma-mso/panel-programa.html\" \"c:/Users/the_r/Documents/GitHub/plataforma-mso/tab-\"*.html)",
+      "Bash(gh api:*)"
+    ]
+  }
+}

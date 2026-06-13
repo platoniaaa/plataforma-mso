@@ -24,12 +24,13 @@
             <th>Rubro</th>
             <th>Contacto</th>
             <th>Email Contacto</th>
+            <th>Programa(s)</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="tbody-clientes">
-          <tr><td colspan="6" class="text-center text-muted p-4">Cargando...</td></tr>
+          <tr><td colspan="7" class="text-center text-muted p-4">Cargando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -93,6 +94,7 @@
 
 <script>
   var clientesData = [];
+  var programasPorCliente = {}; // {cliente_id: [{id, nombre}]}
 
   // Cargar clientes al abrir la vista
   (function() {
@@ -100,11 +102,19 @@
   })();
 
   function cargarClientes() {
+    var clientesListos = false;
+    var progsListos = false;
+
+    function renderCuandoListo() {
+      if (clientesListos && progsListos) renderClientes(clientesData);
+    }
+
     google.script.run
       .withSuccessHandler(function(result) {
         if (result.success) {
           clientesData = result.data;
-          renderClientes(clientesData);
+          clientesListos = true;
+          renderCuandoListo();
         } else {
           showToast(result.error, 'error');
         }
@@ -113,22 +123,48 @@
         showToast('Error al cargar clientes.', 'error');
       })
       .listarClientes(App.token);
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        programasPorCliente = {};
+        var data = (result && result.success && result.data) ? result.data : [];
+        data.forEach(function(p) {
+          if (!p.cliente_id) return;
+          if (!programasPorCliente[p.cliente_id]) programasPorCliente[p.cliente_id] = [];
+          programasPorCliente[p.cliente_id].push({ id: p.id, nombre: p.nombre });
+        });
+        progsListos = true;
+        renderCuandoListo();
+      })
+      .withFailureHandler(function() {
+        progsListos = true;
+        renderCuandoListo();
+      })
+      .listarProgramas(App.token, null);
   }
 
   function renderClientes(clientes) {
     var tbody = document.getElementById('tbody-clientes');
 
     if (!clientes || clientes.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-4">No hay clientes registrados.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-4">No hay clientes registrados.</td></tr>';
       return;
     }
 
     tbody.innerHTML = clientes.map(function(c) {
+      var progs = programasPorCliente[c.id] || [];
+      var progsCell = progs.length === 0
+        ? '<span class="text-muted" style="font-size:12px;font-style:italic;">Sin programas</span>'
+        : progs.map(function(p) {
+            return '<div style="font-size:12px;line-height:1.4;">' + escapeHtml(p.nombre) + '</div>';
+          }).join('');
+
       return '<tr>' +
         '<td><strong>' + escapeHtml(c.nombre) + '</strong></td>' +
         '<td>' + escapeHtml(c.rubro || '-') + '</td>' +
         '<td>' + escapeHtml(c.contacto_nombre) + '</td>' +
         '<td>' + escapeHtml(c.contacto_email) + '</td>' +
+        '<td>' + progsCell + '</td>' +
         '<td>' + getBadge(c.estado) + '</td>' +
         '<td style="white-space:nowrap;">' +
           '<div style="display:inline-flex;gap:6px;align-items:center;">' +

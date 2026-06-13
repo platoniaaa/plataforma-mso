@@ -911,6 +911,11 @@
   }
 
   function renderBrechas(prog, ia) {
+    // Flag: ocultar seccion "Cierre Ejecutivo" a peticion del cliente (2026-05-13).
+    // Para reactivar: cambiar a true. El prompt sigue generando el campo `cierre`,
+    // asi que la reactivacion es inmediata sin tocar nada mas.
+    var MOSTRAR_CIERRE_EJECUTIVO = false;
+
     reporteCharts.forEach(function(c) { c.destroy(); }); reporteCharts = [];
     var hoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
     var datos = ia && ia._datosReales;
@@ -1005,8 +1010,8 @@
       html += '</div></div>';
     }
 
-    /* Cierre */
-    if (ia.cierre) {
+    /* Cierre Ejecutivo - oculto por flag MOSTRAR_CIERRE_EJECUTIVO al inicio de la funcion */
+    if (MOSTRAR_CIERRE_EJECUTIVO && ia.cierre) {
       html += '<div class="rpt-section-title" style="margin-top:28px;">Cierre Ejecutivo</div>';
       html += '<div class="rpt-cierre"><p>' + ia.cierre + '</p></div>';
     }
@@ -1157,6 +1162,10 @@
      ========================================== */
 
   function renderConsolidado(prog, ia) {
+    // Flag: ocultar seccion "Cierre Ejecutivo" a peticion del cliente (2026-05-13).
+    // Para reactivar: cambiar a true. El prompt sigue generando el campo `cierre`.
+    var MOSTRAR_CIERRE_EJECUTIVO = false;
+
     reporteCharts.forEach(function(c) { c.destroy(); }); reporteCharts = [];
     var hoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
 
@@ -1305,8 +1314,8 @@
       html += '</div>';
     }
 
-    /* Cierre */
-    if (ia.cierre) {
+    /* Cierre Ejecutivo - oculto por flag MOSTRAR_CIERRE_EJECUTIVO al inicio de la funcion */
+    if (MOSTRAR_CIERRE_EJECUTIVO && ia.cierre) {
       html += '<div class="rpt-section-title" style="margin-top:28px;">Cierre ejecutivo</div>';
       html += '<div class="rpt-cierre"><p>' + ia.cierre + '</p></div>';
     }
@@ -1705,6 +1714,23 @@
     /* Aviso si el LLM no devolvio ninguna seccion narrativa */
     if (!ia.lectura_global && !ia.analisis_competencias && !ia.insight && !ia.recomendaciones && !ia.compromiso) {
       html += '<p style="color:#888;font-style:italic;">El analisis narrativo no se pudo generar para este informe. Las metricas cuantitativas estan correctas.</p>';
+    }
+
+    /* Reflexiones del lider (respuestas a preguntas abiertas) */
+    var abiertas = (datosReales && datosReales.respuestas_abiertas) || [];
+    if (abiertas.length > 0) {
+      html += '<div class="rpt-section" style="margin-top:24px;border-top:2px solid #eee;padding-top:16px;">';
+      html += '<h2 style="margin-top:0;">Reflexiones del L\u00edder</h2>';
+      html += '<p style="color:#666;font-size:13px;font-style:italic;margin-bottom:16px;">Respuestas textuales del l\u00edder a las preguntas abiertas de la evaluaci\u00f3n.</p>';
+      abiertas.forEach(function(a) {
+        var momentoLabel = (a.encuesta_tipo === 'post') ? 'Final' : 'Inicial';
+        html += '<div style="margin-bottom:20px;padding:16px;background:#fafafa;border-radius:8px;border-left:4px solid #3D0C4B;">';
+        html += '<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">' + momentoLabel + '</div>';
+        if (a.pregunta) html += '<p style="font-weight:600;margin:0 0 8px;color:#2D3436;">' + escapeHtml(a.pregunta) + '</p>';
+        html += '<blockquote style="margin:0;padding-left:12px;border-left:2px solid #ddd;color:#374151;font-style:italic;line-height:1.6;">' + escapeHtml(a.respuesta) + '</blockquote>';
+        html += '</div>';
+      });
+      html += '</div>';
     }
 
     html += '</div>'; /* rpt-body */

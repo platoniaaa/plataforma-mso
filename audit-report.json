@@ -1,0 +1,171 @@
+[
+  {
+    "role": "ADMIN",
+    "views": [
+      {
+        "id": "dashboard",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "clientes",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "programas",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "usuarios",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "hallazgos",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "gestion-observaciones",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "correos",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      }
+    ],
+    "panelTabs": [
+      {
+        "id": "resumen",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "competencias",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "participantes",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "encuestas",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "cronograma",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "seguimiento",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "informes",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      }
+    ]
+  },
+  {
+    "role": "JEFATURA",
+    "views": [
+      {
+        "id": "home-lider",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "mis-encuestas",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "mi-equipo",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "mis-recursos",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "reportar",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      }
+    ],
+    "panelTabs": []
+  },
+  {
+    "role": "PARTICIPANTE",
+    "views": [
+      {
+        "id": "mis-actividades",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "mis-encuestas",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "mis-recursos",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "mi-progreso",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "feedback-recibido",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      },
+      {
+        "id": "reportar",
+        "findings": [],
+        "consoleErrors": [],
+        "pageErrors": []
+      }
+    ],
+    "panelTabs": []
+  }
+]
