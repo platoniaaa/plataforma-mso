@@ -1,0 +1,470 @@
+<!-- Mi Informe (vista del lider para ver SU informe individual) -->
+<div>
+  <div id="mi-informe-loading">
+    <div class="card">
+      <div class="card-body text-center" style="padding:48px 24px;">
+        <div class="spinner spinner-lg"></div>
+        <p class="text-muted mt-3" id="mi-informe-loading-text">Cargando tus datos...</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="mi-informe-locked" class="hidden">
+    <div class="card">
+      <div class="card-body text-center" style="padding:48px 24px;">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" style="margin-bottom:16px;">
+          <rect x="3" y="11" width="18" height="11" rx="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+        <h2 id="mi-informe-locked-title" style="color:var(--color-primario);margin:0 0 12px;">Tu informe aún no está disponible</h2>
+        <p id="mi-informe-locked-msg" class="text-muted" style="max-width:560px;margin:0 auto 20px;line-height:1.6;"></p>
+        <div id="mi-informe-locked-action"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="mi-informe-content" class="hidden">
+    <div id="mi-informe-contenido"></div>
+  </div>
+</div>
+
+<style>
+  /* Estilos PDF replicando el informe individual completo */
+  #mi-informe-contenido .rpt { font-family: 'Segoe UI', -apple-system, sans-serif; color: #2D3436; line-height: 1.6; font-size: 13px; background:white; border-radius:8px; box-shadow:0 2px 16px rgba(0,0,0,0.1); overflow:hidden; }
+  #mi-informe-contenido .rpt-hero { background: linear-gradient(135deg, #1A3C6E 0%, #2A5485 100%); color: white; padding: 28px 50px; position: relative; }
+  #mi-informe-contenido .rpt-hero h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: 0.3px; }
+  #mi-informe-contenido .rpt-hero h2 { margin: 6px 0 12px; font-size: 15px; font-weight: 400; opacity: 0.92; font-style: italic; }
+  #mi-informe-contenido .rpt-meta { font-size: 11px; opacity: 0.78; margin-top: 6px; }
+  #mi-informe-contenido .rpt-body { padding: 28px 50px; }
+  #mi-informe-contenido .rpt-section { margin-bottom: 24px; page-break-inside: avoid; }
+  #mi-informe-contenido .rpt-section-title { font-size: 15px; font-weight: 700; color: #1A3C6E; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #1A3C6E; }
+  #mi-informe-contenido .rpt-subsection-title { font-size: 13px; font-weight: 600; color: #1A3C6E; margin-bottom: 8px; }
+  #mi-informe-contenido .rpt-context-box { background: #1A3C6E; color: white; padding: 16px 18px; border-radius: 6px; }
+  #mi-informe-contenido .rpt-context-box h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
+  #mi-informe-contenido .rpt-context-box ul { margin: 6px 0 0; padding-left: 16px; }
+  #mi-informe-contenido .rpt-context-box li { font-size: 12px; margin-bottom: 3px; }
+  #mi-informe-contenido .rpt-competencias { display: flex; flex-direction: column; gap: 8px; }
+  #mi-informe-contenido .rpt-competencia-item { display: flex; gap: 10px; align-items: center; padding-bottom: 8px; border-bottom: 1px solid #E5E7EB; }
+  #mi-informe-contenido .rpt-competencia-num { font-size: 10px; font-weight: 700; color: #5DADE2; min-width: 18px; }
+  #mi-informe-contenido .rpt-competencia-name { font-size: 12px; font-weight: 600; color: #2D3436; }
+  #mi-informe-contenido .rpt-kpi-row { display: flex; justify-content: space-around; margin: 14px 0; }
+  #mi-informe-contenido .rpt-kpi-big { text-align: center; }
+  #mi-informe-contenido .rpt-kpi-big-value { font-size: 28px; font-weight: 700; color: #1A3C6E; }
+  #mi-informe-contenido .rpt-kpi-big-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+  #mi-informe-contenido .rpt-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+  #mi-informe-contenido .rpt-table th, #mi-informe-contenido .rpt-table td { padding: 8px 10px; text-align: center; border-bottom: 1px solid #E5E7EB; }
+  #mi-informe-contenido .rpt-table th { background: #F3F4F6; font-weight: 600; color: #1A3C6E; }
+  #mi-informe-contenido .rpt-table td:first-child { text-align: left; font-weight: 500; }
+  #mi-informe-contenido .rpt-hbar-row { display: grid; grid-template-columns: 200px 1fr; gap: 12px; align-items: center; margin-bottom: 10px; font-size: 12px; }
+  #mi-informe-contenido .rpt-hbar-label { font-weight: 500; }
+  #mi-informe-contenido .rpt-hbar-track { background: #F3F4F6; border-radius: 3px; height: 18px; position: relative; }
+  #mi-informe-contenido .rpt-hbar-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; color: white; font-size: 10px; font-weight: 700; }
+  #mi-informe-contenido .rpt-hbar-fill-auto { background: #1A3C6E; }
+  #mi-informe-contenido .rpt-hbar-fill-co { background: #5DADE2; }
+  #mi-informe-contenido .rpt-brecha-cards, #mi-informe-contenido .rpt-findings-grid, #mi-informe-contenido .rpt-recs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  #mi-informe-contenido .rpt-brecha-card, #mi-informe-contenido .rpt-finding-card { background: #F9FAFB; padding: 12px 14px; border-radius: 6px; border-left: 3px solid #5DADE2; }
+  #mi-informe-contenido .rpt-brecha-card h4, #mi-informe-contenido .rpt-finding-card h4 { margin: 0 0 6px; font-size: 12px; color: #1A3C6E; }
+  #mi-informe-contenido .rpt-brecha-card p, #mi-informe-contenido .rpt-finding-card p { font-size: 11px; color: #555; margin: 4px 0; line-height: 1.6; }
+  #mi-informe-contenido .brecha-val { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; margin: 4px 0; }
+  #mi-informe-contenido .brecha-neg { background: #FADBD8; color: #C0392B; }
+  #mi-informe-contenido .brecha-pos { background: #D5F5E3; color: #1E8449; }
+  #mi-informe-contenido .brecha-zero { background: #FEF9E7; color: #B7950B; }
+  #mi-informe-contenido .rpt-insight-box { background: #FEF9E7; border-left: 4px solid #F39C12; padding: 14px 18px; border-radius: 0 6px 6px 0; }
+  #mi-informe-contenido .rpt-insight-box .insight-main { font-size: 14px; font-weight: 600; color: #B7950B; margin-top: 6px; }
+  #mi-informe-contenido .rpt-rec-card { display: flex; gap: 10px; align-items: flex-start; background: #F9FAFB; padding: 12px; border-radius: 6px; }
+  #mi-informe-contenido .rpt-rec-num { background: #1A3C6E; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  #mi-informe-contenido .rpt-rec-body h4 { margin: 0 0 4px; font-size: 12px; color: #1A3C6E; }
+  #mi-informe-contenido .rpt-compromiso { background: #D5F5E3; padding: 14px 18px; border-radius: 6px; display: flex; gap: 12px; align-items: flex-start; }
+  #mi-informe-contenido .rpt-compromiso-icon { color: #1E8449; flex-shrink: 0; }
+  #mi-informe-contenido .rpt-footer { padding: 20px 50px; border-top: 2px solid #E2E8F0; text-align: center; font-size: 10px; color: #A0AEC0; }
+</style>
+
+<script>
+  (function() {
+    var miUser = App.usuario;
+    if (!miUser || !miUser.id) {
+      showLocked('No autenticado', 'Vuelve a iniciar sesion para ver tu informe.', '');
+      return;
+    }
+
+    setLoadingText('Cargando tu programa...');
+
+    // 1. Obtener el programa del lider (su unico programa activo)
+    google.script.run.withSuccessHandler(function(rProgs) {
+      if (!rProgs || !rProgs.success || !rProgs.data || rProgs.data.length === 0) {
+        showLocked('Sin programa asignado', 'No tienes un programa activo en este momento. Si crees que es un error, contacta al administrador.', '');
+        return;
+      }
+      var prog = rProgs.data[0];
+
+      setLoadingText('Verificando estado de respuestas...');
+
+      // 2. Cargar participantes del programa para identificar al lider y su colaborador
+      google.script.run.withSuccessHandler(function(rPart) {
+        var participantes = (rPart && rPart.success && rPart.data) || [];
+        var miFila = participantes.find(function(p) { return p.usuario_id === miUser.id; });
+        var miColab = null;
+        if (miFila) {
+          miColab = participantes.find(function(p) {
+            return p.rol_programa === 'colaborador' && p.lider_id === miUser.id;
+          });
+        }
+
+        // 3. Cargar encuestas del programa (autoeval + coeval)
+        google.script.run.withSuccessHandler(function(rEnc) {
+          var encuestas = (rEnc && rEnc.success && rEnc.data) || [];
+          var encAuto = encuestas.find(function(e) { return e.tipo_cuestionario === 'autoevaluacion'; });
+          var encCoe = encuestas.find(function(e) { return e.tipo_cuestionario === 'coevaluacion'; });
+
+          if (!encAuto) {
+            showLocked('Tu informe aún no está disponible', 'El programa todavia no tiene encuesta de autoevaluacion configurada. Tu informe estara disponible cuando el administrador la habilite.', '');
+            return;
+          }
+
+          // 4. Cargar respuestas de autoeval y coeval en paralelo para chequear reglas
+          var checks = { autoListo: false, coeListo: false };
+          var liderRespondio = false;
+          var colabRespondio = false;
+
+          function evaluarReglas() {
+            if (!checks.autoListo) return;
+            if (encCoe && !checks.coeListo) return;
+
+            // REGLA 1: lider debe haber respondido autoeval
+            if (!liderRespondio) {
+              showLocked(
+                'Tu informe aún no está disponible',
+                'Para ver tu informe primero debes responder tu Autoevaluacion Inicial. Cuando termines, vuelve a esta pantalla.',
+                '<button class="btn btn-primary" onclick="cargarVista(\'mis-encuestas\')">Ir a Mis Evaluaciones</button>'
+              );
+              return;
+            }
+
+            // REGLA 2: si tiene colaborador asignado, este debe haber respondido coeval
+            if (miColab && encCoe && !colabRespondio) {
+              showLocked(
+                'Tu informe aún no está disponible',
+                'Tu informe se habilita cuando tu colaborador responda la coevaluacion. Mientras tanto, puedes ver el avance de tu equipo en Mi Equipo.',
+                '<button class="btn btn-primary" onclick="cargarVista(\'mi-equipo\')">Ir a Mi Equipo</button>'
+              );
+              return;
+            }
+
+            // Todas las reglas OK: generar y renderizar el informe
+            cargarYRenderizarInforme(prog);
+          }
+
+          google.script.run.withSuccessHandler(function(rA) {
+            var ids = (rA && rA.success && Array.isArray(rA.data)) ? rA.data : [];
+            liderRespondio = ids.indexOf(miUser.id) !== -1;
+            checks.autoListo = true;
+            evaluarReglas();
+          }).listarRespuestasEncuesta(App.token, encAuto.id);
+
+          if (encCoe) {
+            google.script.run.withSuccessHandler(function(rC) {
+              var ids = (rC && rC.success && Array.isArray(rC.data)) ? rC.data : [];
+              colabRespondio = miColab ? (ids.indexOf(miColab.usuario_id) !== -1) : false;
+              checks.coeListo = true;
+              evaluarReglas();
+            }).listarRespuestasEncuesta(App.token, encCoe.id);
+          }
+        }).listarEncuestas(App.token, prog.id);
+      }).listarParticipantesPrograma(App.token, prog.id);
+    }).listarProgramasDashboard(App.token, miUser.id);
+  })();
+
+  function setLoadingText(t) {
+    var el = document.getElementById('mi-informe-loading-text');
+    if (el) el.textContent = t;
+  }
+
+  function showLocked(titulo, mensaje, actionHtml) {
+    document.getElementById('mi-informe-loading').classList.add('hidden');
+    document.getElementById('mi-informe-content').classList.add('hidden');
+    document.getElementById('mi-informe-locked').classList.remove('hidden');
+    document.getElementById('mi-informe-locked-title').textContent = titulo;
+    document.getElementById('mi-informe-locked-msg').textContent = mensaje;
+    document.getElementById('mi-informe-locked-action').innerHTML = actionHtml || '';
+  }
+
+  function showContent() {
+    document.getElementById('mi-informe-loading').classList.add('hidden');
+    document.getElementById('mi-informe-locked').classList.add('hidden');
+    document.getElementById('mi-informe-content').classList.remove('hidden');
+  }
+
+  function cargarYRenderizarInforme(prog) {
+    setLoadingText('Generando tu informe (esto toma unos segundos)...');
+    var miUser = App.usuario;
+
+    // Primero datos cuantitativos
+    google.script.run.withSuccessHandler(function(rDatos) {
+      if (!rDatos || !rDatos.success) {
+        showLocked('Error al cargar tu informe', (rDatos && rDatos.error) || 'No pudimos cargar los datos. Intenta de nuevo en unos minutos.', '');
+        return;
+      }
+      var datosReales = rDatos.data;
+      var prompt = buildIndividualPromptMI(prog, miUser, datosReales);
+
+      // IA narrativa via Groq
+      callGroqFromBrowser([{ role: 'user', content: prompt }])
+        .then(function(rIA) {
+          var iaData = {};
+          if (rIA && rIA.success && rIA.response) {
+            try {
+              var json = rIA.response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+              iaData = JSON.parse(json);
+            } catch (e) {
+              iaData = { resumen: rIA.response };
+            }
+          }
+          iaData._datosReales = datosReales;
+          renderMiInforme(prog, miUser, iaData);
+          showContent();
+        })
+        .catch(function() {
+          // Si la IA falla, mostramos solo los datos cuantitativos sin narrativa
+          var iaData = { _datosReales: datosReales };
+          renderMiInforme(prog, miUser, iaData);
+          showContent();
+        });
+    }).obtenerDatosInformeIndividual(App.token, prog.id, miUser.id, 'pre');
+  }
+
+  function buildIndividualPromptMI(prog, part, datos) {
+    var dataJson = datos ? JSON.stringify(datos, null, 2) : '{}';
+    var nombre = part ? (part.nombre || 'Participante') : 'Participante';
+    var momento = (datos && datos.momento) || 'pre';
+    var esPost = momento === 'post';
+    var tituloInforme = esPost ? 'INFORME INDIVIDUAL FINAL (completo con evolucion)' : 'INFORME INDIVIDUAL INICIAL (linea base / diagnostico inicial)';
+    var instrMomento = esPost
+      ? 'Este es un informe Final: analiza la EVOLUCION del lider comparando Inicial vs Final (evolucion_auto, evolucion_co, cierre_brecha). Si sinPreHistorico=true, indica que no hay linea base Inicial y analiza solo los datos Final.'
+      : 'Este es un informe Inicial de linea base: analiza SOLO los datos Inicial (auto_pre, co_pre, brecha_pre). NO menciones evolucion ni Final porque no existen. El objetivo es identificar focos de desarrollo iniciales del lider.';
+
+    return 'Eres un coach ejecutivo. Genera un ' + tituloInforme + ' para "' + nombre + '" en el programa "' + prog.nombre + '" basandote en los DATOS REALES siguientes.\n\n' +
+      'DATOS DEL PARTICIPANTE:\n' + dataJson + '\n\n' +
+      'Los valores van de 1 a 4. auto_pre/post = autoevaluacion del lider. co_pre/post = evaluacion de sus colaboradores. ' +
+      'brecha = auto - co (positivo = se sobrevalora). Null = sin dato.\n\n' +
+      instrMomento + '\n\n' +
+      'Responde SOLO con JSON (sin markdown ni backticks) con esta estructura exacta:\n' +
+      '{"lectura_global":"<html lectura global del perfil del lider citando datos concretos>",' +
+      '"analisis_competencias":[{"nombre":"<nombre competencia real>","brecha":"<descripcion cuantificada>","interpretacion":"...","evolucion":["<punto 1>","<punto 2>"]}],' +
+      '"insight":"<frase clave del siguiente nivel de desarrollo>",' +
+      '"recomendaciones":[{"titulo":"...","items":["...","..."]},{"titulo":"...","items":["...","..."]},{"titulo":"...","items":["...","..."]}],' +
+      '"compromiso":"<html compromiso de desarrollo especifico>"}.\n' +
+      'Genera un objeto en analisis_competencias por CADA competencia real. Si es Inicial, en "evolucion" pon observaciones iniciales (no cambios). Usa <strong> para negritas.';
+  }
+
+  function renderMiInforme(prog, miUser, ia) {
+    var hoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+    var nombre = miUser.nombre || 'Participante';
+
+    var datosReales = ia && ia._datosReales;
+    var momento = datosReales ? (datosReales.momento || 'pre') : 'pre';
+    var esPost = momento === 'post';
+    var dims, autoP, coP, brechaG;
+    function numI(v) { return (v === null || v === undefined || isNaN(v)) ? 0 : v; }
+    if (datosReales && datosReales.competencias && datosReales.competencias.length > 0) {
+      dims = datosReales.competencias.map(function(c) {
+        var auto = esPost ? (c.auto_post !== null ? c.auto_post : c.auto_pre) : c.auto_pre;
+        var co = esPost ? (c.co_post !== null ? c.co_post : c.co_pre) : c.co_pre;
+        return {
+          nombre: c.nombre,
+          auto: numI(auto), co: numI(co),
+          brecha: (auto !== null && co !== null) ? Math.round((auto - co) * 100) / 100 : null,
+          sinDato: (auto === null && co === null)
+        };
+      });
+      var dimsConDato = dims.filter(function(d) { return !d.sinDato; });
+      var tA = dimsConDato.reduce(function(a, b) { return a + b.auto; }, 0);
+      var tC = dimsConDato.reduce(function(a, b) { return a + b.co; }, 0);
+      autoP = dimsConDato.length > 0 ? Math.round((tA / dimsConDato.length) * 100) / 100 : 0;
+      coP = dimsConDato.length > 0 ? Math.round((tC / dimsConDato.length) * 100) / 100 : 0;
+      brechaG = Math.round((autoP - coP) * 100) / 100;
+    } else {
+      dims = []; autoP = 0; coP = 0; brechaG = 0;
+    }
+
+    var html = '<div class="rpt">';
+    html += '<div class="rpt-hero">';
+    html += '<h1>' + (esPost ? 'Informe Individual Final' : 'Informe Individual Inicial (Línea base)') + ' &mdash; ' + escapeHtml(prog.nombre) + '</h1>';
+    html += '<h2>Evaluación de Liderazgo &ndash; ' + escapeHtml(nombre) + '</h2>';
+    html += '<div class="rpt-meta">' + escapeHtml(prog.nombre) + ' | ' + escapeHtml(prog.cliente_nombre || '') + ' | ' + hoy + '</div>';
+    html += '</div>';
+
+    html += '<div class="rpt-body">';
+
+    // 1. Contexto + Competencias
+    html += '<div class="rpt-section"><div class="rpt-section-title">1. Contexto de Evaluación</div>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">';
+    var ctxIntro = esPost
+      ? 'Este informe expone los resultados de tu evaluacion Final en el marco del programa de desarrollo basado en la aplicacion practica de competencias. Permite visualizar tu evolucion respecto a la linea base Inicial.'
+      : 'Este informe expone los resultados de tu evaluacion Inicial (linea base) al inicio del programa. Sirve como diagnostico inicial para identificar tus focos de desarrollo.';
+    html += '<div class="rpt-context-box"><h3>Contexto</h3><p style="font-size:13px;opacity:0.9;">' + ctxIntro + '</p>';
+    html += '<p style="font-size:12px;opacity:0.8;margin-top:10px;">El analisis considera:</p>';
+    html += '<ul><li>Tu autoevaluacion</li><li>Coevaluacion de tu colaborador</li><li>Identificacion de brechas de percepcion</li></ul></div>';
+
+    html += '<div><div class="rpt-subsection-title">Competencias Evaluadas</div><div class="rpt-competencias">';
+    var competenciasList = dims.map(function(d) { return d.nombre; });
+    if (competenciasList.length === 0) {
+      html += '<p style="color:#888;font-size:12px;">(Sin competencias definidas en el programa)</p>';
+    } else {
+      competenciasList.forEach(function(c, i) {
+        var num = (i + 1) < 10 ? '0' + (i + 1) : String(i + 1);
+        html += '<div class="rpt-competencia-item"><div class="rpt-competencia-num">' + num + '</div><div class="rpt-competencia-name">' + escapeHtml(c) + '</div></div>';
+      });
+    }
+    html += '</div></div></div></div>';
+
+    // 2. Resultado General
+    html += '<div class="rpt-section"><div class="rpt-section-title">2. Resultado General</div>';
+    html += '<p style="font-size:13px;color:#555;">Presentas un desempeño promedio de:</p>';
+    html += '<div class="rpt-kpi-row">';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + autoP.toFixed(2) + '</div><div class="rpt-kpi-big-label">Autoevaluación</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + coP.toFixed(2) + '</div><div class="rpt-kpi-big-label">Coevaluación</div></div>';
+    html += '<div class="rpt-kpi-big"><div class="rpt-kpi-big-value">' + brechaG + '</div><div class="rpt-kpi-big-label">Brecha Global</div></div>';
+    html += '</div>';
+    var interpBrecha;
+    if (Math.abs(brechaG) < 0.1) {
+      interpBrecha = '<strong>alta coherencia</strong> entre tu autopercepcion y la percepcion externa: perfil equilibrado y buen autoconocimiento.';
+    } else if (brechaG > 0) {
+      interpBrecha = '<strong>te sobreestimas</strong> respecto a la percepcion de tu colaborador (+' + brechaG + '): oportunidad de calibrar tu autopercepcion.';
+    } else {
+      interpBrecha = '<strong>eres valorado por encima</strong> de tu autopercepcion (' + brechaG + '): fortaleza reconocida por tu entorno que podrias potenciar.';
+    }
+    html += '<p style="font-size:13px;color:#555;">La brecha global refleja: ' + interpBrecha + '</p>';
+    html += '</div>';
+
+    // 3. Resultados Detallados
+    html += '<div class="rpt-section"><div class="rpt-section-title">3. Resultados Detallados</div>';
+    html += '<table class="rpt-table"><thead><tr><th>Dimensión</th>';
+    dims.forEach(function(d) { html += '<th>' + escapeHtml(d.nombre) + '</th>'; });
+    html += '<th>Promedio</th></tr></thead><tbody>';
+    html += '<tr><td>Autoevaluación</td>';
+    dims.forEach(function(d) { html += '<td>' + d.auto + '</td>'; });
+    html += '<td>' + autoP.toFixed(2) + '</td></tr>';
+    html += '<tr><td>Coevaluación</td>';
+    dims.forEach(function(d) { html += '<td>' + d.co + '</td>'; });
+    html += '<td>' + coP.toFixed(2) + '</td></tr>';
+    html += '<tr><td><strong>Brecha</strong></td>';
+    dims.forEach(function(d) { html += '<td><strong>' + (d.brecha > 0 ? '+' : '') + d.brecha + '</strong></td>'; });
+    html += '<td><strong>' + brechaG + '</strong></td></tr>';
+    html += '</tbody></table></div>';
+
+    // 4. Visualizacion barras
+    html += '<div class="rpt-section"><div class="rpt-section-title">4. Visualización de Resultados</div>';
+    html += '<div style="margin-bottom:8px;font-size:11px;"><span style="display:inline-block;width:12px;height:12px;background:#1A3C6E;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Autoevaluación &nbsp;&nbsp;<span style="display:inline-block;width:12px;height:12px;background:#5DADE2;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> Coevaluación</div>';
+    dims.forEach(function(d) {
+      var maxI = 4;
+      html += '<div class="rpt-hbar-row"><div class="rpt-hbar-label">' + escapeHtml(d.nombre) + '</div><div>' +
+        '<div class="rpt-hbar-track"><div class="rpt-hbar-fill rpt-hbar-fill-auto" style="width:' + (d.auto / maxI * 100) + '%;">' + d.auto + '</div></div>' +
+        '<div class="rpt-hbar-track" style="margin-top:3px;"><div class="rpt-hbar-fill rpt-hbar-fill-co" style="width:' + (d.co / maxI * 100) + '%;">' + d.co + '</div></div>' +
+      '</div></div>';
+    });
+    html += '</div>';
+
+    // 5. Lectura de Resultados
+    html += '<div class="rpt-section"><div class="rpt-section-title">5. Lectura de Resultados</div>';
+    html += '<div class="rpt-brecha-cards">';
+    dims.forEach(function(d) {
+      var cls = d.brecha < 0 ? 'brecha-neg' : d.brecha > 0 ? 'brecha-pos' : 'brecha-zero';
+      var interp = d.brecha < 0 ? 'Tu entorno te evalúa mejor → <strong>fortaleza</strong>'
+        : d.brecha > 0 ? 'Te evalúas por sobre tu entorno → <strong>oportunidad</strong>'
+        : 'Competencia <strong>alineada</strong>';
+      html += '<div class="rpt-brecha-card"><h4>' + escapeHtml(d.nombre) + ' (' + (d.brecha > 0 ? '+' : '') + d.brecha + ')</h4><span class="brecha-val ' + cls + '">BRECHA (' + (d.brecha > 0 ? '+' : '') + d.brecha + ')</span><p>' + interp + '</p></div>';
+    });
+    html += '</div></div>';
+
+    // 6. Lectura Global
+    if (ia.lectura_global) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">6. Lectura Global del Perfil</div>';
+      html += '<p style="font-size:13px;color:#555;">' + ia.lectura_global + '</p>';
+      html += '</div>';
+    }
+
+    // 7. Analisis por Competencia
+    if (Array.isArray(ia.analisis_competencias) && ia.analisis_competencias.length > 0) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">7. Análisis por Competencia</div>';
+      html += '<div class="rpt-findings-grid">';
+      ia.analisis_competencias.forEach(function(a) {
+        var brechaStr = (a.brecha != null) ? String(a.brecha) : '';
+        var brechaCls = brechaStr.indexOf('-') !== -1 ? 'brecha-neg'
+          : brechaStr.indexOf('+') !== -1 ? 'brecha-pos'
+          : 'brecha-zero';
+        html += '<div class="rpt-finding-card"><h4>' + (a.nombre || '') + '</h4>' +
+          (brechaStr ? '<span class="brecha-val ' + brechaCls + '">BRECHA ' + brechaStr + '</span>' : '') +
+          (a.interpretacion ? '<p><strong>Interpretación:</strong> ' + a.interpretacion + '</p>' : '') +
+          (Array.isArray(a.evolucion) && a.evolucion.length
+            ? '<p><strong>Observaciones:</strong></p><ul style="margin:4px 0;padding-left:16px;">' +
+              a.evolucion.map(function(e) { return '<li style="font-size:12px;">' + e + '</li>'; }).join('') +
+              '</ul>'
+            : '') +
+          '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    // 8. Insight Clave
+    if (ia.insight) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">8. Insight Clave</div>';
+      html += '<div class="rpt-insight-box"><p>Tu siguiente nivel de desarrollo esta en:</p>';
+      html += '<div class="insight-main">' + ia.insight + '</div>';
+      html += '</div></div>';
+    }
+
+    // 9. Recomendaciones
+    if (Array.isArray(ia.recomendaciones) && ia.recomendaciones.length > 0) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">9. Recomendaciones de Desarrollo</div>';
+      html += '<div class="rpt-findings-grid">';
+      ia.recomendaciones.forEach(function(r, i) {
+        html += '<div class="rpt-rec-card"><div class="rpt-rec-num">' + (i + 1) + '</div><div class="rpt-rec-body"><h4>' + (r.titulo || '') + '</h4>';
+        if (Array.isArray(r.items)) {
+          html += '<ul style="margin:6px 0;padding-left:16px;">';
+          r.items.forEach(function(item) { html += '<li style="font-size:12px;color:#555;">' + item + '</li>'; });
+          html += '</ul>';
+        } else if (r.texto) {
+          html += '<p style="font-size:12px;color:#555;">' + r.texto + '</p>';
+        }
+        html += '</div></div>';
+      });
+      html += '</div></div>';
+    }
+
+    // 10. Compromiso
+    if (ia.compromiso) {
+      html += '<div class="rpt-section"><div class="rpt-section-title">10. Compromiso de Desarrollo</div>';
+      html += '<div class="rpt-compromiso"><div class="rpt-compromiso-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10l2 2 4-4"/></svg></div>';
+      html += '<div><p>Desde hoy, orientas tu desarrollo hacia:</p><p><strong>' + ia.compromiso + '</strong></p></div>';
+      html += '</div></div>';
+    }
+
+    // Aviso si la IA no devolvio narrativa
+    if (!ia.lectura_global && !ia.analisis_competencias && !ia.insight && !ia.recomendaciones && !ia.compromiso) {
+      html += '<p style="color:#888;font-style:italic;">El analisis narrativo no se pudo generar en este momento. Las metricas cuantitativas estan correctas.</p>';
+    }
+
+    // Reflexiones del lider (respuestas a preguntas abiertas)
+    var abiertas = (datosReales && datosReales.respuestas_abiertas) || [];
+    if (abiertas.length > 0) {
+      html += '<div class="rpt-section" style="margin-top:24px;border-top:2px solid #eee;padding-top:16px;">';
+      html += '<h2 style="margin-top:0;">Tus Reflexiones</h2>';
+      html += '<p style="color:#666;font-size:13px;font-style:italic;margin-bottom:16px;">Tus respuestas textuales a las preguntas abiertas de la evaluacion.</p>';
+      abiertas.forEach(function(a) {
+        var momentoLabel = (a.encuesta_tipo === 'post') ? 'Final' : 'Inicial';
+        html += '<div style="margin-bottom:20px;padding:16px;background:#fafafa;border-radius:8px;border-left:4px solid #3D0C4B;">';
+        html += '<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">' + momentoLabel + '</div>';
+        if (a.pregunta) html += '<p style="font-weight:600;margin:0 0 8px;color:#2D3436;">' + escapeHtml(a.pregunta) + '</p>';
+        html += '<blockquote style="margin:0;padding-left:12px;border-left:2px solid #ddd;color:#374151;font-style:italic;line-height:1.6;">' + escapeHtml(a.respuesta) + '</blockquote>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    html += '</div>'; // rpt-body
+    html += '<div class="rpt-footer">Informe generado por MSO Chile – Plataforma TPT | Asistido por Inteligencia Artificial | ' + hoy + '</div>';
+    html += '</div>'; // rpt
+
+    document.getElementById('mi-informe-contenido').innerHTML = html;
+  }
+</script>

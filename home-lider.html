@@ -1,0 +1,477 @@
+<!-- Vista: Home del Lider -->
+<style>
+  .hl-saludo {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-primario);
+    margin: 0 0 4px;
+  }
+  .hl-programa {
+    font-size: 15px;
+    color: var(--color-texto-sec);
+    margin: 0 0 24px;
+  }
+  .hl-programa strong {
+    color: var(--color-primario);
+  }
+
+  /* Phase cards stepper (mismo visual que mi-programa) */
+  .hl-phase-card {
+    background: white; border-radius: 12px; padding: 20px 24px; margin-bottom: 18px;
+    border: 1px solid var(--color-borde);
+  }
+  .hl-phase-head {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    flex-wrap: wrap; gap: 8px;
+  }
+  .hl-phase-head h4 {
+    margin: 0; font-size: 14px; font-weight: 700; color: var(--color-primario);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hl-phase-icon {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 11px; font-weight: 700;
+  }
+  .hl-phase-icon.inicial { background: linear-gradient(135deg, #2563EB, #1D4ED8); }
+  .hl-phase-icon.final { background: linear-gradient(135deg, #059669, #047857); }
+  .hl-phase-icon.comparativo { background: linear-gradient(135deg, #6B1D7B, #3D0C4B); }
+  .hl-progress-pill {
+    font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 10px;
+    background: #F1F5F9; color: #475569;
+  }
+  .hl-progress-pill.completo { background: #D1FAE5; color: #065F46; }
+  .hl-progress-pill.en-curso { background: #FED7AA; color: #9A3412; }
+  .hl-hstepper {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 4px 0;
+  }
+  .hl-hstepper.cols-1 { grid-template-columns: 1fr; justify-items: center; }
+  .hl-hstep {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    text-align: center; padding: 0 4px;
+  }
+  .hl-hstep:not(:last-child)::after {
+    content: ''; position: absolute; top: 18px;
+    left: calc(50% + 22px); right: calc(-50% + 22px);
+    height: 3px; background: #E2E8F0; border-radius: 2px; z-index: 0;
+  }
+  .hl-hstep.completada:not(:last-child)::after { background: var(--color-exito); }
+  .hl-hstep-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 3px solid #CBD5E0; background: white;
+    font-size: 13px; font-weight: 700; color: #94A3B8;
+    z-index: 1; transition: all 0.25s;
+  }
+  .hl-hstep.completada .hl-hstep-icon { border-color: var(--color-exito); background: var(--color-exito); color: white; }
+  .hl-hstep.en-curso .hl-hstep-icon { border-color: var(--color-secundario); color: var(--color-secundario); box-shadow: 0 0 0 4px rgba(245,130,32,0.18); }
+  .hl-hstep.bloqueada .hl-hstep-icon { border-color: #E2E8F0; background: #F8FAFC; color: #CBD5E0; }
+  .hl-hstep-label { font-size: 11px; font-weight: 600; color: var(--color-texto); margin-top: 8px; line-height: 1.3; }
+  .hl-hstep.bloqueada .hl-hstep-label { color: #CBD5E0; }
+  .hl-hstep.completada .hl-hstep-label { color: var(--color-exito); }
+  .hl-hstep.en-curso .hl-hstep-label { color: var(--color-secundario); }
+  @media (max-width: 600px) {
+    .hl-hstepper { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .hl-hstep:not(:last-child)::after { display: none; }
+  }
+
+  /* Seccion pendientes */
+  .hl-section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-primario);
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hl-section-title .hl-count {
+    background: var(--color-secundario);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Tarjeta de pendiente */
+  .hl-card {
+    background: #fff;
+    border: 1px solid var(--color-borde);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .hl-card:hover {
+    box-shadow: 0 4px 12px rgba(61, 12, 75, 0.08);
+    border-color: var(--color-secundario);
+  }
+  .hl-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(245, 130, 32, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .hl-card-icon svg {
+    width: 24px;
+    height: 24px;
+    stroke: var(--color-secundario);
+  }
+  .hl-card-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .hl-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0 0 4px;
+  }
+  .hl-card-desc {
+    font-size: 13px;
+    color: var(--color-texto-sec);
+    margin: 0;
+  }
+  .hl-card-action {
+    flex-shrink: 0;
+  }
+  .hl-card-action .btn {
+    white-space: nowrap;
+  }
+
+  /* Al dia */
+  .hl-aldia {
+    text-align: center;
+    padding: 48px 24px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid var(--color-borde);
+  }
+  .hl-aldia-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+  .hl-aldia h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-primario);
+    margin: 0 0 8px;
+  }
+  .hl-aldia p {
+    font-size: 14px;
+    color: var(--color-texto-sec);
+    margin: 0;
+  }
+
+  /* Sin programa */
+  .hl-sin-programa {
+    text-align: center;
+    padding: 60px 24px;
+  }
+  .hl-sin-programa h3 {
+    color: var(--color-primario);
+    margin: 16px 0 8px;
+  }
+
+  /* Equipo rapido */
+  .hl-equipo {
+    margin-top: 24px;
+  }
+  .hl-equipo-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    border: 1px solid var(--color-borde);
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .hl-equipo-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--color-primario);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .hl-equipo-info {
+    flex: 1;
+  }
+  .hl-equipo-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a2e;
+  }
+  .hl-equipo-cargo {
+    font-size: 12px;
+    color: var(--color-texto-sec);
+  }
+
+  @media (max-width: 600px) {
+    .hl-saludo { font-size: 22px; }
+    .hl-card { flex-direction: column; text-align: center; }
+    .hl-card-action { width: 100%; }
+    .hl-card-action .btn { width: 100%; }
+    .hl-step { min-width: 70px; }
+    .hl-step-label { font-size: 10px; }
+  }
+</style>
+
+<div id="hl-loading" class="text-center p-4">
+  <div class="spinner spinner-lg"></div>
+  <p class="text-muted mt-3">Cargando tu programa...</p>
+</div>
+
+<div id="hl-content" class="hidden">
+  <!-- Saludo -->
+  <h1 class="hl-saludo" id="hl-saludo">Hola</h1>
+  <p class="hl-programa" id="hl-programa"></p>
+
+  <!-- Pendientes -->
+  <div id="hl-pendientes"></div>
+
+  <!-- Equipo -->
+  <div id="hl-equipo" class="hl-equipo hidden"></div>
+</div>
+
+<div id="hl-sin-programa" class="hl-sin-programa hidden">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" style="width:56px;height:56px;">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+  <h3>Aun no tienes un programa asignado</h3>
+  <p class="text-muted">Tu administrador te asignara a un programa pronto. Te notificaremos cuando este listo.</p>
+</div>
+
+<script>
+(function() {
+  var userId = App.usuario ? App.usuario.id : null;
+  if (!userId) return;
+
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (!r || !r.success) {
+        document.getElementById('hl-loading').classList.add('hidden');
+        document.getElementById('hl-sin-programa').classList.remove('hidden');
+        return;
+      }
+
+      var data = r.data;
+
+      if (!data.programa) {
+        document.getElementById('hl-loading').classList.add('hidden');
+        document.getElementById('hl-sin-programa').classList.remove('hidden');
+        return;
+      }
+
+      // Saludo
+      var nombre = capitalizar(App.usuario.nombre || 'Usuario');
+      document.getElementById('hl-saludo').textContent = 'Hola, ' + nombre.split(' ')[0];
+      document.getElementById('hl-programa').innerHTML =
+        '<strong>' + escapeHtml(data.programa.nombre) + '</strong>' +
+        (data.programa.cliente_nombre ? ' \u2014 ' + escapeHtml(data.programa.cliente_nombre) : '');
+
+      // Pendientes
+      renderPendientes(data.pendientes || []);
+
+      // Equipo
+      renderEquipo(data.colaboradores || []);
+
+      document.getElementById('hl-loading').classList.add('hidden');
+      document.getElementById('hl-content').classList.remove('hidden');
+    })
+    .withFailureHandler(function() {
+      document.getElementById('hl-loading').classList.add('hidden');
+      document.getElementById('hl-sin-programa').classList.remove('hidden');
+    })
+    .obtenerHomeLider(App.token, userId);
+})();
+
+function capitalizar(texto) {
+  if (!texto) return '';
+  return texto.split(' ').map(function(p) {
+    return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+  }).join(' ');
+}
+
+function cargarFasesHome(progId) {
+  google.script.run
+    .withSuccessHandler(function(rEnc) {
+      var encs = (rEnc && rEnc.data) ? rEnc.data : [];
+      google.script.run
+        .withSuccessHandler(function(rPend) {
+          var pend = (rPend && rPend.data) ? rPend.data : [];
+          renderFasesHome(encs, pend);
+        })
+        .obtenerEncuestaPendiente(App.token);
+    })
+    .listarEncuestas(App.token, progId);
+}
+
+function renderFasesHome(encuestas, encuestasUsuario) {
+  function findEnc(tipo, cuest) {
+    return encuestas.find(function(e) { return e.tipo === tipo && e.tipo_cuestionario === cuest; });
+  }
+  function findUserStatus(encId) {
+    var u = encuestasUsuario.find(function(e) { return e.id === encId; });
+    return u ? u.estado : null;
+  }
+  function statusEnc(enc) {
+    if (!enc) return { s: 'bloqueada', l: 'No creada' };
+    if (enc.estado === 'borrador') return { s: 'bloqueada', l: 'En preparaci\u00f3n' };
+    if (enc.estado === 'cerrada') return { s: 'completada', l: 'Cerrada' };
+    var us = findUserStatus(enc.id);
+    if (us === 'completada') return { s: 'completada', l: 'Respondida' };
+    if (us === 'pendiente') return { s: 'en-curso', l: 'Pendiente' };
+    return { s: 'pendiente', l: 'Activa' };
+  }
+  function infoSt(a, c) {
+    var ac = (a && a.estado === 'cerrada') && (c && c.estado === 'cerrada');
+    if (ac) return { s: 'completada', l: 'Disponible' };
+    if ((a && a.estado === 'activa') || (c && c.estado === 'activa')) return { s: 'pendiente', l: 'En curso' };
+    return { s: 'bloqueada', l: 'Pendiente' };
+  }
+
+  var ai = findEnc('pre', 'autoevaluacion'), ci = findEnc('pre', 'coevaluacion');
+  var af = findEnc('post', 'autoevaluacion'), cf = findEnc('post', 'coevaluacion');
+  var siI = infoSt(ai, ci), siF = infoSt(af, cf);
+  var sBr = (siI.s === 'completada' && siF.s === 'completada')
+    ? { s: 'completada', l: 'Disponible' }
+    : { s: 'bloqueada', l: 'Requiere ambas mediciones' };
+
+  var fases = [
+    { key: 'inicial', icon: 'A', titulo: 'Medici\u00f3n Inicial', steps: [
+      { l: 'Autoevaluaci\u00f3n Inicial', st: statusEnc(ai) },
+      { l: 'Coevaluaci\u00f3n Inicial', st: statusEnc(ci) },
+      { l: 'Informe Individual', st: siI },
+      { l: 'Informe Consolidado', st: siI }
+    ]},
+    { key: 'final', icon: 'B', titulo: 'Medici\u00f3n Final', steps: [
+      { l: 'Autoevaluaci\u00f3n Final', st: statusEnc(af) },
+      { l: 'Coevaluaci\u00f3n Final', st: statusEnc(cf) },
+      { l: 'Informe Individual', st: siF },
+      { l: 'Informe Consolidado', st: siF }
+    ]},
+    { key: 'comparativo', icon: 'C', titulo: 'Comparativo', steps: [
+      { l: 'Informe de Brechas', st: sBr }
+    ]}
+  ];
+
+  var html = '';
+  fases.forEach(function(fase) {
+    var total = fase.steps.length;
+    var done = fase.steps.filter(function(s) { return s.st.s === 'completada'; }).length;
+    var pillCls = done === total ? 'completo' : (done > 0 ? 'en-curso' : '');
+    var gridCls = total === 1 ? 'cols-1' : '';
+
+    html += '<div class="hl-phase-card">' +
+      '<div class="hl-phase-head">' +
+        '<h4><span class="hl-phase-icon ' + fase.key + '">' + fase.icon + '</span>' + fase.titulo + '</h4>' +
+        '<span class="hl-progress-pill ' + pillCls + '">' + done + ' / ' + total + '</span>' +
+      '</div>' +
+      '<div class="hl-hstepper ' + gridCls + '">';
+    fase.steps.forEach(function(step, i) {
+      var ic = step.st.s === 'completada' ? '\u2713' : String(i + 1);
+      html += '<div class="hl-hstep ' + step.st.s + '">' +
+        '<div class="hl-hstep-icon">' + ic + '</div>' +
+        '<div class="hl-hstep-label">' + step.l + '</div>' +
+      '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  document.getElementById('hl-fases').innerHTML = html;
+}
+
+function renderPendientes(pendientes) {
+  var container = document.getElementById('hl-pendientes');
+
+  if (!pendientes.length) {
+    container.innerHTML =
+      '<div class="hl-aldia">' +
+        '<div class="hl-aldia-icon">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" style="width:32px;height:32px;">' +
+            '<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>' +
+          '</svg>' +
+        '</div>' +
+        '<h3>Estas al dia</h3>' +
+        '<p>No tienes evaluaciones pendientes. Te avisaremos cuando haya una nueva actividad.</p>' +
+      '</div>';
+    return;
+  }
+
+  var html = '<div class="hl-section-title">Lo que tienes pendiente <span class="hl-count">' + pendientes.length + '</span></div>';
+
+  pendientes.forEach(function(p) {
+    var nombreCap = capitalizar(p.participante.nombre);
+    html += '<div class="hl-card">' +
+      '<div class="hl-card-icon">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>' +
+      '</div>' +
+      '<div class="hl-card-body">' +
+        '<p class="hl-card-title">Coevaluacion de ' + escapeHtml(nombreCap) + '</p>' +
+        '<p class="hl-card-desc">' + escapeHtml(p.descripcion) + ' \u00b7 Pendiente</p>' +
+      '</div>' +
+      '<div class="hl-card-action">' +
+        '<button class="btn btn-primary" onclick="irACoevaluacion(\'' + p.encuesta_id + '\', \'' + p.participante.id + '\')">' +
+          'Responder \u2192' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function renderEquipo(colaboradores) {
+  if (!colaboradores.length) return;
+
+  var container = document.getElementById('hl-equipo');
+  var html = '<div class="hl-section-title">Tu equipo</div>';
+
+  colaboradores.forEach(function(c) {
+    var nombre = capitalizar(c.nombre);
+    var iniciales = nombre.split(' ').map(function(p) { return p.charAt(0); }).join('').substring(0, 2);
+    html += '<div class="hl-equipo-item">' +
+      '<div class="hl-equipo-avatar">' + iniciales + '</div>' +
+      '<div class="hl-equipo-info">' +
+        '<div class="hl-equipo-nombre">' + escapeHtml(nombre) + '</div>' +
+        '<div class="hl-equipo-cargo">' + escapeHtml(c.cargo || c.email) + '</div>' +
+      '</div>' +
+    '</div>';
+  });
+
+  container.innerHTML = html;
+  container.classList.remove('hidden');
+}
+
+function irACoevaluacion(encuestaId, participanteId) {
+  // Navegar a la encuesta de coevaluacion
+  if (typeof cargarVista === 'function') {
+    cargarVista('mis-encuestas');
+  }
+}
+</script>

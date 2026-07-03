@@ -1,0 +1,283 @@
+<!-- Vista: Encuestas (Admin - Builder) -->
+<div>
+  <div class="flex-between mb-4">
+    <div style="display:flex;gap:12px;">
+      <select class="form-control" id="sel-programa-enc" onchange="cargarEncuestas()" style="min-width:250px;">
+        <option value="">Selecciona un programa...</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="btn-nueva-encuesta" onclick="abrirModalEncuesta()" disabled>
+      + Nueva Encuesta
+    </button>
+  </div>
+
+  <div id="lista-encuestas">
+    <div class="empty-state"><p>Selecciona un programa para gestionar encuestas.</p></div>
+  </div>
+</div>
+
+<!-- Modal: Crear Encuesta -->
+<div class="modal-overlay" id="modal-encuesta">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h3 id="modal-enc-titulo">Nueva Encuesta</h3>
+      <button class="modal-close" onclick="closeModal('modal-encuesta')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-encuesta">
+        <input type="hidden" id="enc-edit-id">
+        <div class="form-group">
+          <label>Nombre *</label>
+          <input type="text" name="nombre" class="form-control" required placeholder="Ej: Encuesta PRE Liderazgo">
+        </div>
+        <div class="form-group">
+          <label>Tipo *</label>
+          <select name="tipo" class="form-control" required>
+            <option value="pre">PRE (antes de capacitaci&oacute;n)</option>
+            <option value="post">POST (despu&eacute;s de capacitaci&oacute;n)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Instrucciones</label>
+          <textarea name="instrucciones" class="form-control" placeholder="Instrucciones para el participante..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Fecha l&iacute;mite de respuesta</label>
+          <input type="date" name="fecha_cierre" class="form-control">
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-encuesta')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-enc" onclick="guardarEncuesta()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Builder de preguntas -->
+<div class="modal-overlay" id="modal-builder">
+  <div class="modal" style="max-width:750px;">
+    <div class="modal-header">
+      <h3 id="builder-titulo">Preguntas de la Encuesta</h3>
+      <button class="modal-close" onclick="closeModal('modal-builder')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="builder-preguntas"></div>
+      <hr style="margin:16px 0;border-color:var(--color-borde);">
+      <h4 class="mb-3" style="color:var(--color-primario);">Agregar pregunta</h4>
+      <div class="form-group">
+        <label>Conducta asociada *</label>
+        <select class="form-control" id="preg-conducta"></select>
+      </div>
+      <div class="form-group">
+        <label>Texto de la pregunta *</label>
+        <textarea class="form-control" id="preg-texto" placeholder="Escribe la pregunta..."></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label>Tipo de respuesta *</label>
+          <select class="form-control" id="preg-tipo">
+            <option value="escala_1_5">Escala 1-5</option>
+            <option value="si_no">S&iacute; / No</option>
+            <option value="logrado_parcial_no">Logrado / Parcial / No logrado</option>
+            <option value="texto_breve">Texto breve</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <label><input type="checkbox" id="preg-obligatoria" checked> Obligatoria</label>
+        </div>
+      </div>
+      <button class="btn btn-secondary" onclick="agregarPreguntaBuilder()">+ Agregar Pregunta</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-builder')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var encuestasData = [];
+  var conductasEncuesta = [];
+  var builderEncuestaId = null;
+
+  (function() {
+    google.script.run.withSuccessHandler(function(r) {
+      if (r.success) {
+        var sel = document.getElementById('sel-programa-enc');
+        r.data.forEach(function(p) {
+          var opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.nombre + ' (' + p.cliente_nombre + ')';
+          sel.appendChild(opt);
+        });
+      }
+    }).listarProgramas(App.token, null);
+  })();
+
+  function cargarEncuestas() {
+    var progId = document.getElementById('sel-programa-enc').value;
+    document.getElementById('btn-nueva-encuesta').disabled = !progId;
+    if (!progId) {
+      document.getElementById('lista-encuestas').innerHTML = '<div class="empty-state"><p>Selecciona un programa.</p></div>';
+      return;
+    }
+
+    google.script.run.withSuccessHandler(function(r) {
+      if (r.success) {
+        encuestasData = r.data;
+        renderEncuestas(r.data);
+      }
+    }).listarEncuestas(App.token, progId);
+
+    // Cargar conductas del programa
+    google.script.run.withSuccessHandler(function(r) {
+      if (r.success) conductasEncuesta = r.data;
+    }).listarConductas(App.token, progId);
+  }
+
+  function renderEncuestas(encuestas) {
+    var container = document.getElementById('lista-encuestas');
+    if (!encuestas.length) {
+      container.innerHTML = '<div class="empty-state"><p>No hay encuestas. Crea la primera.</p></div>';
+      return;
+    }
+
+    container.innerHTML = encuestas.map(function(e) {
+      var acciones = '<button class="btn btn-sm btn-outline" onclick="abrirBuilder(\'' + e.id + '\')">Preguntas (' + e.num_preguntas + ')</button> ';
+      acciones += '<button class="btn btn-sm btn-outline" onclick="editarEncuesta(\'' + e.id + '\')">Editar</button> ';
+      if (e.estado === 'borrador') {
+        acciones += '<button class="btn btn-sm btn-success" onclick="activarEnc(\'' + e.id + '\')">Activar</button> ';
+      } else if (e.estado === 'activa') {
+        acciones += '<button class="btn btn-sm btn-warning" onclick="cerrarEnc(\'' + e.id + '\')">Cerrar</button> ';
+      }
+
+      return '<div class="card mb-3"><div class="card-body flex-between">' +
+        '<div><strong>' + escapeHtml(e.nombre) + '</strong><br>' +
+          '<span class="text-sm text-muted">Tipo: ' + e.tipo.toUpperCase() + ' | Preguntas: ' + e.num_preguntas + '</span></div>' +
+        '<div style="display:flex;gap:8px;align-items:center;">' + getBadge(e.estado) + ' ' + acciones + '</div>' +
+      '</div></div>';
+    }).join('');
+  }
+
+  function abrirModalEncuesta() {
+    document.getElementById('modal-enc-titulo').textContent = 'Nueva Encuesta';
+    resetForm('form-encuesta');
+    document.getElementById('enc-edit-id').value = '';
+    openModal('modal-encuesta');
+  }
+
+  function editarEncuesta(id) {
+    var enc = encuestasData.find(function(e) { return e.id === id; });
+    if (!enc) return;
+    document.getElementById('modal-enc-titulo').textContent = 'Editar Encuesta';
+    document.getElementById('enc-edit-id').value = id;
+    fillForm('form-encuesta', enc);
+    openModal('modal-encuesta');
+  }
+
+  function guardarEncuesta() {
+    var datos = getFormData('form-encuesta');
+    var id = document.getElementById('enc-edit-id').value;
+    var progId = document.getElementById('sel-programa-enc').value;
+    datos.programa_id = progId;
+    var btn = document.getElementById('btn-guardar-enc');
+    btnLoading(btn, true);
+
+    if (id) {
+      google.script.run.withSuccessHandler(function(r) { btnLoading(btn, false); if (r.success) { closeModal('modal-encuesta'); showToast('Actualizada.', 'success'); cargarEncuestas(); } else showToast(r.error, 'error'); })
+      .actualizarEncuesta(App.token, id, datos);
+    } else {
+      google.script.run.withSuccessHandler(function(r) { btnLoading(btn, false); if (r.success) { closeModal('modal-encuesta'); showToast('Encuesta creada.', 'success'); cargarEncuestas(); } else showToast(r.error, 'error'); })
+      .crearEncuesta(App.token, datos);
+    }
+  }
+
+  function activarEnc(id) {
+    if (!confirmar('¿Activar esta encuesta? Se notificará a los participantes.')) return;
+    google.script.run.withSuccessHandler(function(r) { if (r.success) { showToast('Encuesta activada.', 'success'); cargarEncuestas(); } else showToast(r.error, 'error'); })
+    .activarEncuesta(App.token, id);
+  }
+
+  function cerrarEnc(id) {
+    if (!confirmar('¿Cerrar esta encuesta? No aceptará más respuestas.')) return;
+    google.script.run.withSuccessHandler(function(r) { if (r.success) { showToast('Encuesta cerrada.', 'success'); cargarEncuestas(); } else showToast(r.error, 'error'); })
+    .cerrarEncuesta(App.token, id);
+  }
+
+  // --- Builder de preguntas ---
+  function abrirBuilder(encuestaId) {
+    builderEncuestaId = encuestaId;
+    var enc = encuestasData.find(function(e) { return e.id === encuestaId; });
+    document.getElementById('builder-titulo').textContent = 'Preguntas: ' + (enc ? enc.nombre : '');
+
+    // Llenar selector de conductas
+    var sel = document.getElementById('preg-conducta');
+    sel.innerHTML = '<option value="">Selecciona conducta...</option>';
+    conductasEncuesta.forEach(function(c) {
+      var opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.nombre;
+      sel.appendChild(opt);
+    });
+
+    cargarPreguntasBuilder(encuestaId);
+    openModal('modal-builder');
+  }
+
+  function cargarPreguntasBuilder(encuestaId) {
+    google.script.run.withSuccessHandler(function(r) {
+      if (r.success) {
+        var preguntas = r.data.preguntas || [];
+        var div = document.getElementById('builder-preguntas');
+
+        if (!preguntas.length) {
+          div.innerHTML = '<p class="text-muted text-sm">Sin preguntas a\u00fan.</p>';
+          return;
+        }
+
+        div.innerHTML = preguntas.map(function(p, idx) {
+          return '<div class="card mb-2"><div class="card-body" style="padding:12px 16px;">' +
+            '<div class="flex-between">' +
+              '<div><span class="text-xs text-muted">#' + (idx+1) + ' | ' + escapeHtml(p.conducta_nombre) + ' | ' + p.tipo_respuesta +
+                (p.obligatoria ? ' | Obligatoria' : '') + '</span><br>' +
+                '<span>' + escapeHtml(p.texto_pregunta) + '</span></div>' +
+              '<button class="btn btn-sm btn-danger" onclick="eliminarPreg(\'' + p.id + '\')">&times;</button>' +
+            '</div>' +
+          '</div></div>';
+        }).join('');
+      }
+    }).obtenerEncuestaCompleta(App.token, encuestaId);
+  }
+
+  function agregarPreguntaBuilder() {
+    var datos = {
+      encuesta_id: builderEncuestaId,
+      conducta_id: document.getElementById('preg-conducta').value,
+      texto_pregunta: document.getElementById('preg-texto').value,
+      tipo_respuesta: document.getElementById('preg-tipo').value,
+      obligatoria: document.getElementById('preg-obligatoria').checked
+    };
+
+    if (!datos.conducta_id || !datos.texto_pregunta.trim()) {
+      showToast('Completa conducta y texto de la pregunta.', 'error');
+      return;
+    }
+
+    google.script.run.withSuccessHandler(function(r) {
+      if (r.success) {
+        document.getElementById('preg-texto').value = '';
+        cargarPreguntasBuilder(builderEncuestaId);
+        showToast('Pregunta agregada.', 'success');
+      } else showToast(r.error, 'error');
+    }).agregarPregunta(App.token, datos);
+  }
+
+  function eliminarPreg(id) {
+    if (!confirmar('¿Eliminar esta pregunta?')) return;
+    google.script.run.withSuccessHandler(function(r) {
+      cargarPreguntasBuilder(builderEncuestaId);
+      cargarEncuestas();
+    }).eliminarPregunta(App.token, id);
+  }
+</script>

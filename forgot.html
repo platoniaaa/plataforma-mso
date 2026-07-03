@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Restablecer contrase&ntilde;a - MSO TPT</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    :root {
+      --color-primario: #3D0C4B;
+      --color-secundario: #F58220;
+      --color-texto: #2D3748;
+      --color-texto-sec: #718096;
+      --color-borde: #E2E8F0;
+      --color-exito: #27AE60;
+      --color-error: #E74C3C;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', Arial, sans-serif; color: var(--color-texto); }
+    .hidden { display: none !important; }
+    .auth-container {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #3D0C4B 0%, #6B1D7B 50%, #F58220 100%); padding: 20px;
+    }
+    .auth-card {
+      background: white; border-radius: 12px; padding: 40px; width: 100%; max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .auth-logo { text-align: center; margin-bottom: 24px; }
+    .auth-logo p { color: var(--color-texto-sec); font-size: 13px; margin-top: 4px; }
+    h2 { color: var(--color-primario); font-size: 20px; font-weight: 600; margin-bottom: 8px; text-align: center; }
+    .subtitulo { color: var(--color-texto-sec); font-size: 13px; text-align: center; margin-bottom: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .form-control {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--color-borde);
+      border-radius: 8px; font-size: 14px; font-family: 'Inter', Arial, sans-serif;
+      background: white; color: var(--color-texto);
+    }
+    .form-control:focus { outline: none; border-color: var(--color-secundario); box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.15); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; border: none; gap: 8px;
+    }
+    .btn-primary { background: var(--color-secundario); color: white; }
+    .btn-primary:hover { background: #E0741A; }
+    .btn-block { width: 100%; }
+    .btn-lg { padding: 14px 20px; font-size: 15px; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+    .alert-success { background: #D1FAE5; color: #065F46; border-left: 4px solid #059669; }
+    .alert-error { background: #FEE2E2; color: #991B1B; border-left: 4px solid #DC2626; }
+    .text-link { color: var(--color-secundario); text-decoration: none; font-size: 13px; }
+    .text-link:hover { text-decoration: underline; }
+    .text-center { text-align: center; }
+    .mt-3 { margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <img src="https://lh3.googleusercontent.com/d/1F6ndRSX6rNraFsdVHUV6IfDw0o8uK7mf" alt="MSO Chile" style="max-width:180px;margin:0 auto 12px;display:block;">
+        <p>Transferencia al Puesto de Trabajo</p>
+      </div>
+
+      <h2>&iquest;Olvidaste tu contrase&ntilde;a?</h2>
+      <p class="subtitulo">Escribe tu email y te enviaremos un link para restablecerla.</p>
+
+      <div id="alert-container"></div>
+
+      <form id="forgot-form" onsubmit="handleForgot(event)">
+        <div class="form-group">
+          <label for="email">Correo electr&oacute;nico</label>
+          <input type="email" id="email" class="form-control" placeholder="tu@correo.cl" required autofocus>
+        </div>
+
+        <button type="submit" id="btn-forgot" class="btn btn-primary btn-block btn-lg">
+          Enviar link de recuperaci&oacute;n
+        </button>
+      </form>
+
+      <div class="text-center mt-3">
+        <a href="index.html" class="text-link">&larr; Volver al inicio de sesi&oacute;n</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+  <script>
+    function showAlert(msg, type) {
+      var c = document.getElementById('alert-container');
+      c.innerHTML = '<div class="alert alert-' + type + '">' + msg + '</div>';
+    }
+    function clearAlert() { document.getElementById('alert-container').innerHTML = ''; }
+
+    var MSG_GENERICO = 'Si el email esta registrado, recibiras un link en tu bandeja. Revisa tambien tu carpeta de spam.';
+
+    function handleForgot(e) {
+      e.preventDefault();
+      var email = document.getElementById('email').value.trim();
+      if (!email) { showAlert('Escribe tu correo electronico.', 'error'); return; }
+
+      var btn = document.getElementById('btn-forgot');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+      clearAlert();
+
+      google.script.run
+        .withSuccessHandler(function(r) {
+          btn.disabled = false;
+          btn.textContent = 'Enviar link de recuperacion';
+          showAlert((r && r.message) || MSG_GENERICO, 'success');
+          document.getElementById('forgot-form').reset();
+        })
+        .withFailureHandler(function() {
+          btn.disabled = false;
+          btn.textContent = 'Enviar link de recuperacion';
+          showAlert(MSG_GENERICO, 'success');
+        })
+        .solicitarResetPassword(email);
+    }
+  </script>
+</body>
+</html>

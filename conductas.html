@@ -1,0 +1,192 @@
+<!-- Vista: Conductas Críticas (Solo Admin) -->
+<div>
+  <div class="flex-between mb-4">
+    <div class="form-group" style="margin-bottom:0;min-width:250px;">
+      <select class="form-control" id="sel-programa-cond" onchange="cargarConductas()">
+        <option value="">Selecciona un programa...</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="btn-nueva-conducta" onclick="abrirModalConducta()" disabled>
+      + Nueva Conducta
+    </button>
+  </div>
+
+  <div id="lista-conductas">
+    <div class="empty-state">
+      <p>Selecciona un programa para ver sus conductas cr&iacute;ticas.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Crear/Editar Conducta -->
+<div class="modal-overlay" id="modal-conducta">
+  <div class="modal" style="max-width:650px;">
+    <div class="modal-header">
+      <h3 id="modal-conducta-titulo">Nueva Conducta Cr&iacute;tica</h3>
+      <button class="modal-close" onclick="closeModal('modal-conducta')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-conducta">
+        <input type="hidden" id="conducta-edit-id">
+        <div class="form-group">
+          <label>Nombre *</label>
+          <input type="text" name="nombre" class="form-control" required placeholder="Ej: Escucha activa">
+        </div>
+        <div class="form-group">
+          <label>Descripci&oacute;n *</label>
+          <textarea name="descripcion" class="form-control" required placeholder="Qu&eacute; significa esta conducta..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Definici&oacute;n observable *</label>
+          <textarea name="definicion_observable" class="form-control" required placeholder="C&oacute;mo se manifiesta en el trabajo..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Objetivo de negocio</label>
+          <input type="text" name="objetivo_negocio" class="form-control" placeholder="Impacto esperado">
+        </div>
+        <div class="form-group">
+          <label>Indicador observable</label>
+          <input type="text" name="indicador_observable" class="form-control" placeholder="Se&ntilde;al para verificar">
+        </div>
+        <div class="form-group">
+          <label>Conducta no deseada</label>
+          <input type="text" name="conducta_no_deseada" class="form-control" placeholder="Patr&oacute;n antiguo a reemplazar">
+        </div>
+        <div class="form-group">
+          <label>Prioridad *</label>
+          <select name="prioridad" class="form-control" required>
+            <option value="1">1 - Alta</option>
+            <option value="2" selected>2 - Media</option>
+            <option value="3">3 - Baja</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-conducta')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-conducta" onclick="guardarConducta()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  var conductasData = [];
+
+  (function() {
+    // Cargar programas
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          var sel = document.getElementById('sel-programa-cond');
+          r.data.forEach(function(p) {
+            var opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.nombre + ' (' + p.cliente_nombre + ')';
+            sel.appendChild(opt);
+          });
+        }
+      })
+      .listarProgramas(App.token, null);
+  })();
+
+  function cargarConductas() {
+    var programaId = document.getElementById('sel-programa-cond').value;
+    if (!programaId) {
+      document.getElementById('lista-conductas').innerHTML = '<div class="empty-state"><p>Selecciona un programa.</p></div>';
+      document.getElementById('btn-nueva-conducta').disabled = true;
+      return;
+    }
+
+    document.getElementById('btn-nueva-conducta').disabled = false;
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          conductasData = r.data;
+          renderConductas(r.data);
+        }
+      })
+      .listarConductas(App.token, programaId);
+  }
+
+  function renderConductas(conductas) {
+    var container = document.getElementById('lista-conductas');
+
+    if (!conductas.length) {
+      container.innerHTML = '<div class="empty-state"><p>No hay conductas configuradas. Crea la primera.</p></div>';
+      return;
+    }
+
+    container.innerHTML = conductas.map(function(c) {
+      var prioLabel = c.prioridad == 1 ? 'Alta' : (c.prioridad == 2 ? 'Media' : 'Baja');
+      var prioClass = c.prioridad == 1 ? 'badge-danger' : (c.prioridad == 2 ? 'badge-warning' : 'badge-info');
+
+      var criteriosHtml = '<div style="margin-top:12px;"><span class="text-sm text-muted">Los criterios de observaci&oacute;n se configuran desde los checklists asociados.</span></div>';
+
+      return '<div class="card mb-3">' +
+        '<div class="card-header">' +
+          '<div><h2 style="margin:0;">' + escapeHtml(c.nombre) + '</h2>' +
+            '<span class="text-sm text-muted">' + escapeHtml(c.descripcion) + '</span></div>' +
+          '<div style="display:flex;gap:8px;align-items:center;">' +
+            '<span class="badge ' + prioClass + '">P' + c.prioridad + ' ' + prioLabel + '</span>' +
+            '<button class="btn btn-sm btn-outline" onclick="editarConductaModal(\'' + c.id + '\')">Editar</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="eliminarConducta(\'' + c.id + '\')">Eliminar</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card-body">' +
+          '<p class="text-sm mb-2"><strong>Descripci&oacute;n:</strong> ' + escapeHtml(c.descripcion) + '</p>' +
+          (c.conducta_no_deseada ? '<p class="text-sm mb-2"><strong>Conducta no deseada:</strong> ' + escapeHtml(c.conducta_no_deseada) + '</p>' : '') +
+          criteriosHtml +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function abrirModalConducta() {
+    document.getElementById('modal-conducta-titulo').textContent = 'Nueva Conducta Cr\u00edtica';
+    resetForm('form-conducta');
+    document.getElementById('conducta-edit-id').value = '';
+    openModal('modal-conducta');
+  }
+
+  function editarConductaModal(id) {
+    var c = conductasData.find(function(x) { return x.id === id; });
+    if (!c) return;
+    document.getElementById('modal-conducta-titulo').textContent = 'Editar Conducta';
+    document.getElementById('conducta-edit-id').value = id;
+    fillForm('form-conducta', c);
+    openModal('modal-conducta');
+  }
+
+  function guardarConducta() {
+    var datos = getFormData('form-conducta');
+    var id = document.getElementById('conducta-edit-id').value;
+    var btn = document.getElementById('btn-guardar-conducta');
+    var programaId = document.getElementById('sel-programa-cond').value;
+
+    datos.programa_id = programaId;
+    datos.prioridad = parseInt(datos.prioridad) || 2;
+    btnLoading(btn, true);
+
+    if (id) {
+      google.script.run
+        .withSuccessHandler(function(r) { btnLoading(btn, false); if (r.success) { closeModal('modal-conducta'); showToast('Conducta actualizada.', 'success'); cargarConductas(); } else showToast(r.error, 'error'); })
+        .withFailureHandler(function() { btnLoading(btn, false); })
+        .actualizarConducta(App.token, id, datos);
+    } else {
+      google.script.run
+        .withSuccessHandler(function(r) { btnLoading(btn, false); if (r.success) { closeModal('modal-conducta'); showToast('Conducta creada.', 'success'); cargarConductas(); } else showToast(r.error, 'error'); })
+        .withFailureHandler(function() { btnLoading(btn, false); })
+        .crearConducta(App.token, datos);
+    }
+  }
+
+  function eliminarConducta(id) {
+    if (!confirmar('¿Eliminar esta conducta y sus criterios?')) return;
+    google.script.run
+      .withSuccessHandler(function(r) { if (r.success) { showToast('Conducta eliminada.', 'success'); cargarConductas(); } else showToast(r.error, 'error'); })
+      .desactivarConducta(App.token, id);
+  }
+
+</script>

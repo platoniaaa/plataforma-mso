@@ -1,0 +1,61 @@
+# Plataforma TPT - Configuración para Planeta Hosting (LiteSpeed / Apache)
+
+# -------------------------------------------------
+# 1. Forzar HTTPS (si el hosting no lo hace ya)
+# -------------------------------------------------
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# -------------------------------------------------
+# 2. Redirect de raiz a index.html (aunque ya esta por default)
+# -------------------------------------------------
+DirectoryIndex index.html
+
+# -------------------------------------------------
+# 3. Cache-Control para assets estaticos
+#    HTML siempre fresco, JS/CSS cache corto para poder invalidar rapido
+# -------------------------------------------------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 hour"
+  ExpiresByType application/javascript "access plus 1 hour"
+  ExpiresByType image/png "access plus 7 days"
+  ExpiresByType image/jpeg "access plus 7 days"
+  ExpiresByType image/svg+xml "access plus 7 days"
+  ExpiresByType image/webp "access plus 7 days"
+  ExpiresByType font/woff2 "access plus 30 days"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+</IfModule>
+
+# -------------------------------------------------
+# 4. Compresion gzip (mejora tiempos de carga)
+# -------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+# -------------------------------------------------
+# 5. Seguridad basica
+# -------------------------------------------------
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Bloquear acceso a archivos ocultos y de configuracion
+<FilesMatch "^\.|\.bak$|\.log$|\.sql$">
+  Require all denied
+</FilesMatch>

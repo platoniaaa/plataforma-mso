@@ -1,0 +1,693 @@
+<!-- Vista: Distribución de Actividades (Solo Admin) -->
+<div>
+  <div class="flex-between mb-4">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <select class="form-control" id="filtro-prog-act" onchange="filtrarActividades()" style="max-width:220px;">
+        <option value="">Todos los programas</option>
+      </select>
+      <select class="form-control" id="filtro-tipo-act" onchange="filtrarActividades()" style="max-width:180px;">
+        <option value="">Todos los tipos</option>
+        <option value="ms_forms">MS Forms</option>
+        <option value="enlace_externo">Enlace Externo</option>
+        <option value="contenido">Contenido/Material</option>
+        <option value="tarea">Tarea/Entregable</option>
+        <option value="encuesta_interna">Encuesta Interna</option>
+      </select>
+      <select class="form-control" id="filtro-estado-act" onchange="filtrarActividades()" style="max-width:160px;">
+        <option value="">Todos</option>
+        <option value="activa">Activas</option>
+        <option value="borrador">Borradores</option>
+        <option value="cerrada">Cerradas</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalNuevaActividad()">+ Nueva Actividad</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid mb-4">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Actividades</div>
+      <div class="kpi-value" id="act-kpi-total">--</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Activas</div>
+      <div class="kpi-value" id="act-kpi-activas" style="color:var(--color-exito);">--</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Completitud Promedio</div>
+      <div class="kpi-value" id="act-kpi-completitud" style="color:var(--color-secundario);">--</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Participantes Asignados</div>
+      <div class="kpi-value" id="act-kpi-participantes" style="color:var(--color-primario);">--</div>
+    </div>
+  </div>
+
+  <!-- Tabla de actividades -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Actividades</h2>
+      <span class="text-sm text-muted" id="act-count-label"></span>
+    </div>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Actividad</th>
+            <th>Tipo</th>
+            <th>Programa</th>
+            <th>Asignados</th>
+            <th>Completados</th>
+            <th>Estado</th>
+            <th>Fecha L&iacute;mite</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-actividades">
+          <tr><td colspan="8" class="text-center p-4"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Crear/Editar Actividad -->
+<div class="modal-overlay" id="modal-actividad">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <h3 id="modal-act-titulo">Nueva Actividad</h3>
+      <button class="modal-close" onclick="closeModal('modal-actividad')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-actividad">
+        <input type="hidden" id="act-edit-id">
+
+        <div class="form-group">
+          <label>Nombre de la actividad *</label>
+          <input type="text" name="nombre" class="form-control" required placeholder="Ej: Encuesta de clima laboral Q1 2026">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label>Tipo de actividad *</label>
+            <select name="tipo" class="form-control" id="act-tipo-select" required onchange="onTipoActividadChange()">
+              <option value="">Selecciona...</option>
+              <option value="ms_forms">Encuesta Microsoft Forms</option>
+              <option value="enlace_externo">Enlace Externo (otro formulario)</option>
+              <option value="contenido">Contenido / Material</option>
+              <option value="tarea">Tarea / Entregable</option>
+              <option value="encuesta_interna">Encuesta Interna (plataforma)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Programa asociado *</label>
+            <select name="programa_id" class="form-control" id="act-programa-select" required onchange="onProgramaActividadChange()">
+              <option value="">Selecciona...</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Campo de enlace (visible para ms_forms, enlace_externo, contenido) -->
+        <div class="form-group" id="act-enlace-group">
+          <label id="act-enlace-label">Enlace / URL *</label>
+          <input type="url" name="enlace" class="form-control" id="act-enlace-input" placeholder="https://forms.office.com/...">
+          <small class="text-muted" id="act-enlace-hint">Pega el enlace de tu formulario de Microsoft Forms</small>
+        </div>
+
+        <!-- Descripción / Instrucciones -->
+        <div class="form-group">
+          <label>Descripci&oacute;n / Instrucciones</label>
+          <textarea name="descripcion" class="form-control" rows="3" placeholder="Instrucciones para los participantes..."></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label>Fecha l&iacute;mite</label>
+            <input type="date" name="fecha_limite" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Estado *</label>
+            <select name="estado" class="form-control" required>
+              <option value="borrador">Borrador</option>
+              <option value="activa">Activa (visible para participantes)</option>
+              <option value="cerrada">Cerrada</option>
+            </select>
+          </div>
+        </div>
+
+        <hr style="margin:16px 0;border-color:var(--color-borde);">
+
+        <!-- Asignación de destinatarios -->
+        <div>
+          <label style="font-weight:600;color:var(--color-primario);margin-bottom:10px;display:block;">Asignar a:</label>
+
+          <div style="display:flex;gap:12px;margin-bottom:12px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="asignacion_tipo" value="programa_completo" checked onchange="onAsignacionChange()">
+              <span>Programa completo</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="asignacion_tipo" value="seleccion" onchange="onAsignacionChange()">
+              <span>Participantes espec&iacute;ficos</span>
+            </label>
+          </div>
+
+          <!-- Lista de participantes (visible solo en modo selección) -->
+          <div id="act-participantes-container" class="hidden">
+            <div class="alert alert-info text-sm mb-2">Selecciona los participantes que recibir&aacute;n esta actividad:</div>
+            <div id="act-participantes-lista" style="max-height:200px;overflow-y:auto;border:1px solid var(--color-borde);border-radius:8px;padding:8px;">
+              <p class="text-sm text-muted">Selecciona un programa primero.</p>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-actividad')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-act" onclick="guardarActividad()">Crear Actividad</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalle de Actividad (seguimiento) -->
+<div class="modal-overlay" id="modal-detalle-act">
+  <div class="modal" style="max-width:750px;">
+    <div class="modal-header">
+      <h3 id="detalle-act-titulo">Detalle de Actividad</h3>
+      <button class="modal-close" onclick="closeModal('modal-detalle-act')">&times;</button>
+    </div>
+    <div class="modal-body" id="detalle-act-body">
+      Cargando...
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-detalle-act')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tipo-act-badge-ms_forms { background: #E8DAEF; color: #7D3C98; }
+  .tipo-act-badge-enlace_externo { background: #D4E6F1; color: #2471A3; }
+  .tipo-act-badge-contenido { background: #FDEBD0; color: #D68910; }
+  .tipo-act-badge-tarea { background: #D4EFDF; color: #1E8449; }
+  .tipo-act-badge-encuesta_interna { background: #FADBD8; color: #C0392B; }
+
+  .estado-act-activa { background: #D4EFDF; color: #1E8449; }
+  .estado-act-borrador { background: #EAECEE; color: #5D6D7E; }
+  .estado-act-cerrada { background: #FADBD8; color: #C0392B; }
+
+  .participante-check-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--color-borde);
+    cursor: pointer;
+  }
+
+  .participante-check-item:last-child {
+    border-bottom: none;
+  }
+
+  .participante-check-item:hover {
+    background: var(--color-fondo-alt);
+  }
+
+  .completitud-bar {
+    height: 8px;
+    background: var(--color-fondo-alt);
+    border-radius: 4px;
+    overflow: hidden;
+    width: 80px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .completitud-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  .seguimiento-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-borde);
+  }
+
+  .seguimiento-row:last-child {
+    border-bottom: none;
+  }
+</style>
+
+<script>
+  var actividadesData = [];
+  var actividadesFiltradas = [];
+  var participantesPrograma = [];
+
+  (function() {
+    cargarProgramasFiltroAct();
+    cargarActividades();
+  })();
+
+  function cargarProgramasFiltroAct() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success && r.data) {
+          var selFiltro = document.getElementById('filtro-prog-act');
+          var selForm = document.getElementById('act-programa-select');
+          r.data.forEach(function(p) {
+            var opt1 = document.createElement('option');
+            opt1.value = p.id;
+            opt1.textContent = p.nombre;
+            selFiltro.appendChild(opt1);
+
+            var opt2 = document.createElement('option');
+            opt2.value = p.id;
+            opt2.textContent = p.nombre;
+            selForm.appendChild(opt2);
+          });
+        }
+      })
+      .listarProgramas(App.token, null);
+  }
+
+  function cargarActividades() {
+    document.getElementById('tbody-actividades').innerHTML =
+      '<tr><td colspan="8" class="text-center p-4"><div class="spinner"></div></td></tr>';
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          actividadesData = r.data || [];
+          filtrarActividades();
+          actualizarKPIsAct();
+        } else {
+          document.getElementById('tbody-actividades').innerHTML =
+            '<tr><td colspan="8" class="text-center text-danger p-4">Error al cargar.</td></tr>';
+        }
+      })
+      .withFailureHandler(function() {
+        document.getElementById('tbody-actividades').innerHTML =
+          '<tr><td colspan="8" class="text-center text-danger p-4">Error de conexi&oacute;n.</td></tr>';
+      })
+      .listarActividades(App.token);
+  }
+
+  function actualizarKPIsAct() {
+    var total = actividadesData.length;
+    var activas = actividadesData.filter(function(a) { return a.estado === 'activa'; }).length;
+
+    var totalAsignados = 0;
+    var totalCompletados = 0;
+    actividadesData.forEach(function(a) {
+      var asig = (a.asignaciones || []).length;
+      var comp = (a.asignaciones || []).filter(function(x) { return x.completada; }).length;
+      totalAsignados += asig;
+      totalCompletados += comp;
+    });
+
+    var pctCompletitud = totalAsignados > 0 ? Math.round(totalCompletados / totalAsignados * 100) : 0;
+
+    document.getElementById('act-kpi-total').textContent = total;
+    document.getElementById('act-kpi-activas').textContent = activas;
+    document.getElementById('act-kpi-completitud').textContent = pctCompletitud + '%';
+    document.getElementById('act-kpi-participantes').textContent = totalAsignados;
+  }
+
+  function filtrarActividades() {
+    var progId = document.getElementById('filtro-prog-act').value;
+    var tipo = document.getElementById('filtro-tipo-act').value;
+    var estado = document.getElementById('filtro-estado-act').value;
+
+    actividadesFiltradas = actividadesData.filter(function(a) {
+      var matchProg = !progId || a.programa_id === progId;
+      var matchTipo = !tipo || a.tipo === tipo;
+      var matchEstado = !estado || a.estado === estado;
+      return matchProg && matchTipo && matchEstado;
+    });
+
+    document.getElementById('act-count-label').textContent =
+      actividadesFiltradas.length + ' de ' + actividadesData.length + ' actividades';
+
+    renderTablaActividades(actividadesFiltradas);
+  }
+
+  function getTipoActLabel(tipo) {
+    var labels = {
+      'ms_forms': 'MS Forms',
+      'enlace_externo': 'Enlace Externo',
+      'contenido': 'Contenido',
+      'tarea': 'Tarea',
+      'encuesta_interna': 'Enc. Interna'
+    };
+    return labels[tipo] || tipo;
+  }
+
+  function getEstadoActLabel(estado) {
+    var labels = { 'activa': 'Activa', 'borrador': 'Borrador', 'cerrada': 'Cerrada' };
+    return labels[estado] || estado;
+  }
+
+  function renderTablaActividades(actividades) {
+    var tbody = document.getElementById('tbody-actividades');
+
+    if (!actividades || actividades.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted p-4">No hay actividades que mostrar.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = actividades.map(function(a) {
+      var asig = (a.asignaciones || []).length;
+      var comp = (a.asignaciones || []).filter(function(x) { return x.completada; }).length;
+      var pct = asig > 0 ? Math.round(comp / asig * 100) : 0;
+      var barColor = pct === 100 ? '#1E8449' : pct >= 50 ? '#D68910' : '#C0392B';
+
+      return '<tr>' +
+        '<td><strong>' + escapeHtml(a.nombre.length > 35 ? a.nombre.substring(0, 35) + '...' : a.nombre) + '</strong></td>' +
+        '<td><span class="badge tipo-act-badge-' + a.tipo + '">' + getTipoActLabel(a.tipo) + '</span></td>' +
+        '<td class="text-sm">' + escapeHtml(a.programa_nombre) + '</td>' +
+        '<td class="text-center">' + asig + '</td>' +
+        '<td>' +
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<div class="completitud-bar"><div class="completitud-bar-fill" style="width:' + pct + '%;background:' + barColor + ';"></div></div>' +
+            '<span class="text-xs">' + comp + '/' + asig + '</span>' +
+          '</div>' +
+        '</td>' +
+        '<td><span class="badge estado-act-' + a.estado + '">' + getEstadoActLabel(a.estado) + '</span></td>' +
+        '<td class="text-sm">' + (a.fecha_limite ? formatDate(a.fecha_limite) : '-') + '</td>' +
+        '<td>' +
+          '<button class="btn btn-sm btn-outline" onclick="verDetalleActividad(\'' + a.id + '\')" title="Ver seguimiento">Ver</button> ' +
+          '<button class="btn btn-sm btn-outline" onclick="editarActividad(\'' + a.id + '\')" title="Editar">Editar</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // ============================================
+  // MODAL: CREAR / EDITAR ACTIVIDAD
+  // ============================================
+
+  function abrirModalNuevaActividad() {
+    document.getElementById('modal-act-titulo').textContent = 'Nueva Actividad';
+    document.getElementById('btn-guardar-act').textContent = 'Crear Actividad';
+    document.getElementById('act-edit-id').value = '';
+    resetForm('form-actividad');
+    document.getElementById('act-enlace-group').classList.remove('hidden');
+    document.getElementById('act-participantes-container').classList.add('hidden');
+    document.querySelector('input[name="asignacion_tipo"][value="programa_completo"]').checked = true;
+    participantesPrograma = [];
+    openModal('modal-actividad');
+  }
+
+  function editarActividad(id) {
+    var a = actividadesData.find(function(x) { return x.id === id; });
+    if (!a) return;
+
+    document.getElementById('modal-act-titulo').textContent = 'Editar Actividad';
+    document.getElementById('btn-guardar-act').textContent = 'Guardar Cambios';
+    document.getElementById('act-edit-id').value = id;
+
+    fillForm('form-actividad', a);
+    onTipoActividadChange();
+
+    if (a.asignacion_tipo === 'seleccion') {
+      document.querySelector('input[name="asignacion_tipo"][value="seleccion"]').checked = true;
+      onAsignacionChange();
+      // Cargar participantes y preseleccionar
+      setTimeout(function() {
+        onProgramaActividadChange(function() {
+          (a.asignaciones || []).forEach(function(asig) {
+            var cb = document.getElementById('check-part-' + asig.participante_id);
+            if (cb) cb.checked = true;
+          });
+        });
+      }, 100);
+    }
+
+    openModal('modal-actividad');
+  }
+
+  function onTipoActividadChange() {
+    var tipo = document.getElementById('act-tipo-select').value;
+    var enlaceGroup = document.getElementById('act-enlace-group');
+    var enlaceLabel = document.getElementById('act-enlace-label');
+    var enlaceInput = document.getElementById('act-enlace-input');
+    var enlaceHint = document.getElementById('act-enlace-hint');
+
+    switch (tipo) {
+      case 'ms_forms':
+        enlaceGroup.classList.remove('hidden');
+        enlaceLabel.textContent = 'Enlace de Microsoft Forms *';
+        enlaceInput.placeholder = 'https://forms.office.com/...';
+        enlaceHint.textContent = 'Pega el enlace de tu formulario de Microsoft Forms';
+        enlaceInput.required = true;
+        break;
+      case 'enlace_externo':
+        enlaceGroup.classList.remove('hidden');
+        enlaceLabel.textContent = 'Enlace del formulario *';
+        enlaceInput.placeholder = 'https://docs.google.com/forms/... o similar';
+        enlaceHint.textContent = 'Pega el enlace del formulario externo (Google Forms, Typeform, etc.)';
+        enlaceInput.required = true;
+        break;
+      case 'contenido':
+        enlaceGroup.classList.remove('hidden');
+        enlaceLabel.textContent = 'Enlace al contenido / material *';
+        enlaceInput.placeholder = 'https://drive.google.com/... o URL del recurso';
+        enlaceHint.textContent = 'Enlace al documento, video, presentaci\u00f3n o material de apoyo';
+        enlaceInput.required = true;
+        break;
+      case 'tarea':
+        enlaceGroup.classList.remove('hidden');
+        enlaceLabel.textContent = 'Enlace de referencia (opcional)';
+        enlaceInput.placeholder = 'https://...';
+        enlaceHint.textContent = 'Puedes agregar un enlace de referencia para la tarea';
+        enlaceInput.required = false;
+        break;
+      case 'encuesta_interna':
+        enlaceGroup.classList.add('hidden');
+        enlaceInput.required = false;
+        break;
+      default:
+        enlaceGroup.classList.remove('hidden');
+        enlaceInput.required = false;
+        break;
+    }
+  }
+
+  function onAsignacionChange() {
+    var tipo = document.querySelector('input[name="asignacion_tipo"]:checked').value;
+    var container = document.getElementById('act-participantes-container');
+
+    if (tipo === 'seleccion') {
+      container.classList.remove('hidden');
+      onProgramaActividadChange();
+    } else {
+      container.classList.add('hidden');
+    }
+  }
+
+  function onProgramaActividadChange(callback) {
+    var progId = document.getElementById('act-programa-select').value;
+    var lista = document.getElementById('act-participantes-lista');
+
+    if (!progId) {
+      lista.innerHTML = '<p class="text-sm text-muted">Selecciona un programa primero.</p>';
+      participantesPrograma = [];
+      return;
+    }
+
+    lista.innerHTML = '<div class="text-center p-2"><div class="spinner"></div></div>';
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          participantesPrograma = (r.data || []).filter(function(p) {
+            return p.rol_programa === 'participante';
+          });
+          renderListaParticipantes();
+          if (callback) callback();
+        }
+      })
+      .withFailureHandler(function() {
+        lista.innerHTML = '<p class="text-sm text-danger">Error al cargar participantes.</p>';
+      })
+      .listarParticipantesPrograma(App.token, progId);
+  }
+
+  function renderListaParticipantes() {
+    var lista = document.getElementById('act-participantes-lista');
+
+    if (participantesPrograma.length === 0) {
+      lista.innerHTML = '<p class="text-sm text-muted">No hay participantes en este programa.</p>';
+      return;
+    }
+
+    // Select all / deselect
+    var html = '<div class="participante-check-item" style="border-bottom:2px solid var(--color-borde);">' +
+      '<input type="checkbox" id="check-part-todos" onchange="toggleTodosParticipantes(this)">' +
+      '<label for="check-part-todos" style="cursor:pointer;font-weight:600;">Seleccionar todos</label>' +
+    '</div>';
+
+    html += participantesPrograma.map(function(p) {
+      return '<div class="participante-check-item">' +
+        '<input type="checkbox" id="check-part-' + p.id + '" value="' + p.id + '" class="check-participante">' +
+        '<label for="check-part-' + p.id + '" style="cursor:pointer;">' +
+          escapeHtml(p.nombre) + '<span class="text-xs text-muted"> - ' + escapeHtml(p.cargo || 'Sin cargo') + '</span>' +
+        '</label>' +
+      '</div>';
+    }).join('');
+
+    lista.innerHTML = html;
+  }
+
+  function toggleTodosParticipantes(cb) {
+    var checks = document.querySelectorAll('.check-participante');
+    checks.forEach(function(c) { c.checked = cb.checked; });
+  }
+
+  function guardarActividad() {
+    var datos = getFormData('form-actividad');
+    var id = document.getElementById('act-edit-id').value;
+    var asignacionTipo = document.querySelector('input[name="asignacion_tipo"]:checked').value;
+
+    if (!datos.nombre || !datos.tipo || !datos.programa_id) {
+      showToast('Completa los campos obligatorios.', 'error');
+      return;
+    }
+
+    // Validar enlace según tipo
+    var tiposConEnlace = ['ms_forms', 'enlace_externo', 'contenido'];
+    if (tiposConEnlace.indexOf(datos.tipo) !== -1 && !datos.enlace) {
+      showToast('El enlace es obligatorio para este tipo de actividad.', 'error');
+      return;
+    }
+
+    // Recopilar participantes seleccionados
+    var participantesIds = [];
+    if (asignacionTipo === 'seleccion') {
+      var checks = document.querySelectorAll('.check-participante:checked');
+      checks.forEach(function(c) { participantesIds.push(c.value); });
+      if (participantesIds.length === 0) {
+        showToast('Selecciona al menos un participante.', 'error');
+        return;
+      }
+    }
+
+    datos.asignacion_tipo = asignacionTipo;
+    datos.participantes_ids = participantesIds;
+
+    var btn = document.getElementById('btn-guardar-act');
+    btnLoading(btn, true);
+
+    var fnName = id ? 'actualizarActividad' : 'crearActividad';
+    var args = id ? [App.token, id, datos] : [App.token, datos];
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btnLoading(btn, false);
+        if (r.success) {
+          closeModal('modal-actividad');
+          showToast(id ? 'Actividad actualizada.' : 'Actividad creada exitosamente.', 'success');
+          cargarActividades();
+        } else {
+          showToast(r.error || 'Error al guardar.', 'error');
+        }
+      })
+      .withFailureHandler(function() {
+        btnLoading(btn, false);
+        showToast('Error de conexi&oacute;n.', 'error');
+      })[fnName].apply(null, args);
+  }
+
+  // ============================================
+  // MODAL: DETALLE Y SEGUIMIENTO
+  // ============================================
+
+  function verDetalleActividad(id) {
+    var a = actividadesData.find(function(x) { return x.id === id; });
+    if (!a) return;
+
+    document.getElementById('detalle-act-titulo').textContent = a.nombre;
+
+    var html = '';
+
+    // Info general
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Tipo</span><br>' +
+      '<span class="badge tipo-act-badge-' + a.tipo + '">' + getTipoActLabel(a.tipo) + '</span></div>';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Estado</span><br>' +
+      '<span class="badge estado-act-' + a.estado + '">' + getEstadoActLabel(a.estado) + '</span></div>';
+    html += '<div><span class="text-muted text-xs" style="text-transform:uppercase;">Fecha l&iacute;mite</span><br>' +
+      '<span class="text-sm">' + (a.fecha_limite ? formatDate(a.fecha_limite) : 'Sin fecha') + '</span></div>';
+    html += '</div>';
+
+    // Enlace
+    if (a.enlace) {
+      html += '<div class="mb-3">';
+      html += '<span class="text-muted text-xs" style="text-transform:uppercase;">Enlace</span>';
+      html += '<div style="background:var(--color-fondo-alt);padding:10px 14px;border-radius:8px;margin-top:4px;">';
+      html += '<a href="' + escapeHtml(a.enlace) + '" target="_blank" rel="noopener" style="color:var(--color-secundario);word-break:break-all;">' +
+        escapeHtml(a.enlace) + '</a>';
+      html += '</div></div>';
+    }
+
+    // Descripción
+    if (a.descripcion) {
+      html += '<div class="mb-3">';
+      html += '<span class="text-muted text-xs" style="text-transform:uppercase;">Descripci&oacute;n</span>';
+      html += '<div style="background:var(--color-fondo-alt);padding:10px 14px;border-radius:8px;margin-top:4px;">';
+      html += '<p class="text-sm" style="white-space:pre-wrap;">' + escapeHtml(a.descripcion) + '</p>';
+      html += '</div></div>';
+    }
+
+    html += '<hr style="margin:16px 0;border-color:var(--color-borde);">';
+
+    // Seguimiento de participantes
+    var asig = a.asignaciones || [];
+    var comp = asig.filter(function(x) { return x.completada; }).length;
+    var pct = asig.length > 0 ? Math.round(comp / asig.length * 100) : 0;
+
+    html += '<div class="flex-between mb-3">';
+    html += '<h4 style="color:var(--color-primario);">Seguimiento de Participantes</h4>';
+    html += '<span class="text-sm text-muted">' + comp + '/' + asig.length + ' completados (' + pct + '%)</span>';
+    html += '</div>';
+
+    // Barra de progreso
+    var barColor = pct === 100 ? '#1E8449' : pct >= 50 ? '#D68910' : '#C0392B';
+    html += '<div style="height:10px;background:var(--color-fondo-alt);border-radius:5px;overflow:hidden;margin-bottom:16px;">';
+    html += '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:5px;transition:width 0.3s;"></div>';
+    html += '</div>';
+
+    if (asig.length === 0) {
+      html += '<p class="text-sm text-muted">No hay participantes asignados.</p>';
+    } else {
+      html += '<div style="border:1px solid var(--color-borde);border-radius:8px;overflow:hidden;">';
+      html += asig.map(function(p) {
+        var icon = p.completada
+          ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E8449" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>'
+          : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#AEB6BF" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
+        var estadoTexto = p.completada
+          ? '<span class="text-xs" style="color:#1E8449;font-weight:500;">Completada ' + (p.fecha_completada ? formatDate(p.fecha_completada) : '') + '</span>'
+          : '<span class="text-xs text-muted">Pendiente</span>';
+
+        return '<div class="seguimiento-row">' +
+          '<div style="display:flex;align-items:center;gap:10px;">' +
+            icon +
+            '<div>' +
+              '<strong class="text-sm">' + escapeHtml(p.participante_nombre) + '</strong><br>' +
+              '<span class="text-xs text-muted">' + escapeHtml(p.cargo || '') + '</span>' +
+            '</div>' +
+          '</div>' +
+          estadoTexto +
+        '</div>';
+      }).join('');
+      html += '</div>';
+    }
+
+    document.getElementById('detalle-act-body').innerHTML = html;
+    openModal('modal-detalle-act');
+  }
+</script>

@@ -1,0 +1,140 @@
+<!-- Vista: Notificaciones (Todos los roles) -->
+<div>
+  <div class="card">
+    <div class="card-header">
+      <h2>Mis Notificaciones</h2>
+      <button class="btn btn-sm btn-outline" onclick="marcarTodasLeidas()">Marcar todas como leidas</button>
+    </div>
+    <div class="card-body">
+      <div id="lista-notificaciones">
+        <div class="text-center p-4"><div class="spinner spinner-lg"></div><p class="text-muted mt-2">Cargando...</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var notificacionesData = [];
+
+  (function() {
+    cargarNotificaciones();
+  })();
+
+  function cargarNotificaciones() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          notificacionesData = r.data || [];
+          renderNotificaciones(notificacionesData);
+        } else {
+          document.getElementById('lista-notificaciones').innerHTML =
+            '<div class="empty-state"><p>' + escapeHtml(r.error) + '</p></div>';
+        }
+      })
+      .withFailureHandler(function() {
+        document.getElementById('lista-notificaciones').innerHTML =
+          '<div class="empty-state"><p>Error al cargar notificaciones.</p></div>';
+      })
+      .obtenerNotificaciones(App.token);
+  }
+
+  function renderNotificaciones(notificaciones) {
+    var div = document.getElementById('lista-notificaciones');
+
+    if (!notificaciones || notificaciones.length === 0) {
+      div.innerHTML = '<div class="empty-state">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;margin-bottom:16px;opacity:0.4;">' +
+          '<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>' +
+        '</svg>' +
+        '<p>No tienes notificaciones.</p>' +
+      '</div>';
+      return;
+    }
+
+    div.innerHTML = notificaciones.map(function(n) {
+      var isUnread = n.leida === false || n.leida === 'false';
+      var bgStyle = isUnread ? 'background:rgba(46,134,193,0.05);border-left:3px solid var(--color-secundario);' : 'border-left:3px solid transparent;';
+
+      var tipoIcon = '';
+      switch (n.tipo) {
+        case 'encuesta':
+          tipoIcon = '<span class="badge badge-info">Encuesta</span>';
+          break;
+        case 'observacion':
+          tipoIcon = '<span class="badge badge-success">Observaci&oacute;n</span>';
+          break;
+        case 'hallazgo':
+          tipoIcon = '<span class="badge badge-warning">Hallazgo</span>';
+          break;
+        default:
+          tipoIcon = '<span class="badge badge-secondary">' + escapeHtml(n.tipo || 'Info') + '</span>';
+      }
+
+      return '<div class="card mb-2" style="cursor:pointer;' + bgStyle + '" onclick="marcarNotifLeida(\'' + n.id + '\', this)">' +
+        '<div class="card-body" style="padding:12px 16px;">' +
+          '<div class="flex-between mb-1">' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              (isUnread ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--color-secundario);flex-shrink:0;"></span>' : '') +
+              '<strong style="font-size:14px;">' + escapeHtml(n.titulo) + '</strong>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              tipoIcon +
+              '<span class="text-xs text-muted">' + formatDate(n.fecha) + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<p class="text-sm" style="margin-left:' + (isUnread ? '16px' : '0') + ';">' + escapeHtml(n.mensaje) + '</p>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function marcarNotifLeida(id, el) {
+    var notif = notificacionesData.find(function(n) { return n.id === id; });
+    if (!notif || (notif.leida !== false && notif.leida !== 'false')) return;
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r.success) {
+          // Actualizar localmente
+          notif.leida = true;
+          renderNotificaciones(notificacionesData);
+          // Actualizar contador en header
+          if (typeof cargarContadorNotificaciones === 'function') {
+            cargarContadorNotificaciones();
+          }
+        }
+      })
+      .marcarComoLeida(App.token, id);
+  }
+
+  function marcarTodasLeidas() {
+    var noLeidas = notificacionesData.filter(function(n) {
+      return n.leida === false || n.leida === 'false';
+    });
+
+    if (noLeidas.length === 0) {
+      showToast('No hay notificaciones sin leer.', 'info');
+      return;
+    }
+
+    var procesadas = 0;
+    noLeidas.forEach(function(n) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (r.success) n.leida = true;
+          procesadas++;
+          if (procesadas >= noLeidas.length) {
+            renderNotificaciones(notificacionesData);
+            showToast('Todas las notificaciones marcadas como leidas.', 'success');
+            if (typeof cargarContadorNotificaciones === 'function') {
+              cargarContadorNotificaciones();
+            }
+          }
+        })
+        .withFailureHandler(function() {
+          procesadas++;
+        })
+        .marcarComoLeida(App.token, n.id);
+    });
+  }
+</script>

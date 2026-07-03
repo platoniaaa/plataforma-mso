@@ -1,0 +1,182 @@
+<!-- Vista: Archivos y Recursos del Participante -->
+<style>
+  .recurso-card {
+    background: white;
+    border: 1px solid var(--color-borde);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 14px;
+    transition: box-shadow 0.2s;
+  }
+  .recurso-card:hover {
+    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+  }
+  .recurso-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .recurso-icono {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .recurso-icono-cronograma { background: #EBF5FB; }
+  .recurso-icono-material { background: #FEF9E7; }
+  .recurso-icono-instructivo { background: #F4ECF7; }
+  .recurso-icono-presentacion { background: #FDEDEC; }
+  .recurso-icono-enlace { background: #E8F8F5; }
+  .recurso-icono-informe { background: #E8F8F5; }
+  .recurso-icono-otro { background: var(--color-fondo-alt); }
+
+  .recurso-info { flex: 1; min-width: 0; }
+  .recurso-nombre {
+    font-size: 16px; font-weight: 600; color: var(--color-texto);
+    margin-bottom: 4px;
+  }
+  .recurso-meta {
+    font-size: 12px; color: var(--color-texto-sec); margin-bottom: 2px;
+  }
+  .recurso-mensaje {
+    margin-top: 10px; padding: 12px 16px;
+    background: var(--color-fondo-alt); border-radius: 8px;
+    border-left: 3px solid var(--color-secundario);
+    font-size: 14px; color: var(--color-texto); line-height: 1.5;
+  }
+  .recurso-mensaje-autor {
+    font-size: 11px; color: var(--color-texto-sec); margin-top: 6px; font-style: italic;
+  }
+  .recurso-btn {
+    flex-shrink: 0; align-self: center;
+  }
+  .empty-recursos {
+    text-align: center; padding: 60px 24px; color: var(--color-texto-sec);
+  }
+  .empty-recursos p { margin: 4px 0; }
+
+  .tipo-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .tipo-cronograma { background: #D4E6F1; color: #2471A3; }
+  .tipo-material { background: #FDEBD0; color: #D68910; }
+  .tipo-instructivo { background: #E8DAEF; color: #7D3C98; }
+  .tipo-presentacion { background: #FADBD8; color: #C0392B; }
+  .tipo-enlace { background: #D1F2EB; color: #148F77; }
+  .tipo-informe { background: #D1F2EB; color: #1ABC9C; }
+  .tipo-otro { background: #EAECEE; color: #5D6D7E; }
+</style>
+
+<div>
+  <p class="text-muted mb-4" style="font-size:14px;">
+    Materiales, recursos y actividades compartidos por el equipo del programa.
+  </p>
+
+  <div id="mis-recursos-loading" class="text-center p-4">
+    <div class="spinner spinner-lg"></div>
+    <p class="text-muted mt-3">Cargando recursos...</p>
+  </div>
+
+  <div id="mis-recursos-lista"></div>
+</div>
+
+<script>
+(function() {
+  // Obtener los programas del participante para buscar archivos
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r && r.success && r.data && r.data.length > 0) {
+        // Cargar archivos de todos los programas del participante
+        var programas = r.data;
+        var todosArchivos = [];
+        var pendientes = programas.length;
+
+        programas.forEach(function(prog) {
+          google.script.run
+            .withSuccessHandler(function(ar) {
+              if (ar && ar.success) {
+                (ar.data || []).forEach(function(a) {
+                  a.programa_nombre = prog.nombre;
+                  todosArchivos.push(a);
+                });
+              }
+              pendientes--;
+              if (pendientes === 0) {
+                renderRecursos(todosArchivos);
+              }
+            })
+            .withFailureHandler(function() {
+              pendientes--;
+              if (pendientes === 0) renderRecursos(todosArchivos);
+            })
+            .listarArchivosPrograma(App.token, prog.id);
+        });
+      } else {
+        renderRecursos([]);
+      }
+    })
+    .withFailureHandler(function() { renderRecursos([]); })
+    .listarProgramasDashboard(App.token);
+
+  function renderRecursos(archivos) {
+    document.getElementById('mis-recursos-loading').classList.add('hidden');
+    var container = document.getElementById('mis-recursos-lista');
+
+    if (!archivos.length) {
+      container.innerHTML =
+        '<div class="empty-recursos">' +
+          '<p style="font-size:40px;margin-bottom:12px;">&#128218;</p>' +
+          '<p><strong>No hay recursos disponibles</strong></p>' +
+          '<p class="text-sm">Cuando el equipo del programa comparta materiales, apareceran aqui.</p>' +
+        '</div>';
+      return;
+    }
+
+    // Ordenar por fecha mas reciente
+    archivos.sort(function(a, b) {
+      return (b.fecha_subida || '').localeCompare(a.fecha_subida || '');
+    });
+
+    var iconos = {
+      cronograma: '&#128197;', material: '&#128214;', instructivo: '&#128221;',
+      presentacion: '&#127916;', enlace: '&#128279;', informe: '&#128200;', otro: '&#128196;'
+    };
+    var tipoLabels = {
+      cronograma: 'Cronograma', material: 'Material', instructivo: 'Instructivo',
+      presentacion: 'Presentacion', enlace: 'Enlace', informe: 'Informe', otro: 'Otro'
+    };
+
+    container.innerHTML = archivos.map(function(a) {
+      var tipo = a.tipo || 'otro';
+      var icono = iconos[tipo] || iconos.otro;
+      var label = tipoLabels[tipo] || tipo;
+
+      var mensajeHtml = '';
+      if (a.mensaje) {
+        mensajeHtml = '<div class="recurso-mensaje">' +
+          escapeHtml(a.mensaje) +
+          (a.subido_por_nombre ? '<div class="recurso-mensaje-autor">— ' + escapeHtml(a.subido_por_nombre) + '</div>' : '') +
+        '</div>';
+      }
+
+      return '<div class="recurso-card">' +
+        '<div class="recurso-header">' +
+          '<div class="recurso-icono recurso-icono-' + tipo + '">' + icono + '</div>' +
+          '<div class="recurso-info">' +
+            '<div class="recurso-nombre">' + escapeHtml(a.nombre_archivo) + '</div>' +
+            '<div class="recurso-meta">' +
+              '<span class="tipo-badge tipo-' + tipo + '">' + label + '</span> ' +
+              (a.programa_nombre ? escapeHtml(a.programa_nombre) + ' &middot; ' : '') +
+              (a.fecha_subida ? formatDate(a.fecha_subida) : '') +
+            '</div>' +
+            mensajeHtml +
+          '</div>' +
+          '<div class="recurso-btn">' +
+            '<a href="' + escapeHtml(a.drive_url || '#') + '" target="_blank" class="btn btn-primary btn-sm">Abrir</a>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+})();
+</script>
