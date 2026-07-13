@@ -24,6 +24,21 @@
   </div>
 
   <div id="mi-informe-content" class="hidden">
+    <div id="mi-informe-toolbar" class="card" style="margin-bottom:16px;">
+      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;">
+        <div id="mi-informe-selector" style="display:flex;gap:8px;align-items:center;">
+          <span class="text-sm text-muted">Informe:</span>
+          <button type="button" class="btn btn-sm btn-outline" id="mi-informe-btn-pre" onclick="cambiarMomentoInforme('pre')">Inicial</button>
+          <button type="button" class="btn btn-sm btn-outline" id="mi-informe-btn-post" onclick="cambiarMomentoInforme('post')">Final</button>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" onclick="descargarMiInformePDF()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>
+          </svg>
+          Descargar PDF
+        </button>
+      </div>
+    </div>
     <div id="mi-informe-contenido"></div>
   </div>
 </div>
@@ -80,6 +95,11 @@
 </style>
 
 <script>
+  // Estado de la vista: programa y momentos de informe disponibles
+  var MI_INFORME_PROG = null;
+  var MI_INFORME_MOMENTO = 'pre';
+  var MI_INFORME_POST_OK = false;
+
   (function() {
     var miUser = App.usuario;
     if (!miUser || !miUser.id) {
@@ -96,6 +116,7 @@
         return;
       }
       var prog = rProgs.data[0];
+      MI_INFORME_PROG = prog;
 
       setLoadingText('Verificando estado de respuestas...');
 
@@ -110,27 +131,37 @@
           });
         }
 
-        // 3. Cargar encuestas del programa (autoeval + coeval)
+        // 3. Cargar encuestas del programa. Un programa tiene hasta 4 encuestas
+        // (autoeval/coeval x pre/post): hay que distinguir por tipo_cuestionario Y tipo,
+        // porque las reglas de acceso se evaluan contra las encuestas INICIALES.
         google.script.run.withSuccessHandler(function(rEnc) {
           var encuestas = (rEnc && rEnc.success && rEnc.data) || [];
-          var encAuto = encuestas.find(function(e) { return e.tipo_cuestionario === 'autoevaluacion'; });
-          var encCoe = encuestas.find(function(e) { return e.tipo_cuestionario === 'coevaluacion'; });
+          function buscarEnc(cuestionario, momento) {
+            return encuestas.find(function(e) {
+              return e.tipo_cuestionario === cuestionario && (e.tipo || 'pre') === momento;
+            });
+          }
+          var encAutoPre = buscarEnc('autoevaluacion', 'pre');
+          var encCoePre = buscarEnc('coevaluacion', 'pre');
+          var encAutoPost = buscarEnc('autoevaluacion', 'post');
+          var encCoePost = buscarEnc('coevaluacion', 'post');
 
-          if (!encAuto) {
+          if (!encAutoPre) {
             showLocked('Tu informe aún no está disponible', 'El programa todavia no tiene encuesta de autoevaluacion configurada. Tu informe estara disponible cuando el administrador la habilite.', '');
             return;
           }
 
-          // 4. Cargar respuestas de autoeval y coeval en paralelo para chequear reglas
-          var checks = { autoListo: false, coeListo: false };
+          // 4. Cargar respuestas de cada encuesta para chequear reglas y disponibilidad
+          var pendientes = 1 + (encCoePre ? 1 : 0) + (encAutoPost ? 1 : 0) + (encCoePost ? 1 : 0);
           var liderRespondio = false;
           var colabRespondio = false;
+          var autoPostOk = false;
+          var coePostOk = false;
 
           function evaluarReglas() {
-            if (!checks.autoListo) return;
-            if (encCoe && !checks.coeListo) return;
+            if (--pendientes > 0) return;
 
-            // REGLA 1: lider debe haber respondido autoeval
+            // REGLA 1: lider debe haber respondido su autoevaluacion INICIAL
             if (!liderRespondio) {
               showLocked(
                 'Tu informe aún no está disponible',
@@ -140,8 +171,8 @@
               return;
             }
 
-            // REGLA 2: si tiene colaborador asignado, este debe haber respondido coeval
-            if (miColab && encCoe && !colabRespondio) {
+            // REGLA 2: si tiene colaborador asignado, este debe haber respondido la coevaluacion INICIAL
+            if (miColab && encCoePre && !colabRespondio) {
               showLocked(
                 'Tu informe aún no está disponible',
                 'Tu informe se habilita cuando tu colaborador responda la coevaluacion. Mientras tanto, puedes ver el avance de tu equipo en Mi Equipo.',
@@ -150,29 +181,102 @@
               return;
             }
 
-            // Todas las reglas OK: generar y renderizar el informe
-            cargarYRenderizarInforme(prog);
+            // El informe Final se habilita si existe cualquier dato de la etapa post
+            // (autoevaluacion propia o coevaluacion del colaborador).
+            MI_INFORME_POST_OK = autoPostOk || coePostOk;
+            MI_INFORME_MOMENTO = MI_INFORME_POST_OK ? 'post' : 'pre';
+            actualizarSelectorMomento();
+            cargarYRenderizarInforme(prog, MI_INFORME_MOMENTO);
           }
 
           google.script.run.withSuccessHandler(function(rA) {
             var ids = (rA && rA.success && Array.isArray(rA.data)) ? rA.data : [];
             liderRespondio = ids.indexOf(miUser.id) !== -1;
-            checks.autoListo = true;
             evaluarReglas();
-          }).listarRespuestasEncuesta(App.token, encAuto.id);
+          }).listarRespuestasEncuesta(App.token, encAutoPre.id);
 
-          if (encCoe) {
+          if (encCoePre) {
             google.script.run.withSuccessHandler(function(rC) {
               var ids = (rC && rC.success && Array.isArray(rC.data)) ? rC.data : [];
               colabRespondio = miColab ? (ids.indexOf(miColab.usuario_id) !== -1) : false;
-              checks.coeListo = true;
               evaluarReglas();
-            }).listarRespuestasEncuesta(App.token, encCoe.id);
+            }).listarRespuestasEncuesta(App.token, encCoePre.id);
+          }
+
+          if (encAutoPost) {
+            google.script.run.withSuccessHandler(function(rA) {
+              var ids = (rA && rA.success && Array.isArray(rA.data)) ? rA.data : [];
+              autoPostOk = ids.indexOf(miUser.id) !== -1;
+              evaluarReglas();
+            }).listarRespuestasEncuesta(App.token, encAutoPost.id);
+          }
+
+          if (encCoePost) {
+            google.script.run.withSuccessHandler(function(rC) {
+              var ids = (rC && rC.success && Array.isArray(rC.data)) ? rC.data : [];
+              coePostOk = miColab ? (ids.indexOf(miColab.usuario_id) !== -1) : false;
+              evaluarReglas();
+            }).listarRespuestasEncuesta(App.token, encCoePost.id);
           }
         }).listarEncuestas(App.token, prog.id);
       }).listarParticipantesPrograma(App.token, prog.id);
     }).listarProgramasDashboard(App.token, miUser.id);
   })();
+
+  // Selector Inicial / Final: el Final solo se ofrece si hay datos de la etapa post.
+  function actualizarSelectorMomento() {
+    var btnPre = document.getElementById('mi-informe-btn-pre');
+    var btnPost = document.getElementById('mi-informe-btn-post');
+    var selector = document.getElementById('mi-informe-selector');
+    if (!btnPre || !btnPost || !selector) return;
+
+    selector.style.display = MI_INFORME_POST_OK ? 'flex' : 'none';
+    function marcar(btn, activo) {
+      btn.className = 'btn btn-sm ' + (activo ? 'btn-primary' : 'btn-outline');
+    }
+    marcar(btnPre, MI_INFORME_MOMENTO === 'pre');
+    marcar(btnPost, MI_INFORME_MOMENTO === 'post');
+  }
+
+  function cambiarMomentoInforme(momento) {
+    if (momento === MI_INFORME_MOMENTO || !MI_INFORME_PROG) return;
+    if (momento === 'post' && !MI_INFORME_POST_OK) return;
+    MI_INFORME_MOMENTO = momento;
+    actualizarSelectorMomento();
+    document.getElementById('mi-informe-content').classList.add('hidden');
+    document.getElementById('mi-informe-loading').classList.remove('hidden');
+    cargarYRenderizarInforme(MI_INFORME_PROG, momento);
+  }
+
+  function descargarMiInformePDF() {
+    var element = document.getElementById('mi-informe-contenido');
+    if (!element || !element.innerHTML.trim()) {
+      if (typeof showToast === 'function') showToast('El informe aun no esta listo.', 'error');
+      return;
+    }
+    var slug = function(s) { return (s || '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, ''); };
+    var nombre = (App.usuario && App.usuario.nombre) || 'Participante';
+    var progNombre = MI_INFORME_PROG ? MI_INFORME_PROG.nombre : 'Programa';
+    var momentoLabel = MI_INFORME_MOMENTO === 'post' ? 'Final' : 'Inicial';
+    var filename = 'Informe_Individual_' + momentoLabel + '_' + slug(nombre) + '_' + slug(progNombre) + '.pdf';
+
+    if (typeof showToast === 'function') showToast('Generando PDF...', 'success');
+    html2pdf().set({
+      margin: [0, 0, 0, 0],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    }).from(element).save().then(function() {
+      if (typeof showToast === 'function') showToast('PDF descargado.', 'success');
+    }).catch(function() {
+      if (typeof showToast === 'function') showToast('Error al generar PDF.', 'error');
+    });
+  }
+
+  window.cambiarMomentoInforme = cambiarMomentoInforme;
+  window.descargarMiInformePDF = descargarMiInformePDF;
 
   function setLoadingText(t) {
     var el = document.getElementById('mi-informe-loading-text');
@@ -194,8 +298,9 @@
     document.getElementById('mi-informe-content').classList.remove('hidden');
   }
 
-  function cargarYRenderizarInforme(prog) {
-    setLoadingText('Generando tu informe (esto toma unos segundos)...');
+  function cargarYRenderizarInforme(prog, momento) {
+    momento = momento || 'pre';
+    setLoadingText('Generando tu informe ' + (momento === 'post' ? 'final' : 'inicial') + ' (esto toma unos segundos)...');
     var miUser = App.usuario;
 
     // Primero datos cuantitativos
@@ -229,7 +334,7 @@
           renderMiInforme(prog, miUser, iaData);
           showContent();
         });
-    }).obtenerDatosInformeIndividual(App.token, prog.id, miUser.id, 'pre');
+    }).obtenerDatosInformeIndividual(App.token, prog.id, miUser.id, momento);
   }
 
   function buildIndividualPromptMI(prog, part, datos) {
@@ -264,6 +369,7 @@
     var momento = datosReales ? (datosReales.momento || 'pre') : 'pre';
     var esPost = momento === 'post';
     var dims, autoP, coP, brechaG;
+    var faltaAutoPost = false;
     function numI(v) { return (v === null || v === undefined || isNaN(v)) ? 0 : v; }
     if (datosReales && datosReales.competencias && datosReales.competencias.length > 0) {
       dims = datosReales.competencias.map(function(c) {
@@ -275,6 +381,11 @@
           brecha: (auto !== null && co !== null) ? Math.round((auto - co) * 100) / 100 : null,
           sinDato: (auto === null && co === null)
         };
+      });
+      // Si es informe Final y no hay ninguna autoevaluacion post, los valores de
+      // autoevaluacion que se muestran son los de la linea base Inicial (fallback de arriba).
+      faltaAutoPost = esPost && datosReales.competencias.every(function(c) {
+        return c.auto_post === null || c.auto_post === undefined;
       });
       var dimsConDato = dims.filter(function(d) { return !d.sinDato; });
       var tA = dimsConDato.reduce(function(a, b) { return a + b.auto; }, 0);
@@ -334,6 +445,9 @@
       interpBrecha = '<strong>eres valorado por encima</strong> de tu autopercepcion (' + brechaG + '): fortaleza reconocida por tu entorno que podrias potenciar.';
     }
     html += '<p style="font-size:13px;color:#555;">La brecha global refleja: ' + interpBrecha + '</p>';
+    if (faltaAutoPost) {
+      html += '<p style="font-size:11px;color:#888;">Nota: no se registro tu Autoevaluacion Final, por lo que los valores de autoevaluacion de este informe corresponden a tu linea base Inicial. Las cifras de coevaluacion si son de la etapa Final.</p>';
+    }
     html += '</div>';
 
     // 3. Resultados Detallados
