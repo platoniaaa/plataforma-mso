@@ -23,7 +23,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
 // Modelo Groq con soporte de response_format json_object
-const MODEL = "llama-3.3-70b-versatile";
+const MODEL = "openai/gpt-oss-120b";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {

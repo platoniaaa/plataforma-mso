@@ -2827,7 +2827,7 @@ var backendFunctions = {
 // ============================================
 // Groq AI via Edge Function proxy (v2 - bulletproof, no key en frontend)
 // ============================================
-var GROQ_MODEL = 'llama-3.3-70b-versatile';
+var GROQ_MODEL = 'openai/gpt-oss-120b';
 
 function callGroqFromBrowser(messages) {
   console.log('[Groq-v2] via proxy');

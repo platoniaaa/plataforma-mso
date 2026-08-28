@@ -834,7 +834,7 @@ function injectMock(html) {
 // Lee la API key desde .env
 const envContent = fs.existsSync(path.join(BASE_DIR, '.env')) ? fs.readFileSync(path.join(BASE_DIR, '.env'), 'utf-8') : '';
 const GROQ_API_KEY = (envContent.match(/GROQ_API_KEY=(.+)/) || [])[1] || process.env.GROQ_API_KEY || '';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const GROQ_MODEL = 'openai/gpt-oss-120b';
 
 function buildSystemPrompt() {
   const programas = MOCK_DATA.programas;

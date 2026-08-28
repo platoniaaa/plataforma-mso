@@ -51,7 +51,7 @@ ${backendBlock}
 // Groq AI (direct from browser)
 // ============================================
 var GROQ_API_KEY = localStorage.getItem('GROQ_API_KEY') || '';
-var GROQ_MODEL = 'llama-3.3-70b-versatile';
+var GROQ_MODEL = 'openai/gpt-oss-120b';
 
 function callGroqFromBrowser(messages) {
   if (!GROQ_API_KEY) {

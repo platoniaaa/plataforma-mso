@@ -37,7 +37,7 @@ serve(async (req) => {
     }
 
     const payload: Record<string, unknown> = {
-      model: body.model || "llama-3.3-70b-versatile",
+      model: body.model || "openai/gpt-oss-120b",
       messages: body.messages,
       temperature: typeof body.temperature === "number" ? body.temperature : 0.7,
       max_tokens: typeof body.max_tokens === "number" ? body.max_tokens : 2048,
