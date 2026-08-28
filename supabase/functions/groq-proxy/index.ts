@@ -44,18 +44,40 @@ serve(async (req) => {
     };
     if (body.response_format) payload.response_format = body.response_format;
 
-    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${GROQ_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    const MAX_ATTEMPTS = 4;
+    const MAX_WAIT_MS = 25000;
+    const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+    const parseRetryAfter = (resp: Response, body: string): number | null => {
+      const h = resp.headers.get("retry-after");
+      if (h) { const s = parseFloat(h); if (!isNaN(s)) return s * 1000; }
+      const m = body.match(/try again in ([\d.]+)s/i);
+      return m ? parseFloat(m[1]) * 1000 : null;
+    };
 
-    if (!r.ok) {
-      const txt = await r.text();
-      return json({ success: false, error: `Groq ${r.status}: ${txt}` }, 502);
+    let r: Response | null = null;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      // Rate limit o error transitorio -> esperar y reintentar
+      if ((r.status === 429 || r.status >= 500) && attempt < MAX_ATTEMPTS - 1) {
+        const errTxt = await r.text().catch(() => "");
+        const sugerido = r.status === 429 ? parseRetryAfter(r, errTxt) : null;
+        const backoff = Math.min(2000 * Math.pow(2, attempt), MAX_WAIT_MS);
+        await sleep(Math.min(sugerido ?? backoff, MAX_WAIT_MS));
+        continue;
+      }
+      break;
+    }
+
+    if (!r || !r.ok) {
+      const txt = r ? await r.text() : "sin respuesta";
+      return json({ success: false, error: `Groq ${r?.status ?? 0}: ${txt}` }, 502);
     }
 
     const data = await r.json();
