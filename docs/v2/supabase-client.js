@@ -2736,6 +2736,54 @@ var backendFunctions = {
       }
     };
   },
+  // Respuestas abiertas (tipo_respuesta = 'parrafo') de todas las encuestas del programa,
+  // con nombre/email de quien responde y del lider evaluado. Para descarga self-service.
+  obtenerRespuestasCualitativas: async function(token, programaId) {
+    var progR = await _supabase.from('programas').select('nombre').eq('id', programaId).single();
+    var nombrePrograma = (progR.data && progR.data.nombre) || 'Programa';
+
+    var encR = await _supabase.from('encuestas')
+      .select('id, nombre, tipo, tipo_cuestionario').eq('programa_id', programaId);
+    if (encR.error) return { success: false, error: encR.error.message };
+    var encuestas = encR.data || [];
+    if (!encuestas.length) return { success: true, data: { programa_nombre: nombrePrograma, items: [] } };
+    var encMap = {}; encuestas.forEach(function(e) { encMap[e.id] = e; });
+    var encIds = encuestas.map(function(e) { return e.id; });
+
+    var pregR = await _supabase.from('preguntas')
+      .select('id, encuesta_id, texto_pregunta')
+      .in('encuesta_id', encIds).eq('tipo_respuesta', 'parrafo');
+    if (pregR.error) return { success: false, error: pregR.error.message };
+    var preguntas = pregR.data || [];
+    if (!preguntas.length) return { success: true, data: { programa_nombre: nombrePrograma, items: [] } };
+    var pregMap = {}; preguntas.forEach(function(p) { pregMap[p.id] = p; });
+    var pregIds = preguntas.map(function(p) { return p.id; });
+
+    var respR = await _supabase.from('respuestas')
+      .select('pregunta_id, valor, created_at, evaluador:evaluador_id(nombre,email), evaluado:evaluado_id(nombre,email)')
+      .in('pregunta_id', pregIds)
+      .order('created_at', { ascending: true });
+    if (respR.error) return { success: false, error: respR.error.message };
+
+    var items = (respR.data || []).map(function(r) {
+      var p = pregMap[r.pregunta_id] || {};
+      var e = encMap[p.encuesta_id] || {};
+      return {
+        encuesta: e.nombre || '',
+        momento: e.tipo || '',
+        tipo_cuestionario: e.tipo_cuestionario || '',
+        pregunta: p.texto_pregunta || '',
+        fecha: (r.created_at || '').slice(0, 10),
+        quien_responde: (r.evaluador && r.evaluador.nombre) || '',
+        email_responde: (r.evaluador && r.evaluador.email) || '',
+        lider_evaluado: (r.evaluado && r.evaluado.nombre) || '',
+        email_lider_evaluado: (r.evaluado && r.evaluado.email) || '',
+        respuesta: r.valor || ''
+      };
+    });
+    return { success: true, data: { programa_nombre: nombrePrograma, items: items } };
+  },
+
   asignarColaborador: async function(token, progId, liderId, colaboradorUserId, colaboradorData) {
     var usuarioId = colaboradorUserId || null;
     var esNuevo = false;

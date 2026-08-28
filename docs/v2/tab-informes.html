@@ -290,13 +290,20 @@
       </div>
     </div>
 
-    <div class="informes-actions-grid" style="margin-top:24px;grid-template-columns:1fr;max-width:400px;">
+    <div class="informes-actions-grid" style="margin-top:24px;grid-template-columns:1fr 1fr;max-width:820px;">
       <div class="informe-action-card" onclick="window._informeExportar &amp;&amp; window._informeExportar()">
         <div class="action-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </div>
         <div class="action-title">Exportar Datos Excel</div>
         <div class="action-desc">Descarga los datos crudos del programa en formato Excel.</div>
+      </div>
+      <div class="informe-action-card" onclick="window._informeCualitativas &amp;&amp; window._informeCualitativas()">
+        <div class="action-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="action-title">Descargar Respuestas Cualitativas</div>
+        <div class="action-desc">Exporta en Excel las respuestas abiertas (autoevaluaci&oacute;n y coevaluaci&oacute;n) del programa.</div>
       </div>
     </div>
   </div>
@@ -1103,6 +1110,72 @@
       .obtenerDatosInformeConsolidado(App.token, panelProgramaId, 'post');
   }
 
+  function descargarRespuestasCualitativas() {
+    if (typeof XLSX === 'undefined') {
+      showToast('Libreria XLSX no disponible', 'error');
+      return;
+    }
+    showToast('Preparando respuestas cualitativas...', 'info');
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r || !r.success) {
+          showToast((r && r.error) || 'No se pudieron obtener las respuestas.', 'error');
+          return;
+        }
+        var items = (r.data && r.data.items) || [];
+        if (!items.length) {
+          showToast('Este programa no tiene respuestas abiertas registradas.', 'warning');
+          return;
+        }
+
+        var nombrePrograma = (r.data && r.data.programa_nombre) || 'Programa';
+        var hoy = new Date().toISOString().slice(0, 10);
+        var wb = XLSX.utils.book_new();
+
+        // Agrupar por encuesta
+        var grupos = {};
+        items.forEach(function(it) {
+          var key = it.encuesta || 'Sin encuesta';
+          (grupos[key] = grupos[key] || []).push(it);
+        });
+
+        // Orden: Inicial (PRE) antes que Final (POST); Autoevaluacion antes que Coevaluacion
+        var orden = Object.keys(grupos).sort(function(a, b) {
+          function score(nm) { return (/post/i.test(nm) ? 10 : 0) + (/coev/i.test(nm) ? 1 : 0); }
+          return score(a) - score(b);
+        });
+
+        orden.forEach(function(nombreEnc) {
+          var filas = grupos[nombreEnc];
+          var esCo = (filas[0].tipo_cuestionario === 'coevaluacion');
+          var aoa;
+          if (esCo) {
+            aoa = [['Fecha', 'Colaborador (responde)', 'Email', 'Lider evaluado', 'Email lider', 'Respuesta']];
+            filas.forEach(function(f) {
+              aoa.push([f.fecha, f.quien_responde, f.email_responde, f.lider_evaluado, f.email_lider_evaluado, f.respuesta]);
+            });
+          } else {
+            aoa = [['Fecha', 'Lider (responde)', 'Email', 'Respuesta']];
+            filas.forEach(function(f) {
+              aoa.push([f.fecha, f.quien_responde, f.email_responde, f.respuesta]);
+            });
+          }
+          // Nombre de hoja valido: sin caracteres prohibidos y max 31 chars
+          var sheetName = nombreEnc.replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 31);
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), sheetName);
+        });
+
+        var filename = 'Respuestas_Cualitativas_' + nombrePrograma.replace(/[^a-zA-Z0-9]/g, '_') + '_' + hoy + '.xlsx';
+        XLSX.writeFile(wb, filename);
+        showToast('Excel descargado: ' + filename, 'success');
+      })
+      .withFailureHandler(function(err) {
+        showToast('Error de conexión: ' + (err && err.message || ''), 'error');
+      })
+      .obtenerRespuestasCualitativas(App.token, panelProgramaId);
+  }
+
   /* ==========================================
      PROMPTS
      ========================================== */
@@ -1796,6 +1869,7 @@
   window._informeIndividual = function() { abrirSelectorParticipante('post'); };
   window._informeConsolidado = function() { generarInformeConsolidado('post'); };
   window._informeExportar = exportarDatosExcel;
+  window._informeCualitativas = descargarRespuestasCualitativas;
   window._informePDF = descargarPDF;
   window._informeCerrar = cerrarVistaPrevia;
   window._informeActualizar = cargarInformesGenerados;
