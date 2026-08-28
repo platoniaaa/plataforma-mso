@@ -1915,17 +1915,30 @@ var backendFunctions = {
       }
     };
   },
-  asignarColaborador: async function(token, progId, datos) {
-    var colabR = await _supabase.from('usuarios').insert({
-      nombre: datos.nombre || datos.colaborador_nombre || '',
-      email: datos.email || datos.colaborador_email || '',
-      rol: 'participante', estado: 'Activo'
-    }).select().single();
-    if (colabR.data) {
-      await _supabase.from('participantes_programa').insert({
-        programa_id: progId, usuario_id: colabR.data.id,
-        rol_programa: 'colaborador', lider_id: datos.lider_id || null
-      });
+  asignarColaborador: async function(token, progId, liderId, colaboradorUserId, colaboradorData) {
+    var usuarioId = colaboradorUserId || null;
+    // Crear colaborador nuevo solo si no se selecciono uno existente
+    if (!usuarioId && colaboradorData) {
+      var colabR = await _supabase.from('usuarios').insert({
+        nombre: colaboradorData.nombre || '',
+        email: colaboradorData.email || '',
+        cargo: colaboradorData.cargo || '',
+        rol: 'participante', estado: 'Activo'
+      }).select().single();
+      if (colabR.error || !colabR.data) {
+        return { success: false, error: (colabR.error && colabR.error.message) || 'No se pudo crear el colaborador.' };
+      }
+      usuarioId = colabR.data.id;
+    }
+    if (!usuarioId) {
+      return { success: false, error: 'Falta seleccionar o crear el colaborador.' };
+    }
+    var asignR = await _supabase.from('participantes_programa').insert({
+      programa_id: progId, usuario_id: usuarioId,
+      rol_programa: 'colaborador', lider_id: liderId || null
+    });
+    if (asignR.error) {
+      return { success: false, error: asignR.error.message };
     }
     return { success: true };
   },
